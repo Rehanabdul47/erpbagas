@@ -105,11 +105,13 @@
                         <td>{{ $p->location }}</td>
                         <td><span class="badge {{ $p->status_badge }}">{{ $p->status_label }}</span></td>
                         <td>
-                            <div style="display:flex;gap:4px">
-                                <a href="{{ route('inventory.edit', $p) }}" class="btn btn-ghost btn-xs" title="Edit"><i data-lucide="edit-2" style="width:14px;height:14px"></i></a>
-                                <form method="POST" action="{{ route('inventory.destroy', $p) }}" onsubmit="return confirm('Hapus produk {{ $p->name }}?')">
-                                    @csrf @method('DELETE')
-                                    <button type="submit" class="btn btn-ghost btn-xs" style="color:var(--danger-400)" title="Hapus"><i data-lucide="trash-2" style="width:14px;height:14px"></i></button>
+                            <div style="display:flex;gap:8px">
+                                <a href="{{ route('inventory.barcode', $p) }}" class="btn btn-ghost btn-xs" title="Barcode"><i data-lucide="barcode" style="width:14px"></i></a>
+                                <a href="{{ route('inventory.edit', $p) }}" class="btn btn-ghost btn-xs" title="Edit"><i data-lucide="edit" style="width:14px"></i></a>
+                                <form action="{{ route('inventory.destroy', $p) }}" method="POST" onsubmit="return confirm('Hapus produk ini?')">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="btn btn-ghost btn-xs" style="color:var(--danger-400)" title="Hapus"><i data-lucide="trash-2" style="width:14px"></i></button>
                                 </form>
                             </div>
                         </td>

@@ -106,10 +106,14 @@ class InventoryController extends Controller
 
     public function destroy(Product $product)
     {
-        $name = $product->name;
         $product->delete();
+        return redirect()->route('inventory.index')->with('success', 'Produk berhasil dihapus');
+    }
 
-        return redirect()->route('inventory.index')->with('success', "Produk {$name} berhasil dihapus");
+    public function barcode(Product $product)
+    {
+        return view('pages.inventory.barcode', compact('product'))
+            ->with('activePage', 'inventory');
     }
 
     public function stockIn(Request $request)
