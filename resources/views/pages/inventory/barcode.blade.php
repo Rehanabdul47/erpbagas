@@ -15,7 +15,7 @@
         </div>
         
         <div style="margin-bottom: 12px;">
-            {!! DNS1D::getBarcodeHTML($product->sku, 'C128', 2, 80) !!}
+            {!! Milon\Barcode\Facades\DNS1DFacade::getBarcodeHTML($product->sku, 'C128', 2, 80) !!}
         </div>
         
         <div style="font-size: 14px; color: #555;">
