@@ -1,0 +1,32 @@
+/* HRM & Payroll Page Styles */
+.attendance-badge {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-right: 6px;
+}
+
+.attendance-badge.present {
+    background: var(--success-400);
+}
+
+.attendance-badge.late {
+    background: var(--warning-400);
+}
+
+.attendance-badge.absent {
+    background: var(--danger-400);
+}
+
+.attendance-badge.on_leave {
+    background: var(--info-400);
+}
+
+.payslip-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+    padding: var(--space-5);
+    margin-bottom: var(--space-4);
+}
