@@ -91,17 +91,25 @@
             <div class="table-container">
                 <table>
                     <thead>
-                        <tr><th>Karyawan</th><th>Status</th><th>Jam Masuk</th><th>Jam Keluar</th><th>Catatan</th><th>Update</th></tr>
+                        <tr><th>Karyawan</th><th>Foto</th><th>Status</th><th>Jam Masuk</th><th>Jam Keluar</th><th>Catatan</th><th>Update</th></tr>
                     </thead>
-                    <tbody>
+                    <tbody id="attendance-table-body">
                         @foreach($employees as $emp)
                         @php $att = $attendances->firstWhere('employee_id', $emp->id); @endphp
-                        <tr>
+                        <tr id="att-row-{{ $emp->id }}">
                             <td>
                                 <div style="font-weight:500">{{ $emp->name }}</div>
                                 <div style="font-size:12px;color:var(--text-tertiary)">NIP: {{ $emp->nip }}</div>
                             </td>
-                            <td>
+                            <td class="att-photos">
+                                @if($att && $att->image)
+                                    <img src="{{ asset('storage/attendances/' . $att->image) }}" class="att-img-in" style="width:40px;height:40px;border-radius:4px;object-fit:cover;cursor:pointer" onclick="window.open(this.src)" title="Foto Masuk">
+                                @endif
+                                @if($att && $att->image_out)
+                                    <img src="{{ asset('storage/attendances/' . $att->image_out) }}" class="att-img-out" style="width:40px;height:40px;border-radius:4px;object-fit:cover;cursor:pointer;margin-left:4px" onclick="window.open(this.src)" title="Foto Keluar">
+                                @endif
+                            </td>
+                            <td class="att-status">
                                 @if($att)
                                 <span class="badge {{ $att->status === 'present' ? 'badge-success' : ($att->status === 'absent' ? 'badge-danger' : 'badge-warning') }}">
                                     {{ ucfirst($att->status) }}
@@ -110,11 +118,11 @@
                                 <span style="font-size:12px;color:var(--text-tertiary)">Belum mencatat</span>
                                 @endif
                             </td>
-                            <td>{{ $att->clock_in ?? '-' }}</td>
-                            <td>{{ $att->clock_out ?? '-' }}</td>
-                            <td><span style="font-size:12px">{{ $att->note ?? '-' }}</span></td>
+                            <td class="att-in">{{ $att->clock_in ?? '-' }}</td>
+                            <td class="att-out">{{ $att->clock_out ?? '-' }}</td>
+                            <td class="att-note"><span style="font-size:12px">{{ $att->note ?? '-' }}</span></td>
                             <td>
-                                <button class="btn btn-ghost btn-xs" onclick='openAttendanceModal(@json($emp), @json($att))'><i data-lucide="clipboard-check" style="width:14px"></i> Log</button>
+                                <button class="btn btn-ghost btn-xs btn-log" onclick='openAttendanceModal(@json($emp), @json($att))'><i data-lucide="clipboard-check" style="width:14px"></i> Log</button>
                             </td>
                         </tr>
                         @endforeach
@@ -209,6 +217,7 @@
                     <div class="form-group"><label>Jam Keluar</label><input type="time" name="clock_out" id="att-out" class="form-control"></div>
                 </div>
                 <div class="form-group"><label>Catatan</label><input type="text" name="note" id="att-note" class="form-control"></div>
+                <div id="att-photo-preview" style="margin-top:12px;display:flex;gap:12px"></div>
             </div>
             <div class="modal-footer"><button type="submit" class="btn btn-primary">Simpan Presensi</button></div>
         </form>
@@ -295,11 +304,23 @@ function openAttendanceModal(emp, att) {
         document.getElementById('att-in').value = att.clock_in ? att.clock_in.substring(0, 5) : '';
         document.getElementById('att-out').value = att.clock_out ? att.clock_out.substring(0, 5) : '';
         document.getElementById('att-note').value = att.note || '';
+        document.getElementById('att-note').value = att.note || '';
+
+        // Show photos in modal
+        let photoHtml = '';
+        if (att.image) {
+            photoHtml += `<div><label style="font-size:12px;display:block;margin-bottom:4px">Foto Masuk:</label><img src="/storage/attendances/${att.image}" style="width:100%;max-width:200px;border-radius:8px"></div>`;
+        }
+        if (att.image_out) {
+            photoHtml += `<div><label style="font-size:12px;display:block;margin-bottom:4px">Foto Keluar:</label><img src="/storage/attendances/${att.image_out}" style="width:100%;max-width:200px;border-radius:8px"></div>`;
+        }
+        document.getElementById('att-photo-preview').innerHTML = photoHtml;
     } else {
         document.getElementById('att-status').value = 'present';
         document.getElementById('att-in').value = '08:00';
         document.getElementById('att-out').value = '17:00';
         document.getElementById('att-note').value = '';
+        document.getElementById('att-photo-preview').innerHTML = '';
     }
     openModal('modal-attendance');
 }
@@ -314,6 +335,53 @@ function editPayroll(pay) {
     document.getElementById('pay-status').value = pay.status;
     openModal('modal-edit-payroll');
 }
+
+// Real-time updates with Pusher
+@if(config('broadcasting.connections.pusher.key'))
+const pusher = new Pusher('{{ config('broadcasting.connections.pusher.key') }}', {
+    cluster: '{{ config('broadcasting.connections.pusher.options.cluster') }}',
+    forceTLS: true
+});
+
+const channel = pusher.subscribe('attendance');
+channel.bind('App\\Events\\AttendanceRecorded', function(data) {
+    const att = data.attendance;
+    const empId = att.employee_id;
+    const row = document.getElementById('att-row-' + empId);
+    
+    if (row && '{{ $attendanceDate }}' === att.date) {
+        // Update Status
+        const statusBadge = att.status === 'present' ? 'badge-success' : (att.status === 'absent' ? 'badge-danger' : 'badge-warning');
+        row.querySelector('.att-status').innerHTML = `<span class="badge ${statusBadge}">${att.status.charAt(0).toUpperCase() + att.status.slice(1)}</span>`;
+        
+        // Update Clock In/Out
+        row.querySelector('.att-in').textContent = att.clock_in || '-';
+        row.querySelector('.att-out').textContent = att.clock_out || '-';
+        row.querySelector('.att-note').innerHTML = `<span style="font-size:12px">${att.note || '-'}</span>`;
+        
+        // Update Photos
+        let photosHtml = '';
+        if (att.image) {
+            photosHtml += `<img src="/storage/attendances/${att.image}" class="att-img-in" style="width:40px;height:40px;border-radius:4px;object-fit:cover;cursor:pointer" onclick="window.open(this.src)" title="Foto Masuk"> `;
+        }
+        if (att.image_out) {
+            photosHtml += `<img src="/storage/attendances/${att.image_out}" class="att-img-out" style="width:40px;height:40px;border-radius:4px;object-fit:cover;cursor:pointer;margin-left:4px" onclick="window.open(this.src)" title="Foto Keluar">`;
+        }
+        row.querySelector('.att-photos').innerHTML = photosHtml;
+        
+        // Update Modal Data binding on the button
+        const logBtn = row.querySelector('.btn-log');
+        const empData = @json($employees->keyBy('id'));
+        logBtn.onclick = () => openAttendanceModal(empData[empId], att);
+
+        // Highlight Effect
+        row.style.background = 'rgba(79, 70, 229, 0.1)';
+        setTimeout(() => { row.style.background = 'transparent'; }, 2000);
+        
+        // If showing attendance tab, play subtle sound or toast could be added here
+    }
+});
+@endif
 
 // Initial binding for add button
 document.querySelector('[onclick="openModal(\'modal-add-employee\')"]').onclick = () => {

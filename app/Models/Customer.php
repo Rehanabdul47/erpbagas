@@ -19,4 +19,9 @@ class Customer extends Model
     {
         return $this->hasMany(Sale::class);
     }
+
+    public function hasCompletedPurchase(): bool
+    {
+        return $this->sales()->where('status', 'paid')->exists();
+    }
 }

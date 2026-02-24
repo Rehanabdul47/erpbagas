@@ -78,10 +78,23 @@
             </div>
         </div>
 
+        <div style="padding:16px;border-top:1px solid var(--border-color)">
+            <label style="font-size:12px;font-weight:600;color:var(--text-secondary);margin-bottom:8px;display:block">Redeem Code</label>
+            <div style="display:flex;gap:8px">
+                <input type="text" id="pos-redeem-code" class="form-control" placeholder="Masukkan kode promo" style="flex:1;text-transform:uppercase">
+                <button class="btn btn-outline" onclick="applyRedeemCode()">Terapkan</button>
+            </div>
+            <div id="redeem-code-msg" style="font-size:12px;margin-top:8px"></div>
+        </div>
+
         <div class="cart-footer" style="padding:20px;background:var(--bg-surface);border-top:1px solid var(--border-color)">
             <div style="display:flex;justify-content:space-between;margin-bottom:8px;font-size:14px;color:var(--text-secondary)">
                 <span>Subtotal</span>
                 <span id="cart-subtotal">Rp 0</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;margin-bottom:8px;font-size:14px;color:var(--danger-500);display:none" id="discount-row">
+                <span>Diskon <span id="discount-code-name" style="font-size:11px;background:var(--bg-tertiary);padding:2px 4px;border-radius:4px;margin-left:4px"></span></span>
+                <span id="cart-discount">-Rp 0</span>
             </div>
             <div style="display:flex;justify-content:space-between;margin-bottom:16px;font-size:20px;font-weight:800;color:var(--text-primary)">
                 <span>Total</span>
@@ -247,6 +260,8 @@
 <script>
 let cart = [];
 let paymentMethod = 'Tunai';
+let currentDiscount = 0;
+let appliedRedeemCode = null;
 
 function switchMainTab(tab, btn) {
     document.querySelectorAll('.main-tab-content').forEach(el => el.style.display = 'none');
@@ -344,7 +359,29 @@ function renderCart() {
 
 function updateTotals(total) {
     document.getElementById('cart-subtotal').innerText = 'Rp ' + total.toLocaleString('id-ID');
-    document.getElementById('cart-total').innerText = 'Rp ' + total.toLocaleString('id-ID');
+    
+    // Calculate final total based on discount
+    let finalTotal = total;
+    if (appliedRedeemCode) {
+        if (appliedRedeemCode.type === 'percentage') {
+            currentDiscount = (total * appliedRedeemCode.value) / 100;
+        } else {
+            currentDiscount = parseFloat(appliedRedeemCode.value);
+        }
+        
+        // Ensure discount doesn't exceed total
+        currentDiscount = Math.min(currentDiscount, total);
+        finalTotal -= currentDiscount;
+        
+        document.getElementById('discount-row').style.display = 'flex';
+        document.getElementById('discount-code-name').innerText = appliedRedeemCode.code;
+        document.getElementById('cart-discount').innerText = '-Rp ' + currentDiscount.toLocaleString('id-ID');
+    } else {
+        document.getElementById('discount-row').style.display = 'none';
+        currentDiscount = 0;
+    }
+
+    document.getElementById('cart-total').innerText = 'Rp ' + finalTotal.toLocaleString('id-ID');
 }
 
 function openCheckoutModal() {
@@ -381,17 +418,64 @@ function quickCash(amount) {
 }
 
 function calculateChange() {
-    const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    const finalTotal = subtotal - currentDiscount;
     const received = parseFloat(document.getElementById('cash-amount').value) || 0;
-    const change = Math.max(0, received - total);
+    const change = Math.max(0, received - finalTotal);
     document.getElementById('cash-change').innerText = 'Rp ' + change.toLocaleString('id-ID');
 }
 
+function applyRedeemCode() {
+    const code = document.getElementById('pos-redeem-code').value.trim();
+    const customerId = document.getElementById('cart-customer').value;
+    const msgEl = document.getElementById('redeem-code-msg');
+
+    if (!code) {
+        appliedRedeemCode = null;
+        renderCart();
+        msgEl.innerText = '';
+        return;
+    }
+
+    msgEl.innerText = 'Memvalidasi...';
+    msgEl.style.color = 'var(--text-tertiary)';
+
+    fetch("{{ route('pos.apply-redeem-code') }}", {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': "{{ csrf_token() }}"
+        },
+        body: JSON.stringify({ code: code, customer_id: customerId })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            appliedRedeemCode = data.code;
+            msgEl.innerText = data.message;
+            msgEl.style.color = 'var(--success-500)';
+            renderCart(); // recalculate total
+        } else {
+            appliedRedeemCode = null;
+            msgEl.innerText = data.message;
+            msgEl.style.color = 'var(--danger-500)';
+            renderCart();
+        }
+    })
+    .catch(err => {
+        appliedRedeemCode = null;
+        msgEl.innerText = 'Terjadi kesalahan sistem';
+        msgEl.style.color = 'var(--danger-500)';
+        renderCart();
+    });
+}
+
 function processCheckout() {
-    const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    const finalTotal = subtotal - currentDiscount;
     const received = parseFloat(document.getElementById('cash-amount').value) || 0;
     
-    if (paymentMethod === 'Tunai' && received < total) {
+    if (paymentMethod === 'Tunai' && received < finalTotal) {
         return alert('Jumlah bayar kurang!');
     }
 
@@ -399,7 +483,8 @@ function processCheckout() {
         customer_id: document.getElementById('cart-customer').value,
         items: cart.map(item => ({ product_id: item.id, quantity: item.quantity })),
         payment_method: paymentMethod,
-        amount_paid: paymentMethod === 'Tunai' ? received : total,
+        amount_paid: paymentMethod === 'Tunai' ? received : finalTotal,
+        redeem_code: appliedRedeemCode ? appliedRedeemCode.code : null,
         _token: "{{ csrf_token() }}"
     };
 
@@ -415,6 +500,12 @@ function processCheckout() {
             document.getElementById('success-invoice').innerText = res.invoice_no;
             document.getElementById('modal-success').classList.remove('hidden');
             if (window.lucide) lucide.createIcons();
+            
+            // clear logic
+            cart = [];
+            appliedRedeemCode = null;
+            document.getElementById('pos-redeem-code').value = '';
+            document.getElementById('redeem-code-msg').innerText = '';
         } else {
             alert(res.message);
         }

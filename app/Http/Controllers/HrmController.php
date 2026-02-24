@@ -7,6 +7,7 @@ use App\Models\Attendance;
 use App\Models\Payroll;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
+use App\Events\AttendanceRecorded;
 
 class HrmController extends Controller
 {
@@ -104,10 +105,12 @@ class HrmController extends Controller
             'note' => 'nullable|string',
         ]);
 
-        Attendance::updateOrCreate(
+        $attendance = Attendance::updateOrCreate(
             ['employee_id' => $validated['employee_id'], 'date' => $validated['date']],
             $validated
         );
+
+        event(new AttendanceRecorded($attendance));
 
         return back()->with('success', 'Absensi berhasil dicatat');
     }
@@ -163,5 +166,85 @@ class HrmController extends Controller
         $payroll->update($validated);
 
         return back()->with('success', 'Payroll berhasil diperbarui');
+    }
+
+    public function kiosk()
+    {
+        return view('pages.hrm.kiosk');
+    }
+
+    public function kioskScan(Request $request)
+    {
+        $request->validate([
+            'nip' => 'required|string',
+            'image' => 'nullable|string', // Base64 image
+        ]);
+
+        $employee = Employee::where('nip', $request->nip)->first();
+
+        if (!$employee) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Karyawan dengan NIP ' . $request->nip . ' tidak ditemukan.'
+            ], 404);
+        }
+
+        $today = date('Y-m-d');
+        $now = date('H:i:s');
+
+        // Handle Image
+        $imageName = null;
+        if ($request->image) {
+            $imageData = $request->image;
+            $imageData = str_replace('data:image/png;base64,', '', $imageData);
+            $imageData = str_replace(' ', '+', $imageData);
+            $imageName = $employee->nip . '_' . time() . '.png';
+            \Storage::disk('public')->put('attendances/' . $imageName, base64_decode($imageData));
+        }
+
+        $attendance = Attendance::where('employee_id', $employee->id)
+            ->whereDate('date', $today)
+            ->first();
+
+        if (!$attendance) {
+            // Clock In
+            $newAttendance = Attendance::create([
+                'employee_id' => $employee->id,
+                'date' => $today,
+                'status' => 'present',
+                'clock_in' => $now,
+                'image' => $imageName,
+            ]);
+
+            event(new AttendanceRecorded($newAttendance));
+
+            return response()->json([
+                'success' => true,
+                'type' => 'in',
+                'message' => 'Berhasil Absen Masuk: ' . $employee->name,
+                'time' => $now
+            ]);
+        } elseif (!$attendance->clock_out) {
+            // Clock Out
+            $attendance->update([
+                'clock_out' => $now,
+                'image_out' => $imageName,
+            ]);
+
+            event(new AttendanceRecorded($attendance));
+
+            return response()->json([
+                'success' => true,
+                'type' => 'out',
+                'message' => 'Berhasil Absen Keluar: ' . $employee->name,
+                'time' => $now
+            ]);
+        } else {
+            // Already clocked out
+            return response()->json([
+                'success' => false,
+                'message' => $employee->name . ' sudah melakukan absen keluar hari ini.'
+            ], 400);
+        }
     }
 }

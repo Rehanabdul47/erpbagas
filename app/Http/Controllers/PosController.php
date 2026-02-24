@@ -12,6 +12,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
+use App\Models\RedeemCode;
 
 class PosController extends Controller
 {
@@ -38,12 +39,29 @@ class PosController extends Controller
             'items.*.quantity' => 'required|integer|min:1',
             'payment_method' => 'required|string',
             'amount_paid' => 'required|numeric|min:0',
+            'redeem_code' => 'nullable|string'
         ]);
 
         try {
             return DB::transaction(function () use ($validated) {
                 $totalAmount = 0;
                 $invoiceNo = 'POS-' . strtoupper(uniqid());
+                
+                $redeemCode = null;
+                $discountAmount = 0;
+
+                // Validate Redeem Code if provided
+                if (!empty($validated['redeem_code'])) {
+                    $customer = Customer::findOrFail($validated['customer_id']);
+                    if (!$customer->hasCompletedPurchase()) {
+                        throw new \Exception('This redeem code is only available for returning customers with previous purchases.');
+                    }
+
+                    $redeemCode = RedeemCode::where('code', $validated['redeem_code'])->lockForUpdate()->first();
+                    if (!$redeemCode || !$redeemCode->isValid($validated['customer_id'])) {
+                        throw new \Exception('Invalid, expired, or fully used redeem code.');
+                    }
+                }
 
                 // 1. Create Sale
                 $sale = Sale::create([
@@ -51,8 +69,10 @@ class PosController extends Controller
                     'invoice_no' => $invoiceNo,
                     'sale_date' => Carbon::now(),
                     'total_amount' => 0, // Update later
+                    'discount_amount' => 0, // Update later
                     'status' => 'paid',
                     'notes' => 'POS Transaction via ' . $validated['payment_method'],
+                    'redeem_code_id' => $redeemCode ? $redeemCode->id : null,
                 ]);
 
                 foreach ($validated['items'] as $item) {
@@ -87,8 +107,27 @@ class PosController extends Controller
                     ]);
                 }
 
+                // Apply Discount
+                if ($redeemCode) {
+                    if ($redeemCode->type === 'percentage') {
+                        $discountAmount = ($totalAmount * $redeemCode->value) / 100;
+                    } else {
+                        $discountAmount = $redeemCode->value;
+                    }
+                    
+                    // Ensure discount doesn't exceed total amount
+                    $discountAmount = min($discountAmount, $totalAmount);
+                    $totalAmount -= $discountAmount;
+
+                    // Increment usage
+                    $redeemCode->increment('used_count');
+                }
+
                 // Update Sale Total
-                $sale->update(['total_amount' => $totalAmount]);
+                $sale->update([
+                    'total_amount' => $totalAmount,
+                    'discount_amount' => $discountAmount
+                ]);
 
                 // 5. Record Cash Transaction
                 CashTransaction::create([

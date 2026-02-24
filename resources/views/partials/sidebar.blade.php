@@ -8,6 +8,7 @@
             ['id' => 'categories', 'icon' => 'tags', 'label' => 'Kategori', 'route' => 'categories.index'],
             ['id' => 'orders', 'icon' => 'shopping-cart', 'label' => 'Orders', 'route' => 'orders', 'badge' => 3],
             ['id' => 'sales', 'icon' => 'trending-up', 'label' => 'Sales & CRM', 'route' => 'sales.index'],
+            ['id' => 'redeem-codes', 'icon' => 'ticket', 'label' => 'Redeem Codes', 'route' => 'redeem-codes.index'],
             ['id' => 'pos', 'icon' => 'monitor', 'label' => 'Point of Sale', 'route' => 'pos.index'],
         ]],
         ['section' => 'KEUANGAN', 'items' => [
@@ -15,6 +16,7 @@
         ]],
         ['section' => 'SDM', 'items' => [
             ['id' => 'hrm', 'icon' => 'users', 'label' => 'HRM & Payroll', 'route' => 'hrm.index'],
+            ['id' => 'kiosk', 'icon' => 'scan-line', 'label' => 'Presensi', 'route' => 'hrm.kiosk', 'target' => '_blank'],
         ]],
         ['section' => 'SISTEM', 'items' => [
             ['id' => 'users', 'icon' => 'user-cog', 'label' => 'Manage Users', 'route' => 'users.index'],
@@ -40,7 +42,7 @@
         <div class="sidebar-section">
             <div class="sidebar-section-title">{{ $section['section'] }}</div>
             @foreach($section['items'] as $item)
-            <a class="nav-item {{ $activePage === $item['id'] ? 'active' : '' }}" href="{{ route($item['route']) }}" data-id="{{ $item['id'] }}">
+            <a class="nav-item {{ $activePage === $item['id'] ? 'active' : '' }}" href="{{ route($item['route']) }}" data-id="{{ $item['id'] }}" @if(isset($item['target'])) target="{{ $item['target'] }}" @endif>
                 <i data-lucide="{{ $item['icon'] }}"></i>
                 <span>{{ $item['label'] }}</span>
                 @if(!empty($item['badge']))

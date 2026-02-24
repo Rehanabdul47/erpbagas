@@ -10,6 +10,8 @@ use App\Http\Controllers\HrmController;
 use App\Http\Controllers\SalesController;
 use App\Http\Controllers\PosController;
 
+use App\Http\Controllers\RedeemCodeController;
+
 // Auth routes
 Route::get('/', [AuthController::class, 'showLogin'])->name('login');
 Route::post('/login', [AuthController::class, 'login'])->name('login.post');
@@ -18,6 +20,15 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 // Protected routes
 Route::middleware('auth')->group(function () {
     Route::get('/dashboard', fn() => view('pages.dashboard', ['activePage' => 'dashboard']))->name('dashboard');
+
+    // Redeem Codes
+    Route::prefix('redeem-codes')->name('redeem-codes.')->group(function () {
+        Route::get('/', [RedeemCodeController::class, 'index'])->name('index');
+        Route::post('/', [RedeemCodeController::class, 'store'])->name('store');
+        Route::put('/{redeemCode}', [RedeemCodeController::class, 'update'])->name('update');
+        Route::delete('/{redeemCode}', [RedeemCodeController::class, 'destroy'])->name('destroy');
+        Route::get('/{redeemCode}/barcode', [RedeemCodeController::class, 'barcode'])->name('barcode');
+    });
 
     // Inventory (resource-style)
     Route::prefix('inventory')->name('inventory.')->group(function () {
@@ -67,6 +78,11 @@ Route::middleware('auth')->group(function () {
         Route::put('/employees/{employee}', [HrmController::class, 'updateEmployee'])->name('employees.update');
         Route::delete('/employees/{employee}', [HrmController::class, 'destroyEmployee'])->name('employees.destroy');
         Route::post('/attendance', [HrmController::class, 'storeAttendance'])->name('attendance.store');
+        
+        // Kiosk
+        Route::get('/kiosk', [HrmController::class, 'kiosk'])->name('kiosk');
+        Route::post('/kiosk/scan', [HrmController::class, 'kioskScan'])->name('kiosk.scan');
+
         Route::post('/payroll/generate', [HrmController::class, 'generatePayroll'])->name('payroll.generate');
         Route::put('/payroll/{payroll}', [HrmController::class, 'updatePayroll'])->name('payroll.update');
     });
@@ -79,6 +95,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/', [PosController::class, 'index'])->name('index');
         Route::post('/checkout', [PosController::class, 'checkout'])->name('checkout');
         Route::post('/customer', [SalesController::class, 'storeQuick'])->name('customer.store');
+        Route::post('/apply-redeem-code', [RedeemCodeController::class, 'apply'])->name('apply-redeem-code');
     });
 
     // Sales & CRM

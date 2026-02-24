@@ -15,11 +15,18 @@ class Sale extends Model
         'total_amount',
         'status',
         'notes',
+        'discount_amount',
+        'redeem_code_id',
     ];
 
     public function customer(): BelongsTo
     {
         return $this->belongsTo(Customer::class);
+    }
+
+    public function redeemCode(): BelongsTo
+    {
+        return $this->belongsTo(RedeemCode::class);
     }
 
     public function items(): HasMany
