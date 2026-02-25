@@ -51,7 +51,7 @@
                     </thead>
                     <tbody>
                         @forelse($employees as $emp)
-                        <tr>
+                        <tr class="clickable-row employee-row" style="cursor:pointer" data-employee='@json($emp)'>
                             <td><code>{{ $emp->nip }}</code></td>
                             <td style="font-weight:600">{{ $emp->name }}</td>
                             <td>{{ $emp->position }}</td>
@@ -63,8 +63,8 @@
                             </td>
                             <td>
                                 <div style="display:flex;gap:4px">
-                                    <button class="btn btn-ghost btn-xs" title="Edit" onclick='editEmployee(@json($emp))'><i data-lucide="edit-2" style="width:14px"></i></button>
-                                    <form method="POST" action="{{ route('hrm.employees.destroy', $emp) }}" onsubmit="return confirm('Hapus karyawan ini?')">
+                                    <button class="btn btn-ghost btn-xs" title="Edit" onclick='event.stopPropagation(); editEmployee(@json($emp))'><i data-lucide="edit-2" style="width:14px"></i></button>
+                                    <form method="POST" action="{{ route('hrm.employees.destroy', $emp) }}" onsubmit="event.stopPropagation(); return confirm('Hapus karyawan ini?')" onclick="event.stopPropagation()">
                                         @csrf @method('DELETE')
                                         <button type="submit" class="btn btn-ghost btn-xs text-danger"><i data-lucide="trash-2" style="width:14px"></i></button>
                                     </form>
@@ -96,17 +96,17 @@
                     <tbody id="attendance-table-body">
                         @foreach($employees as $emp)
                         @php $att = $attendances->firstWhere('employee_id', $emp->id); @endphp
-                        <tr id="att-row-{{ $emp->id }}">
+                        <tr id="att-row-{{ $emp->id }}" class="clickable-row attendance-row" style="cursor:pointer" data-emp='@json($emp)' data-att='@json($att)'>
                             <td>
                                 <div style="font-weight:500">{{ $emp->name }}</div>
                                 <div style="font-size:12px;color:var(--text-tertiary)">NIP: {{ $emp->nip }}</div>
                             </td>
                             <td class="att-photos">
                                 @if($att && $att->image)
-                                    <img src="{{ asset('storage/attendances/' . $att->image) }}" class="att-img-in" style="width:40px;height:40px;border-radius:4px;object-fit:cover;cursor:pointer" onclick="window.open(this.src)" title="Foto Masuk">
+                                    <img src="{{ asset('storage/attendances/' . $att->image) }}" class="att-img-in" style="width:40px;height:40px;border-radius:4px;object-fit:cover;cursor:pointer" onclick="event.stopPropagation(); window.open(this.src)" title="Foto Masuk">
                                 @endif
                                 @if($att && $att->image_out)
-                                    <img src="{{ asset('storage/attendances/' . $att->image_out) }}" class="att-img-out" style="width:40px;height:40px;border-radius:4px;object-fit:cover;cursor:pointer;margin-left:4px" onclick="window.open(this.src)" title="Foto Keluar">
+                                    <img src="{{ asset('storage/attendances/' . $att->image_out) }}" class="att-img-out" style="width:40px;height:40px;border-radius:4px;object-fit:cover;cursor:pointer;margin-left:4px" onclick="event.stopPropagation(); window.open(this.src)" title="Foto Keluar">
                                 @endif
                             </td>
                             <td class="att-status">
@@ -122,7 +122,7 @@
                             <td class="att-out">{{ $att->clock_out ?? '-' }}</td>
                             <td class="att-note"><span style="font-size:12px">{{ $att->note ?? '-' }}</span></td>
                             <td>
-                                <button class="btn btn-ghost btn-xs btn-log" onclick='openAttendanceModal(@json($emp), @json($att))'><i data-lucide="clipboard-check" style="width:14px"></i> Log</button>
+                                <button class="btn btn-ghost btn-xs btn-log" onclick='event.stopPropagation(); openAttendanceModal(@json($emp), @json($att))'><i data-lucide="clipboard-check" style="width:14px"></i> Log</button>
                             </td>
                         </tr>
                         @endforeach
@@ -151,7 +151,7 @@
                     </thead>
                     <tbody>
                         @forelse($payrolls as $pay)
-                        <tr>
+                        <tr class="clickable-row payroll-row" style="cursor:pointer" data-payroll='@json($pay->load("employee"))'>
                             <td>{{ $pay->employee->name }}</td>
                             <td>Rp {{ number_format($pay->basic_salary, 0, ',', '.') }}</td>
                             <td class="text-success">+ Rp {{ number_format($pay->allowance, 0, ',', '.') }}</td>
@@ -163,7 +163,7 @@
                                 </span>
                             </td>
                             <td>
-                                <button class="btn btn-ghost btn-xs" onclick='editPayroll(@json($pay))'><i data-lucide="settings" style="width:14px"></i> Edit</button>
+                                <button class="btn btn-ghost btn-xs" onclick='event.stopPropagation(); editPayroll(@json($pay))'><i data-lucide="settings" style="width:14px"></i> Edit</button>
                             </td>
                         </tr>
                         @empty
@@ -243,6 +243,23 @@
     </div>
 </div>
 
+</div>
+
+{{-- Modal: Detail View --}}
+<div id="modal-hrm-detail" class="modal-overlay hidden" onclick="if(event.target===this)closeModal('modal-hrm-detail')">
+    <div class="modal" style="max-width:550px">
+        <div class="modal-header">
+            <h3 id="hrm-detail-title">Detail</h3>
+            <button class="btn-icon" onclick="closeModal('modal-hrm-detail')"><i data-lucide="x"></i></button>
+        </div>
+        <div class="modal-body" id="hrm-detail-content">
+            {{-- Content will be injected by JS --}}
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeModal('modal-hrm-detail')">Tutup</button>
+        </div>
+    </div>
+</div>
 @endsection
 
 @push('scripts')
@@ -251,6 +268,164 @@ function switchTab(tabId) {
     const url = new URL(window.location);
     url.searchParams.set('tab', tabId);
     window.location.href = url.href;
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Employee Row Click
+    document.querySelectorAll('.employee-row').forEach(row => {
+        row.addEventListener('click', function(e) {
+            if (e.target.closest('button') || e.target.closest('form')) return;
+            const emp = JSON.parse(this.getAttribute('data-employee'));
+            viewEmployeeDetail(emp);
+        });
+    });
+
+    // Attendance Row Click
+    document.querySelectorAll('.attendance-row').forEach(row => {
+        row.addEventListener('click', function(e) {
+            if (e.target.closest('button') || e.target.closest('img')) return;
+            const emp = JSON.parse(this.getAttribute('data-emp'));
+            const att = JSON.parse(this.getAttribute('data-att'));
+            viewAttendanceDetail(emp, att);
+        });
+    });
+
+    // Payroll Row Click
+    document.querySelectorAll('.payroll-row').forEach(row => {
+        row.addEventListener('click', function(e) {
+            if (e.target.closest('button')) return;
+            const pay = JSON.parse(this.getAttribute('data-payroll'));
+            viewPayrollDetail(pay);
+        });
+    });
+});
+
+function viewEmployeeDetail(emp) {
+    document.getElementById('hrm-detail-title').innerText = '👤 Profil Karyawan';
+    const initials = emp.name.substring(0, 1).toUpperCase();
+    const joinDate = new Date(emp.join_date).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+    
+    document.getElementById('hrm-detail-content').innerHTML = `
+        <div style="text-align:center;margin-bottom:24px">
+            <div style="width:70px;height:70px;border-radius:50%;background:var(--primary-500);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:24px;margin:0 auto 12px;box-shadow:0 8px 15px -3px rgba(var(--primary-rgb), 0.3)">
+                ${initials}
+            </div>
+            <h4 style="font-size:18px;margin:0;font-weight:700;color:var(--text-primary)">${emp.name}</h4>
+            <div style="color:var(--text-secondary);font-size:14px;margin-top:2px">${emp.nip} • ${emp.position}</div>
+        </div>
+        
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <div class="detail-item">
+                <div class="detail-label">Email</div>
+                <div class="detail-value" style="font-size:13px">${emp.email}</div>
+            </div>
+            <div class="detail-item">
+                <div class="detail-label">Telepon</div>
+                <div class="detail-value">${emp.phone}</div>
+            </div>
+            <div class="detail-item">
+                <div class="detail-label">Departemen</div>
+                <div class="detail-value">${emp.department}</div>
+            </div>
+            <div class="detail-item">
+                <div class="detail-label">Tgl Bergabung</div>
+                <div class="detail-value">${joinDate}</div>
+            </div>
+            <div class="detail-item" style="grid-column: span 2">
+                <div class="detail-label">Gaji Pokok</div>
+                <div class="detail-value" style="color:var(--success-600)">Rp ${Number(emp.basic_salary).toLocaleString('id-ID')}</div>
+            </div>
+        </div>
+    `;
+    openModal('modal-hrm-detail');
+}
+
+function viewAttendanceDetail(emp, att) {
+    document.getElementById('hrm-detail-title').innerText = '📅 Detail Presensi';
+    const date = '{{ Carbon\Carbon::parse($attendanceDate)->format("d F Y") }}';
+    
+    let attContent = att ? `
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px">
+            <div class="detail-item">
+                <div class="detail-label">Status</div>
+                <div class="detail-value"><span class="badge ${att.status === 'present' ? 'badge-success' : 'badge-danger'}">${att.status.toUpperCase()}</span></div>
+            </div>
+            <div class="detail-item">
+                <div class="detail-label">Jam Kerja</div>
+                <div class="detail-value">${att.clock_in || '--:--'} - ${att.clock_out || '--:--'}</div>
+            </div>
+        </div>
+        <div class="detail-item" style="margin-top:12px">
+            <div class="detail-label">Catatan Karyawan</div>
+            <div class="detail-value" style="font-weight:400;font-style:italic">${att.note || '-'}</div>
+        </div>
+        ${att.image ? `
+            <div style="margin-top:16px">
+                <div class="detail-label">Bukti Foto</div>
+                <div style="display:flex;gap:8px;margin-top:8px">
+                    <img src="/storage/attendances/${att.image}" style="flex:1;height:120px;border-radius:8px;object-fit:cover;border:1px solid var(--border-color)">
+                    ${att.image_out ? `<img src="/storage/attendances/${att.image_out}" style="flex:1;height:120px;border-radius:8px;object-fit:cover;border:1px solid var(--border-color)">` : ''}
+                </div>
+            </div>
+        ` : ''}
+    ` : `
+        <div style="text-align:center;padding:20px;background:var(--bg-secondary);border-radius:12px;margin-top:16px;border:1px dashed var(--border-color)">
+            <i data-lucide="calendar-x" style="width:32px;height:32px;color:var(--text-tertiary);margin-bottom:8px"></i>
+            <div style="color:var(--text-secondary)">Karyawan belum mencatat presensi hari ini</div>
+        </div>
+    `;
+
+    document.getElementById('hrm-detail-content').innerHTML = `
+        <div style="display:flex;align-items:center;gap:12px;background:var(--bg-secondary);padding:12px;border-radius:12px;border:1px solid var(--border-color)">
+            <div style="width:40px;height:40px;border-radius:50%;background:var(--primary-500);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700">${emp.name.substring(0,1)}</div>
+            <div>
+                <div style="font-weight:700;color:var(--text-primary)">${emp.name}</div>
+                <div style="font-size:12px;color:var(--text-tertiary)">${date}</div>
+            </div>
+        </div>
+        ${attContent}
+    `;
+    openModal('modal-hrm-detail');
+}
+
+function viewPayrollDetail(pay) {
+    document.getElementById('hrm-detail-title').innerText = '💸 Rincian Slip Gaji';
+    const net = Number(pay.net_salary).toLocaleString('id-ID');
+    const basic = Number(pay.basic_salary).toLocaleString('id-ID');
+    const allowance = Number(pay.allowance).toLocaleString('id-ID');
+    const deduction = Number(pay.deduction).toLocaleString('id-ID');
+
+    document.getElementById('hrm-detail-content').innerHTML = `
+        <div style="text-align:center;margin-bottom:20px;padding-bottom:15px;border-bottom:1px solid var(--border-color)">
+            <div style="font-size:12px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:1px">Periode: ${pay.period_month}/${pay.period_year}</div>
+            <div style="font-size:18px;font-weight:700;color:var(--text-primary)">${pay.employee.name}</div>
+        </div>
+
+        <div style="display:grid;gap:10px">
+            <div style="display:flex;justify-content:space-between">
+                <span style="color:var(--text-secondary)">Gaji Pokok</span>
+                <span style="font-weight:600">Rp ${basic}</span>
+            </div>
+            <div style="display:flex;justify-content:space-between">
+                <span style="color:var(--text-secondary)">Tunjangan</span>
+                <span style="font-weight:600;color:var(--success-500)">+ Rp ${allowance}</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;padding-bottom:10px;border-bottom:1px dashed var(--border-color)">
+                <span style="color:var(--text-secondary)">Potongan</span>
+                <span style="font-weight:600;color:var(--danger-500)">- Rp ${deduction}</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;padding-top:10px;font-size:18px">
+                <span style="font-weight:700">Total Bersih</span>
+                <span style="font-weight:800;color:var(--primary-600)">Rp ${net}</span>
+            </div>
+        </div>
+
+        <div style="margin-top:20px;padding:12px;border-radius:10px;background:var(--bg-secondary);text-align:center">
+            <div style="font-size:12px;color:var(--text-tertiary);margin-bottom:4px">Status Pembayaran</div>
+            <span class="badge ${pay.status === 'paid' ? 'badge-success' : 'badge-warning'}">${pay.status.toUpperCase()}</span>
+        </div>
+    `;
+    openModal('modal-hrm-detail');
 }
 
 function openModal(id) {
@@ -406,5 +581,47 @@ document.querySelector('[onclick="openModal(\'modal-add-employee\')"]').onclick 
 .tab-pane.hidden { display: none; }
 .text-success { color: var(--success-500); }
 .text-danger { color: var(--danger-500); }
+
+.detail-item {
+    background: var(--bg-secondary);
+    padding: 12px;
+    border-radius: 10px;
+    border: 1px solid var(--border-color);
+}
+.detail-label {
+    font-size: 11px;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-weight: 700;
+    margin-bottom: 4px;
+}
+.detail-value {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+.modal-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(15, 23, 42, 0.7);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 20px;
+}
+.modal-overlay.hidden { display: none; }
+.modal {
+    background: var(--bg-card, white);
+    padding: 24px;
+    border-radius: 16px;
+    border: 1px solid var(--border-color);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    width: 100%;
+}
+.clickable-row:hover {
+    background: rgba(var(--primary-rgb), 0.05) !important;
+}
 </style>
 @endpush

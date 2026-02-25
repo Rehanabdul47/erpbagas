@@ -12,7 +12,8 @@
             ['id' => 'pos', 'icon' => 'monitor', 'label' => 'Point of Sale', 'route' => 'pos.index'],
         ]],
         ['section' => 'KEUANGAN', 'items' => [
-            ['id' => 'finance', 'icon' => 'wallet', 'label' => 'Finance', 'route' => 'finance.index'],
+            ['id' => 'finance', 'icon' => 'wallet', 'label' => 'Buku Kas', 'route' => 'finance.index'],
+            ['id' => 'reports', 'icon' => 'bar-chart-3', 'label' => 'Laporan Keuangan', 'route' => 'finance.reports'],
         ]],
         ['section' => 'SDM', 'items' => [
             ['id' => 'hrm', 'icon' => 'users', 'label' => 'HRM & Payroll', 'route' => 'hrm.index'],

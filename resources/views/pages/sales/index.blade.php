@@ -58,7 +58,7 @@
                 </thead>
                 <tbody>
                     @forelse($customers as $c)
-                    <tr data-name="{{ strtolower($c->name) }}" data-phone="{{ $c->phone }}">
+                    <tr class="clickable-row customer-row" style="cursor:pointer" data-customer='@json($c)' data-name="{{ strtolower($c->name) }}" data-phone="{{ $c->phone }}">
                         <td style="font-weight:600;color:var(--text-primary)">{{ $c->name }}</td>
                         <td>{{ $c->phone ?? '-' }}</td>
                         <td>
@@ -69,8 +69,8 @@
                         <td style="font-weight:700">{{ $c->sales_count }}</td>
                         <td>
                             <div style="display:flex;gap:4px">
-                                <button class="btn btn-ghost btn-xs" onclick='openEditCustomerModal({{ json_encode($c) }})'><i data-lucide="edit-2" style="width:14px"></i></button>
-                                <form method="POST" action="{{ route('sales.customers.destroy', $c) }}" onsubmit="return confirm('Hapus customer ini?')">
+                                <button class="btn btn-ghost btn-xs" onclick='event.stopPropagation(); openEditCustomerModal({{ json_encode($c) }})'><i data-lucide="edit-2" style="width:14px"></i></button>
+                                <form method="POST" action="{{ route('sales.customers.destroy', $c) }}" onsubmit="event.stopPropagation(); return confirm('Hapus customer ini?')" onclick="event.stopPropagation()">
                                     @csrf @method('DELETE')
                                     <button type="submit" class="btn btn-ghost btn-xs" style="color:var(--danger-400)"><i data-lucide="trash-2" style="width:14px"></i></button>
                                 </form>
@@ -94,10 +94,10 @@
                 </thead>
                 <tbody>
                     @forelse($sales as $s)
-                    <tr>
+                    <tr class="clickable-row sale-row" style="cursor:pointer" data-sale='@json($s->load("customer"))'>
                         <td style="font-weight:600">#{{ $s->invoice_no }}</td>
                         <td>{{ $s->customer->name }}</td>
-                        <td>{{ $s->sale_date }}</td>
+                        <td>{{ \Carbon\Carbon::parse($s->sale_date)->format('d M Y') }}</td>
                         <td style="font-weight:700">Rp {{ number_format($s->total_amount, 0, ',', '.') }}</td>
                         <td><span class="badge badge-success">{{ ucfirst($s->status) }}</span></td>
                     </tr>
@@ -153,10 +153,119 @@
     </div>
 </div>
 
+{{-- Modal: Detail View --}}
+<div id="modal-detail" class="modal-overlay hidden" onclick="if(event.target===this)closeModal('modal-detail')">
+    <div class="modal" style="max-width:550px">
+        <div class="modal-header">
+            <h3 id="detail-title">Detail</h3>
+            <button class="btn-icon" onclick="closeModal('modal-detail')"><i data-lucide="x"></i></button>
+        </div>
+        <div class="modal-body" id="detail-content">
+            {{-- Content will be injected by JS --}}
+        </div>
+        <div class="modal-footer" id="detail-footer">
+            <button class="btn btn-secondary" onclick="closeModal('modal-detail')">Tutup</button>
+        </div>
+    </div>
+</div>
 @endsection
 
 @push('scripts')
 <script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Handle Customer Row Click
+    document.querySelectorAll('.customer-row').forEach(row => {
+        row.addEventListener('click', function(e) {
+            if (e.target.closest('button') || e.target.closest('form')) return;
+            const data = JSON.parse(this.getAttribute('data-customer'));
+            viewCustomerDetail(data);
+        });
+    });
+
+    // Handle Sale Row Click
+    document.querySelectorAll('.sale-row').forEach(row => {
+        row.addEventListener('click', function(e) {
+            const data = JSON.parse(this.getAttribute('data-sale'));
+            viewSaleDetail(data);
+        });
+    });
+});
+
+function viewCustomerDetail(c) {
+    document.getElementById('detail-title').innerText = '👥 Detail Customer';
+    const initials = c.name.substring(0, 1).toUpperCase();
+    
+    document.getElementById('detail-content').innerHTML = `
+        <div style="text-align:center;margin-bottom:24px">
+            <div style="width:70px;height:70px;border-radius:50%;background:var(--primary-500);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:24px;margin:0 auto 12px;box-shadow:0 8px 15px -3px rgba(var(--primary-rgb), 0.3)">
+                ${initials}
+            </div>
+            <h4 style="font-size:18px;margin:0;font-weight:700;color:var(--text-primary)">${c.name}</h4>
+            <div style="color:var(--text-secondary);font-size:14px;margin-top:2px">${c.email || 'Tanpa Email'}</div>
+        </div>
+        
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <div class="detail-item">
+                <div class="detail-label">Telepon / WA</div>
+                <div class="detail-value">${c.phone || '-'}</div>
+            </div>
+            <div class="detail-item">
+                <div class="detail-label">Status</div>
+                <div class="detail-value"><span class="badge badge-success">${c.status}</span></div>
+            </div>
+            <div class="detail-item" style="grid-column: span 2">
+                <div class="detail-label">Alamat</div>
+                <div class="detail-value" style="font-weight:400">${c.address || '-'}</div>
+            </div>
+        </div>
+    `;
+    
+    document.getElementById('modal-detail').classList.remove('hidden');
+    if (window.lucide) lucide.createIcons();
+}
+
+function viewSaleDetail(s) {
+    document.getElementById('detail-title').innerText = '📜 Detail Transaksi';
+    const amount = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(s.total_amount);
+    const date = new Date(s.sale_date).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+
+    document.getElementById('detail-content').innerHTML = `
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;padding-bottom:15px;border-bottom:1px dashed var(--border-color)">
+            <div>
+                <div style="font-size:12px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:1px">Nomor Invoice</div>
+                <div style="font-size:20px;font-weight:700;color:var(--primary-600)">#${s.invoice_no}</div>
+            </div>
+            <div style="text-align:right">
+                <div style="font-size:12px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:1px">Tanggal</div>
+                <div style="font-weight:600">${date}</div>
+            </div>
+        </div>
+        
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px">
+            <div class="detail-item">
+                <div class="detail-label">Customer</div>
+                <div class="detail-value">${s.customer.name}</div>
+            </div>
+            <div class="detail-item">
+                <div class="detail-label">Status</div>
+                <div class="detail-value"><span class="badge badge-success">${s.status}</span></div>
+            </div>
+        </div>
+
+        <div style="background:var(--bg-secondary);padding:16px;border-radius:12px;text-align:center;border:1px solid var(--border-color)">
+            <div style="font-size:13px;color:var(--text-secondary);margin-bottom:4px">Total Pembayaran</div>
+            <div style="font-size:24px;font-weight:800;color:var(--text-primary)">${amount}</div>
+        </div>
+        
+        <div style="margin-top:20px;font-size:13px;color:var(--text-tertiary);font-style:italic">
+            * Catatan: ${s.notes || 'Tidak ada catatan untuk transaksi ini.'}
+        </div>
+    `;
+    
+    document.getElementById('modal-detail').classList.remove('hidden');
+    if (window.lucide) lucide.createIcons();
+}
+
 function switchTab(tab, btn) {
     document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
     document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
@@ -187,6 +296,10 @@ function openEditCustomerModal(c) {
     document.getElementById('modal-customer').classList.remove('hidden');
 }
 
+function closeModal(id) {
+    document.getElementById(id).classList.add('hidden');
+}
+
 function filterCustomers() {
     const search = document.getElementById('search-customer').value.toLowerCase();
     document.querySelectorAll('#customer-table tbody tr').forEach(row => {
@@ -195,15 +308,49 @@ function filterCustomers() {
         row.style.display = match ? '' : 'none';
     });
 }
-
-// Auto-switch tab on load
-window.addEventListener('DOMContentLoaded', () => {
-    const params = new URLSearchParams(window.location.search);
-    const tab = params.get('tab');
-    if (tab) {
-        const btn = document.querySelector(`button[onclick*="'${tab}'"]`);
-        if (btn) btn.click();
-    }
-});
 </script>
+
+<style>
+.clickable-row:hover {
+    background: rgba(var(--primary-rgb), 0.05) !important;
+}
+.modal-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(15, 23, 42, 0.7);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 20px;
+}
+.modal-overlay.hidden { display: none; }
+.modal {
+    background: var(--bg-card, white);
+    padding: 24px;
+    border-radius: 16px;
+    border: 1px solid var(--border-color);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    width: 100%;
+}
+.detail-item {
+    background: var(--bg-secondary);
+    padding: 12px;
+    border-radius: 10px;
+    border: 1px solid var(--border-color);
+}
+.detail-label {
+    font-size: 11px;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-weight: 700;
+    margin-bottom: 4px;
+}
+.detail-value {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+</style>
 @endpush

@@ -27,29 +27,34 @@
     </div>
 </div>
 
-<div class="card">
-    <div class="filter-bar" style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap;align-items:center">
-        <form id="filter-form" style="display:flex;gap:12px;flex-wrap:wrap;flex:1">
-            <input type="month" name="month" class="form-control" style="max-width:200px" value="{{ $month }}" onchange="document.getElementById('filter-form').submit()">
+<div class="card" style="margin-bottom: 24px">
+    <div class="filter-bar" style="display:flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+        <form id="filter-form" style="display:flex;gap:12px;flex-wrap:wrap;flex:1;align-items:center">
+            <h2 style="margin:0; font-size: 18px; font-weight: 600; margin-right: 12px">Buku Kas</h2>
+            <input type="month" name="month" class="form-control" style="max-width:180px" value="{{ $month }}" onchange="document.getElementById('filter-form').submit()">
             
-            <select name="type" class="form-control" style="max-width:180px" onchange="document.getElementById('filter-form').submit()">
-                <option value="">Semua Transaksi</option>
-                <option value="in" {{ request('type') == 'in' ? 'selected' : '' }}>Kas Masuk</option>
-                <option value="out" {{ request('type') == 'out' ? 'selected' : '' }}>Kas Keluar</option>
+            <select name="type" class="form-control" style="max-width:160px" onchange="document.getElementById('filter-form').submit()">
+                <option value="">Semua Tipe</option>
+                <option value="in" {{ request('type') == 'in' ? 'selected' : '' }}>Masuk</option>
+                <option value="out" {{ request('type') == 'out' ? 'selected' : '' }}>Keluar</option>
             </select>
             
-            <div style="flex:1;min-width:200px;display:flex;gap:8px">
-                <input type="text" name="search" class="form-control" placeholder="Cari keterangan / kategori..." value="{{ request('search') }}">
+            <div style="display:flex;gap:8px; max-width: 300px; flex: 1">
+                <input type="text" name="search" class="form-control" placeholder="Cari..." value="{{ request('search') }}">
                 <button type="submit" class="btn btn-ghost"><i data-lucide="search" style="width:18px"></i></button>
             </div>
         </form>
 
-        <div style="display:flex;gap:8px;margin-left:auto">
+        <div style="display:flex;gap:8px">
+            <a href="{{ route('finance.reports', ['month' => $month]) }}" class="btn btn-ghost btn-sm" style="border: 1px solid var(--primary-500); color: var(--primary-600)">
+                <i data-lucide="bar-chart-3" style="width:16px;margin-right:6px"></i> Laporan Lengkap
+            </a>
             <button class="btn btn-primary btn-sm" onclick="openModal('modal-in')" style="background:var(--success-500);border-color:var(--success-600)"><i data-lucide="plus"></i> Kas Masuk</button>
             <button class="btn btn-primary btn-sm" onclick="openModal('modal-out')" style="background:var(--danger-500);border-color:var(--danger-600)"><i data-lucide="minus"></i> Kas Keluar</button>
         </div>
     </div>
-
+</div>
+<div class="card">
     <div class="table-container">
         <table id="finance-table">
             <thead>

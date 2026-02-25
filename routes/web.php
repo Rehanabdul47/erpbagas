@@ -69,6 +69,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/', [CashController::class, 'store'])->name('store');
         Route::put('/{finance}', [CashController::class, 'update'])->name('update');
         Route::delete('/{finance}', [CashController::class, 'destroy'])->name('destroy');
+        Route::get('/reports', [\App\Http\Controllers\FinanceReportController::class, 'index'])->name('reports');
     });
 
     // HRM & Payroll
