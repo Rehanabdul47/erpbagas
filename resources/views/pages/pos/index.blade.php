@@ -117,24 +117,36 @@
                 <template x-if="cart.length > 0">
                     <div class="space-y-3">
                         <template x-for="item in cart" :key="item.id">
-                            <div class="bg-gray-800 border border-gray-700/50 rounded-lg p-3 flex gap-3 shadow-sm relative group overflow-hidden">
-                                <!-- Remove btn overlay on hover -->
-                                <button @click="removeFromCart(item.id)" class="absolute right-0 top-0 bottom-0 px-2 bg-red-500/90 backdrop-blur text-white opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center transform translate-x-full group-hover:translate-x-0 z-10" title="Hapus Item">
-                                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                            <div class="bg-gray-800/80 border border-gray-700/50 rounded-xl p-3.5 flex items-center gap-4 shadow-sm relative group overflow-hidden hover:border-indigo-500/30 transition-all duration-300">
+                                <!-- Remove Action -->
+                                <button @click="removeFromCart(item.id)" 
+                                        class="absolute right-0 top-0 bottom-0 px-4 bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-center justify-center border-l border-red-500/20 z-10" 
+                                        title="Hapus Item">
+                                    <i data-lucide="trash-2" class="w-5 h-5"></i>
                                 </button>
                                 
-                                <div class="flex-1 min-w-0 pr-8 group-hover:pr-10 transition-all">
-                                    <h5 class="text-sm font-bold text-gray-200 truncate mb-1" x-text="item.name"></h5>
-                                    <div class="text-xs text-indigo-400 font-mono tracking-tight" x-text="'Rp ' + formatRupiah(item.price) + ' / unit'"></div>
+                                <!-- Item Meta -->
+                                <div class="flex-1 min-w-0 group-hover:pr-10 transition-all duration-300">
+                                    <h5 class="text-[13px] font-black text-gray-100 truncate mb-1 leading-none" x-text="item.name"></h5>
+                                    <div class="flex items-center gap-1.5 mt-1.5">
+                                        <span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-gray-900 border border-gray-700 text-gray-400 uppercase" x-text="formatRupiah(item.price)"></span>
+                                        <span class="text-[10px] text-gray-500 font-medium">/ unit</span>
+                                    </div>
                                 </div>
-                                <div class="flex flex-col items-end justify-between gap-2 shrink-0">
-                                    <div class="font-bold text-sm text-white tracking-tight" x-text="'Rp ' + formatRupiah(item.price * item.quantity)"></div>
-                                    <div class="flex items-center bg-gray-900 border border-gray-700 rounded-md overflow-hidden shadow-inner">
-                                        <button @click="updateQty(item.id, -1)" class="w-7 h-7 flex items-center justify-center hover:bg-gray-700 hover:text-white text-gray-400 transition-colors disabled:opacity-50" :disabled="item.quantity <= 1">
+
+                                <!-- Qty & Price -->
+                                <div class="flex flex-col items-end gap-2.5 shrink-0 group-hover:translate-x-[-10px] transition-all duration-300">
+                                    <div class="font-black text-[13px] text-indigo-400 tracking-tight" x-text="'Rp ' + formatRupiah(item.price * item.quantity)"></div>
+                                    <div class="flex items-center bg-gray-950/50 border border-gray-700 rounded-lg overflow-hidden h-8 shadow-inner">
+                                        <button @click="updateQty(item.id, -1)" 
+                                                class="w-8 h-8 flex items-center justify-center hover:bg-red-500/20 hover:text-red-400 text-gray-500 transition-colors disabled:opacity-20" 
+                                                :disabled="item.quantity <= 1">
                                             <i data-lucide="minus" class="w-3 h-3"></i>
                                         </button>
-                                        <div class="w-8 text-center text-xs font-bold text-white bg-gray-800/50 flex flex-col justify-center h-full" x-text="item.quantity"></div>
-                                        <button @click="updateQty(item.id, 1)" class="w-7 h-7 flex items-center justify-center hover:bg-gray-700 hover:text-white text-gray-400 transition-colors disabled:opacity-50" :disabled="item.quantity >= item.stock">
+                                        <div class="min-w-[28px] text-center text-xs font-black text-white" x-text="item.quantity"></div>
+                                        <button @click="updateQty(item.id, 1)" 
+                                                class="w-8 h-8 flex items-center justify-center hover:bg-emerald-500/20 hover:text-emerald-400 text-gray-500 transition-colors disabled:opacity-20" 
+                                                :disabled="item.quantity >= item.stock">
                                             <i data-lucide="plus" class="w-3 h-3"></i>
                                         </button>
                                     </div>

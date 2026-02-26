@@ -9,17 +9,27 @@
     showModalOut: false,
     showModalEdit: false,
     editTrx: { id: '', date: '', category: '', amount: '', description: '', reference: '', type: '' },
+    method: 'Tunai',
     openEditModal(trx) {
+        if (!trx) return;
         this.editTrx = {
             id: trx.id,
-            date: trx.date.split('T')[0],
-            category: trx.category,
-            amount: trx.amount,
-            description: trx.description,
+            date: trx.date ? trx.date.split(/[T ]/)[0] : '',
+            category: trx.category || '',
+            amount: trx.amount || 0,
+            description: trx.description || '',
             reference: trx.reference || '',
-            type: trx.type
+            type: trx.type || 'out'
         };
         this.showModalEdit = true;
+    },
+    appendMethod(target) {
+        var prefix = '[' + this.method + '] ';
+        var elId = target === 'in' ? 'desc-in' : 'desc-out';
+        var el = document.getElementById(elId);
+        if (el && el.value && !el.value.startsWith('[')) {
+            el.value = prefix + el.value;
+        }
     }
 }">
 
@@ -177,42 +187,75 @@
                 </h3>
                 <button type="button" @click="showModalIn = false" class="text-gray-400 hover:text-white transition-colors"><i data-lucide="x" class="w-5 h-5"></i></button>
             </div>
-            <form method="POST" action="{{ route('finance.store') }}">
+             <form method="POST" action="{{ route('finance.store') }}" @submit="appendMethod('in')">
                 @csrf
                 <input type="hidden" name="type" value="in">
-                <div class="p-5 flex flex-col gap-4">
+                <div class="p-5 flex flex-col gap-5">
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div class="space-y-1.5">
-                            <label class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Tanggal</label>
+                            <label class="text-[10px] font-bold text-gray-400 uppercase tracking-widest pl-1">Tanggal Transaksi</label>
                             <input type="date" name="date" class="w-full bg-gray-900 border border-gray-700 text-white rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all" value="{{ date('Y-m-d') }}" required>
                         </div>
                         <div class="space-y-1.5">
-                            <label class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Kategori</label>
-                            <input type="text" name="category" list="cat-in" class="w-full bg-gray-900 border border-gray-700 text-white rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all" placeholder="Pilih/Ketik kategori" required>
-                            <datalist id="cat-in">
-                                <option value="Penjualan Tunai"><option value="Penerimaan Piutang"><option value="Suntikan Modal"><option value="Lain-lain">
-                            </datalist>
+                            <label class="text-[10px] font-bold text-gray-400 uppercase tracking-widest pl-1">Metode Penerimaan</label>
+                            <select x-model="method" class="w-full bg-gray-900 border border-gray-700 text-white rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all">
+                                <option value="Tunai">Tunai / Cash</option>
+                                <option value="Transfer">Transfer Bank</option>
+                                <option value="QRIS">QRIS / E-Wallet</option>
+                                <option value="Giro">Cek / Giro</option>
+                            </select>
                         </div>
                     </div>
+
                     <div class="space-y-1.5">
-                        <label class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Nominal (Rp)</label>
-                        <div class="relative">
-                            <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-medium">Rp</span>
-                            <input type="number" name="amount" class="w-full bg-gray-900 border border-gray-700 text-emerald-400 font-bold text-lg rounded-xl pl-12 pr-4 py-2.5 focus:ring-2 focus:ring-emerald-500 outline-none transition-all" min="1" step="0.01" placeholder="0" required>
+                        <label class="text-[10px] font-bold text-gray-400 uppercase tracking-widest pl-1">Kategori Pemasukan</label>
+                        <div class="flex flex-wrap gap-2 mb-2">
+                            @foreach(['Penjualan', 'Piutang', 'Investasi', 'Hibah', 'Lainnya'] as $cat)
+                            <button type="button" @click="$el.closest('.space-y-1.5').querySelector('input').value = '{{ $cat }}'" 
+                                    class="text-[10px] px-2 py-1 bg-gray-700 hover:bg-emerald-500/20 hover:text-emerald-400 text-gray-400 rounded transition-colors border border-transparent hover:border-emerald-500/30">
+                                {{ $cat }}
+                            </button>
+                            @endforeach
+                        </div>
+                        <input type="text" name="category" list="cat-in" class="w-full bg-gray-900 border border-gray-700 text-white rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all" placeholder="Pilih atau ketik kategori baru..." required>
+                        <datalist id="cat-in">
+                            <option value="Penjualan Produk"><option value="Jasa / Layanan"><option value="Pelunasan Piutang"><option value="Suntikan Modal"><option value="Pendapatan Bunga"><option value="Pengembalian Pajak">
+                        </datalist>
+                    </div>
+
+                    <div class="space-y-1.5">
+                        <label class="text-[10px] font-bold text-gray-400 uppercase tracking-widest pl-1">Nominal (Rp)</label>
+                        <div class="relative group">
+                            <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-bold">Rp</span>
+                            <input type="number" name="amount" class="w-full bg-gray-900 border border-gray-700 text-emerald-400 font-black text-xl rounded-xl pl-12 pr-4 py-3 focus:ring-2 focus:ring-emerald-500 outline-none transition-all group-hover:border-gray-600" min="1" step="0.01" placeholder="0" required>
+                        </div>
+                        <div class="flex flex-wrap gap-2 mt-2">
+                            @foreach([50000, 100000, 500000, 1000000] as $amt)
+                            <button type="button" @click="$el.closest('.space-y-1.5').querySelector('input').value = '{{ $amt }}'" 
+                                    class="text-[10px] px-2 py-1 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded transition-colors">
+                                +{{ number_format($amt/1000, 0) }}k
+                            </button>
+                            @endforeach
                         </div>
                     </div>
-                    <div class="space-y-1.5">
-                        <label class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Keterangan Lengkap</label>
-                        <textarea name="description" class="w-full bg-gray-900 border border-gray-700 text-white rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all placeholder-gray-600" rows="3" placeholder="Detail transaksi..." required></textarea>
-                    </div>
-                    <div class="space-y-1.5">
-                        <label class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Referensi (Opsional)</label>
-                        <input type="text" name="reference" class="w-full bg-gray-900 border border-gray-700 text-white rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all placeholder-gray-600" placeholder="No. Invoice / Kwitansi">
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div class="space-y-1.5">
+                            <label class="text-[10px] font-bold text-gray-400 uppercase tracking-widest pl-1">Keterangan</label>
+                            <textarea id="desc-in" name="description" class="w-full bg-gray-900 border border-gray-700 text-white rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all placeholder-gray-600" rows="2" placeholder="Contoh: Pembayaran invoice #001..." required></textarea>
+                        </div>
+                        <div class="space-y-1.5">
+                            <label class="text-[10px] font-bold text-gray-400 uppercase tracking-widest pl-1">Referensi / No. Dok</label>
+                            <input type="text" name="reference" class="w-full bg-gray-900 border border-gray-700 text-white rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all placeholder-gray-600" placeholder="No. Invoice / Kwitansi">
+                            <p class="text-[9px] text-gray-500 italic pl-1">Opsional: isi kode unik transaksi</p>
+                        </div>
                     </div>
                 </div>
-                <div class="px-5 py-4 border-t border-gray-700/50 bg-gray-800/50 flex justify-end gap-3">
+                <div class="px-5 py-4 border-t border-gray-700/50 bg-gray-900/20 flex justify-end gap-3">
                     <button type="button" @click="showModalIn = false" class="px-4 py-2 hover:bg-gray-700 text-gray-300 rounded-lg text-sm font-medium transition-colors">Batal</button>
-                    <button type="submit" class="px-6 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-sm font-medium transition-colors shadow-sm">Simpan Pemasukan</button>
+                    <button type="submit" class="px-6 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-sm font-bold transition-all shadow-lg shadow-emerald-900/20 active:scale-95 flex items-center gap-2">
+                        <i data-lucide="save" class="w-4 h-4"></i> Simpan Pemasukan
+                    </button>
                 </div>
             </form>
         </div>
@@ -227,42 +270,75 @@
                 </h3>
                 <button type="button" @click="showModalOut = false" class="text-gray-400 hover:text-white transition-colors"><i data-lucide="x" class="w-5 h-5"></i></button>
             </div>
-            <form method="POST" action="{{ route('finance.store') }}">
+             <form method="POST" action="{{ route('finance.store') }}" @submit="appendMethod('out')">
                 @csrf
                 <input type="hidden" name="type" value="out">
-                <div class="p-5 flex flex-col gap-4">
+                <div class="p-5 flex flex-col gap-5">
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div class="space-y-1.5">
-                            <label class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Tanggal</label>
+                            <label class="text-[10px] font-bold text-gray-400 uppercase tracking-widest pl-1">Tanggal Transaksi</label>
                             <input type="date" name="date" class="w-full bg-gray-900 border border-gray-700 text-white rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-red-500 outline-none transition-all" value="{{ date('Y-m-d') }}" required>
                         </div>
                         <div class="space-y-1.5">
-                            <label class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Kategori</label>
-                            <input type="text" name="category" list="cat-out" class="w-full bg-gray-900 border border-gray-700 text-white rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-red-500 outline-none transition-all" placeholder="Pilih/Ketik kategori" required>
-                            <datalist id="cat-out">
-                                <option value="Operasional"><option value="Gaji Karyawan"><option value="Kasbon Karyawan"><option value="Pembelian Aset"><option value="Biaya Server"><option value="Lain-lain">
-                            </datalist>
+                            <label class="text-[10px] font-bold text-gray-400 uppercase tracking-widest pl-1">Metode Pembayaran</label>
+                            <select x-model="method" class="w-full bg-gray-900 border border-gray-700 text-white rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-red-500 outline-none transition-all">
+                                <option value="Tunai">Tunai / Cash</option>
+                                <option value="Transfer">Transfer Bank</option>
+                                <option value="QRIS">QRIS / E-Wallet</option>
+                                <option value="Giro">Cek / Giro</option>
+                            </select>
                         </div>
                     </div>
+
                     <div class="space-y-1.5">
-                        <label class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Nominal (Rp)</label>
-                        <div class="relative">
-                            <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-medium">Rp</span>
-                            <input type="number" name="amount" class="w-full bg-gray-900 border border-gray-700 text-red-400 font-bold text-lg rounded-xl pl-12 pr-4 py-2.5 focus:ring-2 focus:ring-red-500 outline-none transition-all" min="1" step="0.01" placeholder="0" required>
+                        <label class="text-[10px] font-bold text-gray-400 uppercase tracking-widest pl-1">Kategori Pengeluaran</label>
+                        <div class="flex flex-wrap gap-2 mb-2">
+                            @foreach(['Gaji', 'Listrik/Air', 'Sewa', 'Stok', 'Marketing', 'Lainnya'] as $cat)
+                            <button type="button" @click="$el.closest('.space-y-1.5').querySelector('input').value = '{{ $cat }}'" 
+                                    class="text-[10px] px-2 py-1 bg-gray-700 hover:bg-red-500/20 hover:text-red-400 text-gray-400 rounded transition-colors border border-transparent hover:border-red-500/30">
+                                {{ $cat }}
+                            </button>
+                            @endforeach
+                        </div>
+                        <input type="text" name="category" list="cat-out" class="w-full bg-gray-900 border border-gray-700 text-white rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-red-500 outline-none transition-all" placeholder="Pilih atau ketik kategori pengeluaran..." required>
+                        <datalist id="cat-out">
+                            <option value="Gaji Karyawan"><option value="Operasional Kantor"><option value="Listrik, Air & WiFi"><option value="Sewa Tempat"><option value="Beli Stok / Barang"><option value="Biaya Marketing"><option value="Perbaikan & Pemeliharaan"><option value="Biaya Pajak">
+                        </datalist>
+                    </div>
+
+                    <div class="space-y-1.5">
+                        <label class="text-[10px] font-bold text-gray-400 uppercase tracking-widest pl-1">Nominal (Rp)</label>
+                        <div class="relative group">
+                            <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-bold">Rp</span>
+                            <input type="number" name="amount" class="w-full bg-gray-900 border border-gray-700 text-red-400 font-black text-xl rounded-xl pl-12 pr-4 py-3 focus:ring-2 focus:ring-red-500 outline-none transition-all group-hover:border-gray-600" min="1" step="0.01" placeholder="0" required>
+                        </div>
+                        <div class="flex flex-wrap gap-2 mt-2">
+                            @foreach([50000, 100000, 500000, 1000000] as $amt)
+                            <button type="button" @click="$el.closest('.space-y-1.5').querySelector('input').value = '{{ $amt }}'" 
+                                    class="text-[10px] px-2 py-1 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded transition-colors">
+                                +{{ number_format($amt/1000, 0) }}k
+                            </button>
+                            @endforeach
                         </div>
                     </div>
-                    <div class="space-y-1.5">
-                        <label class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Keterangan Lengkap</label>
-                        <textarea name="description" class="w-full bg-gray-900 border border-gray-700 text-white rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-red-500 outline-none transition-all placeholder-gray-600" rows="3" placeholder="Detail pengeluaran..." required></textarea>
-                    </div>
-                    <div class="space-y-1.5">
-                        <label class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Referensi (Opsional)</label>
-                        <input type="text" name="reference" class="w-full bg-gray-900 border border-gray-700 text-white rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-red-500 outline-none transition-all placeholder-gray-600" placeholder="No. PO / Bukti Transfer">
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div class="space-y-1.5">
+                            <label class="text-[10px] font-bold text-gray-400 uppercase tracking-widest pl-1">Keterangan</label>
+                            <textarea id="desc-out" name="description" class="w-full bg-gray-900 border border-gray-700 text-white rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-red-500 outline-none transition-all placeholder-gray-600" rows="2" placeholder="Contoh: Bayar listrik bulan ini..." required></textarea>
+                        </div>
+                        <div class="space-y-1.5">
+                            <label class="text-[10px] font-bold text-gray-400 uppercase tracking-widest pl-1">Referensi / No. Bukti</label>
+                            <input type="text" name="reference" class="w-full bg-gray-900 border border-gray-700 text-white rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-red-500 outline-none transition-all placeholder-gray-600" placeholder="No. Nota / Bukti Transfer">
+                            <p class="text-[9px] text-gray-500 italic pl-1">Opsional: isi no. bukti bayar</p>
+                        </div>
                     </div>
                 </div>
-                <div class="px-5 py-4 border-t border-gray-700/50 bg-gray-800/50 flex justify-end gap-3">
+                <div class="px-5 py-4 border-t border-gray-700/50 bg-gray-900/20 flex justify-end gap-3">
                     <button type="button" @click="showModalOut = false" class="px-4 py-2 hover:bg-gray-700 text-gray-300 rounded-lg text-sm font-medium transition-colors">Batal</button>
-                    <button type="submit" class="px-6 py-2 bg-red-600 hover:bg-red-500 text-white rounded-lg text-sm font-medium transition-colors shadow-sm">Simpan Pengeluaran</button>
+                    <button type="submit" class="px-6 py-2 bg-red-600 hover:bg-red-500 text-white rounded-xl text-sm font-bold transition-all shadow-lg shadow-red-900/20 active:scale-95 flex items-center gap-2">
+                        <i data-lucide="save" class="w-4 h-4"></i> Simpan Pengeluaran
+                    </button>
                 </div>
             </form>
         </div>
@@ -282,33 +358,45 @@
                 <div class="p-5 flex flex-col gap-4">
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div class="space-y-1.5">
-                            <label class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Tanggal</label>
+                            <label class="text-[10px] font-bold text-gray-400 uppercase tracking-widest pl-1">Tanggal</label>
                             <input type="date" name="date" x-model="editTrx.date" class="w-full bg-gray-900 border border-gray-700 text-white rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all" required>
                         </div>
                         <div class="space-y-1.5">
-                            <label class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Kategori</label>
-                            <input type="text" name="category" x-model="editTrx.category" class="w-full bg-gray-900 border border-gray-700 text-white rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all" required>
+                            <label class="text-[10px] font-bold text-gray-400 uppercase tracking-widest pl-1">Kategori</label>
+                            <input type="text" name="category" x-model="editTrx.category" :list="editTrx.type === 'in' ? 'cat-in' : 'cat-out'" class="w-full bg-gray-900 border border-gray-700 text-white rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all" required>
                         </div>
                     </div>
+                    
                     <div class="space-y-1.5">
-                        <label class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Nominal (Rp)</label>
-                        <div class="relative">
-                            <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-medium">Rp</span>
-                            <input type="number" name="amount" x-model="editTrx.amount" class="w-full bg-gray-900 border border-gray-700 text-white font-bold text-lg rounded-xl pl-12 pr-4 py-2.5 focus:ring-2 focus:ring-indigo-500 outline-none transition-all" min="1" step="0.01" required>
+                        <label class="text-[10px] font-bold text-gray-400 uppercase tracking-widest pl-1">Nominal (Rp)</label>
+                        <div class="relative group">
+                            <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-bold">Rp</span>
+                            <input type="number" name="amount" x-model="editTrx.amount" class="w-full bg-gray-900 border border-gray-700 text-white font-black text-xl rounded-xl pl-12 pr-4 py-3 focus:ring-2 focus:ring-indigo-500 outline-none transition-all" min="1" step="0.01" required>
+                        </div>
+                        <div class="flex flex-wrap gap-2 mt-2">
+                            @foreach([50000, 100000, 500000, 1000000] as $amt)
+                            <button type="button" @click="editTrx.amount = '{{ $amt }}'" 
+                                    class="text-[10px] px-2 py-1 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded transition-colors">
+                                Set {{ number_format($amt/1000, 0) }}k
+                            </button>
+                            @endforeach
                         </div>
                     </div>
+
                     <div class="space-y-1.5">
-                        <label class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Keterangan Lengkap</label>
+                        <label class="text-[10px] font-bold text-gray-400 uppercase tracking-widest pl-1">Keterangan Lengkap</label>
                         <textarea name="description" x-model="editTrx.description" class="w-full bg-gray-900 border border-gray-700 text-white rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all" rows="3" required></textarea>
                     </div>
                     <div class="space-y-1.5">
-                        <label class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Referensi (Opsional)</label>
+                        <label class="text-[10px] font-bold text-gray-400 uppercase tracking-widest pl-1">Referensi / No. Dok</label>
                         <input type="text" name="reference" x-model="editTrx.reference" class="w-full bg-gray-900 border border-gray-700 text-white rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all">
                     </div>
                 </div>
-                <div class="px-5 py-4 border-t border-gray-700/50 bg-gray-800/50 flex justify-end gap-3">
+                <div class="px-5 py-4 border-t border-gray-700/50 bg-gray-900/20 flex justify-end gap-3">
                     <button type="button" @click="showModalEdit = false" class="px-4 py-2 hover:bg-gray-700 text-gray-300 rounded-lg text-sm font-medium transition-colors">Batal</button>
-                    <button type="submit" class="px-6 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm font-medium transition-colors border border-indigo-500 shadow-sm shadow-indigo-600/20" :class="editTrx.type === 'out' ? 'bg-amber-600 hover:bg-amber-500 border-amber-500 shadow-amber-600/20' : ''">Update Data</button>
+                    <button type="submit" class="px-6 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-sm font-bold transition-all shadow-lg shadow-indigo-900/20 active:scale-95 flex items-center gap-2" :class="editTrx.type === 'out' ? 'bg-amber-600 hover:bg-amber-500' : ''">
+                        <i data-lucide="refresh-cw" class="w-4 h-4"></i> Update Data
+                    </button>
                 </div>
             </form>
         </div>

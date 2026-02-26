@@ -5,6 +5,8 @@
         ]],
         ['section' => 'OPERASIONAL', 'items' => [
             ['id' => 'inventory', 'icon' => 'package', 'label' => 'Inventory', 'route' => 'inventory.index'],
+            ['id' => 'purchase-orders', 'icon' => 'shopping-bag', 'label' => 'Purchase Order', 'route' => 'purchase-orders.index'],
+            ['id' => 'suppliers', 'icon' => 'truck', 'label' => 'Suppliers', 'route' => 'suppliers.index'],
             ['id' => 'production', 'icon' => 'factory', 'label' => 'Produksi', 'route' => 'production.index'],
             ['id' => 'categories', 'icon' => 'tags', 'label' => 'Kategori', 'route' => 'categories.index'],
             ['id' => 'orders', 'icon' => 'shopping-cart', 'label' => 'Orders', 'route' => 'orders', 'badge' => 3],

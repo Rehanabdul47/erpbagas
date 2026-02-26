@@ -50,6 +50,23 @@ Route::middleware('auth')->group(function () {
         Route::delete('/bom/{bom}', [BomController::class, 'destroy'])->name('bom.destroy');
     });
 
+    // Suppliers
+    Route::prefix('suppliers')->name('suppliers.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\SupplierController::class, 'index'])->name('index');
+        Route::post('/', [\App\Http\Controllers\SupplierController::class, 'store'])->name('store');
+        Route::put('/{supplier}', [\App\Http\Controllers\SupplierController::class, 'update'])->name('update');
+        Route::delete('/{supplier}', [\App\Http\Controllers\SupplierController::class, 'destroy'])->name('destroy');
+    });
+
+    // Purchase Orders
+    Route::prefix('purchase-orders')->name('purchase-orders.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\PurchaseOrderController::class, 'index'])->name('index');
+        Route::get('/create', [\App\Http\Controllers\PurchaseOrderController::class, 'create'])->name('create');
+        Route::post('/', [\App\Http\Controllers\PurchaseOrderController::class, 'store'])->name('store');
+        Route::get('/{purchaseOrder}', [\App\Http\Controllers\PurchaseOrderController::class, 'show'])->name('show');
+        Route::put('/{purchaseOrder}/status', [\App\Http\Controllers\PurchaseOrderController::class, 'updateStatus'])->name('update-status');
+    });
+
     // Production
     Route::prefix('production')->name('production.')->group(function () {
         Route::get('/', [ProductionController::class, 'index'])->name('index');
