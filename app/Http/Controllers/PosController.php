@@ -109,10 +109,11 @@ class PosController extends Controller
 
                 // Apply Discount
                 if ($redeemCode) {
+                    $discountValue = abs($redeemCode->value);
                     if ($redeemCode->type === 'percentage') {
-                        $discountAmount = ($totalAmount * $redeemCode->value) / 100;
+                        $discountAmount = ($totalAmount * $discountValue) / 100;
                     } else {
-                        $discountAmount = $redeemCode->value;
+                        $discountAmount = $discountValue;
                     }
                     
                     // Ensure discount doesn't exceed total amount
@@ -137,6 +138,7 @@ class PosController extends Controller
                     'amount' => $totalAmount,
                     'description' => "Penjualan POS #{$invoiceNo}",
                     'reference' => $invoiceNo,
+                    'user_id' => Auth::id(),
                 ]);
 
                 return response()->json([

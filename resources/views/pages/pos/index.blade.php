@@ -1,572 +1,655 @@
 @extends('layouts.app')
 
 @section('title', 'Point of Sale')
+@section('breadcrumb', 'Point of Sale')
 
 @section('content')
-<div class="card" style="margin-bottom:20px;padding:8px">
-    <div class="tabs" style="display:flex;gap:0;border:none;margin-bottom:0">
-        <button class="tab-btn active" onclick="switchMainTab('kasir', this)"><i data-lucide="monitor" style="width:16px"></i> Kasir (POS)</button>
-        <button class="tab-btn" onclick="switchMainTab('history', this)"><i data-lucide="history" style="width:16px"></i> Riwayat Transaksi</button>
-    </div>
-</div>
-
-<div id="main-tab-kasir" class="main-tab-content">
-<div class="pos-container" style="display:grid;grid-template-columns:1fr 380px;gap:20px;height:calc(100vh - 180px)">
+<div x-data="posSystem()" class="flex flex-col gap-4 md:gap-6 lg:h-[calc(100vh-110px)]">
     
-    {{-- Left Section: Products --}}
-    <div class="pos-main card" style="display:flex;flex-direction:column;overflow:hidden;margin-bottom:0">
-        <div class="pos-header" style="padding:16px;border-bottom:1px solid var(--border-color);display:flex;gap:12px;align-items:center">
-            <div style="position:relative;flex:1">
-                <i data-lucide="search" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);width:16px;color:var(--text-tertiary)"></i>
-                <input type="text" id="pos-search" class="form-control" placeholder="Cari nama produk atau scan barcode..." style="padding-left:36px" onkeyup="filterProducts()">
-            </div>
-            <select id="pos-category" class="form-control" style="width:180px" onchange="filterProducts()">
-                <option value="">Semua Kategori</option>
-                @foreach($products->pluck('category.name')->unique() as $cat)
-                <option value="{{ $cat }}">{{ $cat }}</option>
-                @endforeach
-            </select>
-        </div>
-        
-        <div id="product-grid" style="flex:1;overflow-y:auto;padding:16px;display:grid;grid-template-columns:repeat(auto-fill, minmax(150px, 1fr));gap:16px">
-            @foreach($products as $p)
-            <div class="product-item card" 
-                 style="cursor:pointer;padding:12px;transition:all 0.2s;border:1px solid transparent"
-                 data-id="{{ $p->id }}" 
-                 data-name="{{ strtolower($p->name) }}" 
-                 data-sku="{{ strtolower($p->sku) }}"
-                 data-category="{{ $p->category->name }}"
-                 data-price="{{ $p->price }}"
-                 onclick="addToCart({{ json_encode($p) }})">
-                <div style="aspect-ratio:1;background:var(--bg-tertiary);border-radius:var(--radius-md);overflow:hidden;display:flex;align-items:center;justify-content:center;margin-bottom:8px">
-                    @if($p->image)
-                        <img src="{{ Str::startsWith($p->image, 'http') ? $p->image : asset($p->image) }}" alt="{{ $p->name }}" style="width:100%;height:100%;object-fit:cover">
-                    @else
-                        <i data-lucide="package" style="width:32px;height:32px;color:var(--primary-300)"></i>
-                    @endif
-                </div>
-                <div style="font-weight:600;font-size:14px;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ $p->name }}</div>
-                <div style="display:flex;justify-content:space-between;align-items:center">
-                    <span style="color:var(--primary-400);font-weight:700;font-size:13px">Rp {{ number_format($p->price, 0, ',', '.') }}</span>
-                    <span style="font-size:11px;color:var(--text-tertiary)">{{ $p->stock }} {{ $p->unit ?? 'pcs' }}</span>
-                </div>
-            </div>
-            @endforeach
-        </div>
-    </div>
-
-    {{-- Right Section: Cart --}}
-    <div class="pos-sidebar card" style="display:flex;flex-direction:column;overflow:hidden;margin-bottom:0;position:relative">
-        <div style="padding:16px;border-bottom:1px solid var(--border-color)">
-            <h4 style="margin:0;display:flex;align-items:center;gap:8px"><i data-lucide="shopping-cart"></i> Detail Pesanan</h4>
-        </div>
-        
-        <div style="padding:12px;display:flex;gap:8px">
-            <select id="cart-customer" class="form-control" style="flex:1">
-                @foreach($customers as $c)
-                <option value="{{ $c->id }}">{{ $c->name }}</option>
-                @endforeach
-            </select>
-            <button class="btn btn-ghost" onclick="document.getElementById('modal-customer').classList.remove('hidden')"><i data-lucide="user-plus"></i></button>
-        </div>
-
-        <div id="cart-items" style="flex:1;overflow-y:auto;padding:0 16px">
-            {{-- Items will be injected here --}}
-            <div id="empty-cart" style="height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--text-tertiary);opacity:0.6">
-                <i data-lucide="shopping-bag" style="width:48px;height:48px;margin-bottom:12px"></i>
-                <p>Keranjang masih kosong</p>
-            </div>
-        </div>
-
-        <div style="padding:16px;border-top:1px solid var(--border-color)">
-            <label style="font-size:12px;font-weight:600;color:var(--text-secondary);margin-bottom:8px;display:block">Redeem Code</label>
-            <div style="display:flex;gap:8px">
-                <input type="text" id="pos-redeem-code" class="form-control" placeholder="Masukkan kode promo" style="flex:1;text-transform:uppercase">
-                <button class="btn btn-outline" onclick="applyRedeemCode()">Terapkan</button>
-            </div>
-            <div id="redeem-code-msg" style="font-size:12px;margin-top:8px"></div>
-        </div>
-
-        <div class="cart-footer" style="padding:20px;background:var(--bg-surface);border-top:1px solid var(--border-color)">
-            <div style="display:flex;justify-content:space-between;margin-bottom:8px;font-size:14px;color:var(--text-secondary)">
-                <span>Subtotal</span>
-                <span id="cart-subtotal">Rp 0</span>
-            </div>
-            <div style="display:flex;justify-content:space-between;margin-bottom:8px;font-size:14px;color:var(--danger-500);display:none" id="discount-row">
-                <span>Diskon <span id="discount-code-name" style="font-size:11px;background:var(--bg-tertiary);padding:2px 4px;border-radius:4px;margin-left:4px"></span></span>
-                <span id="cart-discount">-Rp 0</span>
-            </div>
-            <div style="display:flex;justify-content:space-between;margin-bottom:16px;font-size:20px;font-weight:800;color:var(--text-primary)">
-                <span>Total</span>
-                <span id="cart-total">Rp 0</span>
-            </div>
-            <button class="btn btn-primary" style="width:100%;padding:14px;font-size:16px;font-weight:700" onclick="openCheckoutModal()">
-                <i data-lucide="credit-card"></i> Bayar Sekarang
+    {{-- Top Navigation Tabs --}}
+    <div class="bg-gray-800 border border-gray-700/50 rounded-xl shadow-sm shrink-0 overflow-x-auto hide-scrollbar">
+        <div class="flex w-max">
+            <button @click="activeTab = 'kasir'" :class="activeTab === 'kasir' ? 'text-indigo-400 border-b-2 border-indigo-500 bg-gray-800/80' : 'text-gray-400 hover:text-white hover:bg-gray-800/50 border-b-2 border-transparent'" class="whitespace-nowrap px-6 py-4 text-sm font-medium transition-colors flex items-center gap-2">
+                <i data-lucide="monitor" class="w-4 h-4"></i> Kasir (POS)
+            </button>
+            <button @click="activeTab = 'history'" :class="activeTab === 'history' ? 'text-indigo-400 border-b-2 border-indigo-500 bg-gray-800/80' : 'text-gray-400 hover:text-white hover:bg-gray-800/50 border-b-2 border-transparent'" class="whitespace-nowrap px-6 py-4 text-sm font-medium transition-colors flex items-center gap-2">
+                <i data-lucide="history" class="w-4 h-4"></i> Riwayat Transaksi
             </button>
         </div>
     </div>
-</div>
-</div>
 
-{{-- Tab: History --}}
-<div id="main-tab-history" class="main-tab-content" style="display:none">
-    <div class="card">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
-            <h3 style="margin:0">📜 Riwayat Transaksi Kasir</h3>
-            <div class="badge badge-info">Terakhir 20 Transaksi</div>
-        </div>
+    {{-- Main POS View --}}
+    <div x-show="activeTab === 'kasir'" class="flex-1 flex flex-col lg:flex-row gap-4 md:gap-6 min-h-0">
         
-        <div class="table-container">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Invoice</th>
-                        <th>Waktu</th>
-                        <th>Customer</th>
-                        <th>Item Terjual</th>
-                        <th>Total Amount</th>
-                        <th>Metode</th>
-                        <th>Status</th>
-                        <th>Aksi</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse($posHistory as $sale)
-                    <tr>
-                        <td style="font-weight:700">#{{ $sale->invoice_no }}</td>
-                        <td>{{ $sale->created_at->format('d M Y, H:i') }}</td>
-                        <td>{{ $sale->customer->name }}</td>
-                        <td>
-                            <div style="font-size:12px;color:var(--text-secondary)">
-                                {{ $sale->items->count() }} Item
-                            </div>
-                        </td>
-                        <td style="font-weight:700">Rp {{ number_format($sale->total_amount, 0, ',', '.') }}</td>
-                        <td>
-                            <span class="badge badge-neutral" style="font-size:10px">
-                                {{ str_replace('POS Transaction via ', '', $sale->notes) }}
-                            </span>
-                        </td>
-                        <td><span class="badge badge-success">Selesai</span></td>
-                        <td>
-                            <button class="btn btn-ghost btn-xs" title="Detail"><i data-lucide="eye" style="width:14px"></i></button>
-                        </td>
-                    </tr>
-                    @empty
-                    <tr>
-                        <td colspan="8" style="text-align:center;padding:40px;color:var(--text-tertiary)">
-                            <i data-lucide="inbox" style="width:48px;height:48px;margin-bottom:12px;opacity:0.5"></i>
-                            <p>Belum ada riwayat transaksi via POS</p>
-                        </td>
-                    </tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
-    </div>
-</div>
-
-{{-- Modal: Checkout --}}
-<div id="modal-checkout" class="modal-overlay hidden" onclick="if(event.target===this)this.classList.add('hidden')">
-    <div class="modal" style="max-width:450px">
-        <div class="modal-header">
-            <h3>💳 Selesaikan Pembayaran</h3>
-            <button class="btn-icon" onclick="document.getElementById('modal-checkout').classList.add('hidden')"><i data-lucide="x"></i></button>
-        </div>
-        <div class="modal-body">
-            <div style="text-align:center;margin-bottom:24px;padding:20px;background:var(--bg-tertiary);border-radius:var(--radius-lg)">
-                <div style="font-size:14px;color:var(--text-tertiary);margin-bottom:4px">Total yang harus dibayar</div>
-                <div id="checkout-total-display" style="font-size:32px;font-weight:800;color:var(--primary-500)">Rp 0</div>
+        {{-- Left Section: Products Catalog --}}
+        <div class="flex-1 bg-gray-800 border border-gray-700/50 rounded-xl shadow-sm flex flex-col overflow-hidden min-h-[600px] lg:min-h-0">
+            <!-- Search & Filter Header -->
+            <div class="p-4 border-b border-gray-700/50 flex flex-col sm:flex-row gap-3 bg-gray-800/50 shrink-0">
+                <div class="relative flex-1">
+                    <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500"></i>
+                    <input type="text" x-model="searchQuery" class="w-full bg-gray-900/50 border border-gray-700 text-white rounded-lg pl-10 pr-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all placeholder-gray-500 focus:bg-gray-900" placeholder="Cari nama produk atau barcode...">
+                </div>
+                <div class="relative w-full sm:w-48 shrink-0">
+                    <select x-model="selectedCategory" class="w-full bg-gray-900/50 border border-gray-700 text-white rounded-lg pl-3 pr-10 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all appearance-none cursor-pointer focus:bg-gray-900">
+                        <option value="">Semua Kategori</option>
+                        @foreach($products->pluck('category.name')->unique() as $cat)
+                        <option value="{{ $cat }}">{{ $cat }}</option>
+                        @endforeach
+                    </select>
+                    <i data-lucide="chevron-down" class="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none"></i>
+                </div>
             </div>
             
-            <div class="form-group">
-                <label>Metode Pembayaran</label>
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-                    <button class="btn btn-outline btn-payment active" onclick="setPaymentMethod('Tunai', this)">💵 Tunai</button>
-                    <button class="btn btn-outline btn-payment" onclick="setPaymentMethod('Transfer', this)">📱 Transfer/QRIS</button>
+            <!-- Products Grid Container -->
+            <div class="flex-1 overflow-y-auto p-4 scrollbar-thin scrollbar-thumb-indigo-500/20 hover:scrollbar-thumb-indigo-500/50 scrollbar-track-transparent bg-gray-900/20">
+                <div class="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-4 auto-rows-max">
+                    @foreach($products as $p)
+                    <div x-show="matchProduct('{{ strtolower($p->name) }}', '{{ strtolower($p->sku) }}', '{{ $p->category->name }}')" 
+                         @click="addToCart({{ json_encode($p) }})" 
+                         class="bg-gray-800 border border-gray-700/50 rounded-xl p-3 cursor-pointer hover:border-indigo-500/50 hover:bg-indigo-500/5 hover:-translate-y-1 transition-all group flex flex-col h-full shadow-sm hover:shadow-indigo-500/10 active:scale-95">
+                        
+                        <!-- Image Container -->
+                        <div class="aspect-square bg-gray-900 rounded-lg overflow-hidden flex items-center justify-center mb-3 relative group-hover:shadow-inner">
+                            @if($p->image)
+                                <img src="{{ Str::startsWith($p->image, 'http') ? $p->image : asset($p->image) }}" alt="{{ $p->name }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+                            @else
+                                <i data-lucide="package" class="w-10 h-10 text-gray-600 group-hover:text-indigo-400 transition-colors"></i>
+                            @endif
+                            
+                            <!-- Stock Overlay badge -->
+                            <div class="absolute top-2 right-2 px-1.5 py-0.5 rounded text-[10px] font-bold shadow-sm backdrop-blur-md {{ $p->stock <= 5 ? 'bg-red-500/80 text-white' : 'bg-gray-900/60 text-gray-200' }}">
+                                {{ $p->stock }} {{ $p->unit ?? 'pcs' }}
+                            </div>
+                        </div>
+                        
+                        <!-- Product Info -->
+                        <div class="flex-1 flex flex-col justify-between">
+                            <h4 class="font-bold text-gray-200 text-sm mb-2 line-clamp-2 leading-tight group-hover:text-indigo-400 transition-colors" title="{{ $p->name }}">{{ $p->name }}</h4>
+                            <div class="flex justify-between items-end mt-auto">
+                                <div class="font-bold text-indigo-400 tracking-tight">Rp {{ number_format($p->price, 0, ',', '.') }}</div>
+                            </div>
+                        </div>
+                    </div>
+                    @endforeach
+                </div>
+                
+                <!-- Empty State -->
+                <div x-show="!hasMatchingProducts()" x-cloak class="h-full flex flex-col items-center justify-center text-gray-500 py-12">
+                    <i data-lucide="search-x" class="w-16 h-16 opacity-50 mb-4"></i>
+                    <p class="text-lg font-medium">Produk tidak ditemukan</p>
+                    <p class="text-sm">Coba kata kunci pencarian yang lain.</p>
+                </div>
+            </div>
+        </div>
+
+        {{-- Right Section: Shopping Cart Sidebar --}}
+        <div class="w-full lg:w-[400px] xl:w-[420px] bg-gray-800 border border-gray-700/50 rounded-xl shadow-sm flex flex-col overflow-hidden shrink-0 min-h-[600px] lg:min-h-0">
+            <!-- Cart Header -->
+            <div class="p-4 border-b border-gray-700/50 shrink-0 bg-gray-800">
+                <h4 class="font-bold text-lg text-white flex items-center justify-between m-0">
+                    <div class="flex items-center gap-2">
+                        <i data-lucide="shopping-cart" class="w-5 h-5 text-indigo-400"></i> Detail Pesanan
+                    </div>
+                    <span class="bg-indigo-500/20 shadow-inner px-2 py-1 rounded-md text-indigo-400 text-xs font-bold border border-indigo-500/20" x-text="totalItems + ' Item'"></span>
+                </h4>
+            </div>
+            
+            <!-- Customer Selection -->
+            <div class="p-4 border-b border-gray-700/50 shrink-0 bg-gray-900/30 flex gap-2">
+                <div class="relative flex-1">
+                    <i data-lucide="user" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500"></i>
+                    <select x-model="customerId" class="w-full bg-gray-900 border border-gray-700 text-white rounded-lg pl-10 pr-10 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all appearance-none shadow-inner">
+                        <option value="" disabled {{ $customers->isEmpty() ? 'selected' : '' }}>Pilih Pelanggan</option>
+                        @foreach($customers as $c)
+                        <option value="{{ $c->id }}">{{ $c->name }}</option>
+                        @endforeach
+                    </select>
+                    <i data-lucide="chevron-down" class="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none"></i>
+                </div>
+                <button @click="modals.customer = true" class="px-3 bg-gray-700 hover:bg-gray-600 border border-gray-600 text-white rounded-lg transition-colors flex items-center justify-center shadow-sm" title="Tambah Customer Baru">
+                    <i data-lucide="user-plus" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <!-- Cart Items List -->
+            <div class="flex-1 overflow-y-auto p-4 scrollbar-thin scrollbar-thumb-indigo-500/20 hover:scrollbar-thumb-indigo-500/50 scrollbar-track-transparent bg-gray-900/10">
+                
+                <template x-if="cart.length > 0">
+                    <div class="space-y-3">
+                        <template x-for="item in cart" :key="item.id">
+                            <div class="bg-gray-800 border border-gray-700/50 rounded-lg p-3 flex gap-3 shadow-sm relative group overflow-hidden">
+                                <!-- Remove btn overlay on hover -->
+                                <button @click="removeFromCart(item.id)" class="absolute right-0 top-0 bottom-0 px-2 bg-red-500/90 backdrop-blur text-white opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center transform translate-x-full group-hover:translate-x-0 z-10" title="Hapus Item">
+                                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                </button>
+                                
+                                <div class="flex-1 min-w-0 pr-8 group-hover:pr-10 transition-all">
+                                    <h5 class="text-sm font-bold text-gray-200 truncate mb-1" x-text="item.name"></h5>
+                                    <div class="text-xs text-indigo-400 font-mono tracking-tight" x-text="'Rp ' + formatRupiah(item.price) + ' / unit'"></div>
+                                </div>
+                                <div class="flex flex-col items-end justify-between gap-2 shrink-0">
+                                    <div class="font-bold text-sm text-white tracking-tight" x-text="'Rp ' + formatRupiah(item.price * item.quantity)"></div>
+                                    <div class="flex items-center bg-gray-900 border border-gray-700 rounded-md overflow-hidden shadow-inner">
+                                        <button @click="updateQty(item.id, -1)" class="w-7 h-7 flex items-center justify-center hover:bg-gray-700 hover:text-white text-gray-400 transition-colors disabled:opacity-50" :disabled="item.quantity <= 1">
+                                            <i data-lucide="minus" class="w-3 h-3"></i>
+                                        </button>
+                                        <div class="w-8 text-center text-xs font-bold text-white bg-gray-800/50 flex flex-col justify-center h-full" x-text="item.quantity"></div>
+                                        <button @click="updateQty(item.id, 1)" class="w-7 h-7 flex items-center justify-center hover:bg-gray-700 hover:text-white text-gray-400 transition-colors disabled:opacity-50" :disabled="item.quantity >= item.stock">
+                                            <i data-lucide="plus" class="w-3 h-3"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </template>
+
+                <template x-if="cart.length === 0">
+                    <div class="h-full flex flex-col items-center justify-center text-gray-500 opacity-80 min-h-[150px]">
+                        <i data-lucide="shopping-bag" class="w-14 h-14 mb-4 opacity-50"></i>
+                        <p class="text-sm font-medium">Keranjang masih kosong</p>
+                        <p class="text-xs text-center mt-2 max-w-[200px] opacity-70">Klik produk di katalog untuk menambah pesanan.</p>
+                    </div>
+                </template>
+            </div>
+
+            <!-- Discount / Promo Section -->
+            <div class="p-4 border-t border-gray-700/50 shrink-0 bg-gray-900/30">
+                <label class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 block">Kode Promo / Redeem</label>
+                <div class="flex gap-2 relative">
+                    <input type="text" x-model="redeemCodeInput" @keyup.enter="applyRedeemCode()" class="flex-1 bg-gray-900 border border-gray-700 text-white rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all uppercase placeholder:normal-case font-mono font-bold shadow-inner" placeholder="Masukkan kode">
+                    <template x-if="appliedRedeemCode">
+                        <button @click="removeRedeemCode()" class="absolute right-[85px] top-1/2 -translate-y-1/2 text-gray-500 hover:text-red-500 bg-gray-900 py-1 pl-1 pr-2">
+                             <i data-lucide="x-circle" class="w-4 h-4"></i>
+                        </button>
+                    </template>
+                    <button @click="applyRedeemCode()" class="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg text-sm font-medium transition-colors border border-gray-600 shrink-0 shadow-sm active:scale-95 disabled:opacity-50 disabled:active:scale-100">Cek</button>
+                </div>
+                <!-- Validation msg -->
+                <div x-show="redeemMsg" x-cloak class="text-xs font-medium mt-2 flex items-center gap-1.5" :class="redeemStatus === 'success' ? 'text-emerald-400' : (redeemStatus === 'error' ? 'text-red-400' : 'text-gray-400')">
+                    <i data-lucide="info" class="w-3.5 h-3.5 shrink-0"></i> <span x-text="redeemMsg"></span>
                 </div>
             </div>
 
-            <div class="form-group" id="cash-input-group">
-                <label>Diterima (Tunai)</label>
-                <input type="number" id="cash-amount" class="form-control" placeholder="0" oninput="calculateChange()" style="font-size:20px;height:50px">
-                <div style="display:grid;grid-template-columns:repeat(4, 1fr);gap:6px;margin-top:10px">
-                    <button class="btn btn-ghost btn-xs" onclick="quickCash(10000)">10rb</button>
-                    <button class="btn btn-ghost btn-xs" onclick="quickCash(20000)">20rb</button>
-                    <button class="btn btn-ghost btn-xs" onclick="quickCash(50000)">50rb</button>
-                    <button class="btn btn-ghost btn-xs" onclick="quickCash(100000)">100rb</button>
+            <!-- Total Processing block -->
+            <div class="p-5 bg-gray-800 border-t border-gray-700/50 shrink-0 shadow-[0_-10px_15px_-3px_rgba(0,0,0,0.1)] z-20">
+                <div class="space-y-2 mb-4">
+                    <div class="flex justify-between text-sm text-gray-400 font-medium">
+                        <span>Subtotal</span>
+                        <span x-text="'Rp ' + formatRupiah(subtotal)"></span>
+                    </div>
+                    
+                    <template x-if="appliedRedeemCode">
+                        <div class="flex justify-between text-sm text-emerald-400 font-medium items-center">
+                            <span class="flex items-center gap-2">
+                                Diskon 
+                                <span class="bg-emerald-500/20 text-emerald-400 text-[10px] font-mono px-2 py-0.5 rounded border border-emerald-500/30" x-text="appliedRedeemCode.code"></span>
+                            </span>
+                            <span x-text="'-Rp ' + formatRupiah(discountAmount)"></span>
+                        </div>
+                    </template>
+                    
+                    <div class="border-t border-gray-700/50 pt-3 mt-1 flex justify-between items-end">
+                        <span class="text-white font-bold text-lg">Total</span>
+                        <span class="text-2xl font-black text-indigo-400 tracking-tight" x-text="'Rp ' + formatRupiah(finalTotal)"></span>
+                    </div>
+                </div>
+                
+                <button @click="openCheckoutModal" :disabled="cart.length === 0" class="w-full py-3.5 bg-indigo-600 hover:bg-indigo-500 disabled:bg-gray-700 disabled:text-gray-500 disabled:shadow-none text-white rounded-xl text-base font-bold transition-all shadow-lg shadow-indigo-600/20 active:scale-[0.98] flex justify-center items-center gap-2">
+                    <i data-lucide="credit-card" class="w-5 h-5"></i> Lanjut Pembayaran
+                </button>
+            </div>
+        </div>
+    </div>
+
+    {{-- Tab: History View --}}
+    <div x-show="activeTab === 'history'" x-cloak style="display: none;" class="flex-1 bg-gray-800 border border-gray-700/50 rounded-xl shadow-sm flex flex-col min-h-[600px] lg:min-h-0 overflow-hidden">
+        <div class="p-5 border-b border-gray-700/50 flex justify-between items-center bg-gray-800 shrink-0">
+            <h3 class="m-0 text-xl font-bold text-white flex items-center gap-2">
+                <i data-lucide="receipt" class="w-5 h-5 text-indigo-400"></i> Riwayat Transaksi Kasir
+            </h3>
+        </div>
+        
+        <div class="flex-1 overflow-y-auto p-5 scrollbar-thin scrollbar-thumb-indigo-500/20 hover:scrollbar-thumb-indigo-500/50 scrollbar-track-transparent bg-gray-900/10">
+            <div class="border border-gray-700/50 rounded-xl overflow-hidden shadow-sm bg-gray-800">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm whitespace-nowrap">
+                        <thead class="bg-gray-900/80 text-gray-400 text-xs uppercase tracking-wider border-b border-gray-700/50">
+                            <tr>
+                                <th class="px-5 py-3 font-medium">Invoice</th>
+                                <th class="px-5 py-3 font-medium">Waktu</th>
+                                <th class="px-5 py-3 font-medium">Customer</th>
+                                <th class="px-5 py-3 font-medium">Item Terjual</th>
+                                <th class="px-5 py-3 font-medium">Total Amount</th>
+                                <th class="px-5 py-3 font-medium">Metode</th>
+                                <th class="px-5 py-3 font-medium text-right">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-700/50">
+                            @forelse($posHistory as $sale)
+                            <tr class="hover:bg-indigo-500/5 transition-colors group cursor-pointer">
+                                <td class="px-5 py-3 font-bold text-indigo-400 font-mono text-sm tracking-tight">#{{ $sale->invoice_no }}</td>
+                                <td class="px-5 py-3 text-gray-400 text-xs">{{ $sale->created_at->format('d M Y, H:i') }}</td>
+                                <td class="px-5 py-3 font-bold text-white">{{ $sale->customer->name }}</td>
+                                <td class="px-5 py-3 text-gray-300"><span class="bg-gray-700 px-2 py-0.5 rounded text-xs">{{ $sale->items->count() }} Item</span></td>
+                                <td class="px-5 py-3 font-bold text-white">Rp {{ number_format($sale->total_amount, 0, ',', '.') }}</td>
+                                <td class="px-5 py-3">
+                                    <span class="px-2 py-1 rounded border text-[10px] font-bold {{ str_contains(strtolower($sale->notes), 'tunai') ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20' }}">
+                                        {{ str_replace('POS Transaction via ', '', $sale->notes) }}
+                                    </span>
+                                </td>
+                                <td class="px-5 py-3 text-right">
+                                    <button class="p-1.5 rounded-lg text-gray-400 hover:text-indigo-400 hover:bg-indigo-500/10 transition-colors opacity-50 group-hover:opacity-100" title="Detail Invoice">
+                                        <i data-lucide="eye" class="w-4 h-4"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            @empty
+                            <tr>
+                                <td colspan="7" class="text-center py-16 text-gray-500">
+                                    <div class="flex flex-col items-center gap-3">
+                                        <i data-lucide="inbox" class="w-12 h-12 opacity-30 text-gray-400"></i>
+                                        <span class="text-base font-medium">Belum ada riwayat transaksi POS</span>
+                                    </div>
+                                </td>
+                            </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
                 </div>
             </div>
+        </div>
+    </div>
 
-            <div id="change-group" style="padding:16px;background:rgba(34,197,94,0.1);border-radius:var(--radius-md);margin-top:20px;display:flex;justify-content:space-between;align-items:center">
-                <span style="color:var(--success-400);font-weight:600">Kembalian</span>
-                <span id="cash-change" style="font-size:20px;font-weight:800;color:var(--success-500)">Rp 0</span>
+    {{-- Checkout Modal --}}
+    <div x-show="modals.checkout" x-cloak style="display: none;" class="fixed inset-0 bg-gray-900/80 backdrop-blur-sm z-[150] flex items-center justify-center p-4 transition-opacity">
+        <div @click.away="modals.checkout = false" class="bg-gray-800 border border-gray-700 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col pointer-events-auto transform transition-all">
+            <div class="px-5 py-4 border-b border-gray-700/50 flex items-center justify-between shrink-0 bg-gray-800/80 backdrop-blur-md">
+                <h3 class="font-bold text-white flex items-center gap-2 text-lg">
+                    <i data-lucide="credit-card" class="w-5 h-5 text-indigo-400"></i> Selesaikan Pembayaran
+                </h3>
+                <button @click="modals.checkout = false" class="p-1 text-gray-400 hover:text-white bg-gray-900/50 hover:bg-gray-700 rounded-lg transition-colors"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            
+            <div class="p-5 flex flex-col gap-6 bg-gray-800">
+                <!-- Total Display -->
+                <div class="bg-gray-900 border border-gray-700 rounded-xl p-6 text-center shadow-inner relative overflow-hidden">
+                    <div class="absolute inset-0 bg-indigo-500/5 pointer-events-none"></div>
+                    <div class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1 relative z-10">Total Tagihan</div>
+                    <div class="text-4xl font-black text-indigo-400 tracking-tighter relative z-10" x-text="'Rp ' + formatRupiah(finalTotal)"></div>
+                </div>
+                
+                <!-- Payment Method Selector -->
+                <div class="space-y-2">
+                    <label class="text-xs font-semibold text-gray-400 uppercase tracking-wider block">Metode Pembayaran</label>
+                    <div class="grid grid-cols-2 gap-3">
+                        <button type="button" @click="paymentMethod = 'Tunai'; calculateChange()" :class="paymentMethod === 'Tunai' ? 'bg-indigo-600 text-white border-indigo-500 ring-2 ring-indigo-500/20' : 'bg-gray-900/50 text-gray-300 border-gray-700 hover:bg-gray-800 hover:text-white hover:border-gray-600'" class="px-4 py-3 rounded-xl border text-sm font-bold transition-all flex items-center justify-center gap-2">
+                            <i data-lucide="banknote" class="w-4 h-4"></i> Tunai (Cash)
+                        </button>
+                        <button type="button" @click="paymentMethod = 'Transfer'; calculateChange()" :class="paymentMethod === 'Transfer' ? 'bg-indigo-600 text-white border-indigo-500 ring-2 ring-indigo-500/20' : 'bg-gray-900/50 text-gray-300 border-gray-700 hover:bg-gray-800 hover:text-white hover:border-gray-600'" class="px-4 py-3 rounded-xl border text-sm font-bold transition-all flex items-center justify-center gap-2">
+                            <i data-lucide="smartphone" class="w-4 h-4"></i> QRIS / Transfer
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Cash Input (only if Tunai) -->
+                <div x-show="paymentMethod === 'Tunai'" x-collapse>
+                    <div class="space-y-3 pt-2">
+                        <div class="space-y-1.5">
+                            <label class="text-xs font-semibold text-gray-400 uppercase tracking-wider block">Nominal Diterima</label>
+                            <input type="number" x-model.number="cashReceived" @input="calculateChange()" class="w-full bg-gray-900 border-2 border-gray-600 text-white rounded-xl px-4 py-3 text-xl font-bold font-mono text-right focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all placeholder-gray-600" placeholder="0">
+                        </div>
+                        
+                        <!-- Quick Cash Buttons -->
+                        <div class="grid grid-cols-4 gap-2">
+                            <button @click="quickCash(10000)" class="py-2 bg-gray-700/50 hover:bg-gray-600 border border-gray-600 rounded-lg text-xs font-bold text-gray-200 transition-colors">10rb</button>
+                            <button @click="quickCash(20000)" class="py-2 bg-gray-700/50 hover:bg-gray-600 border border-gray-600 rounded-lg text-xs font-bold text-gray-200 transition-colors">20rb</button>
+                            <button @click="quickCash(50000)" class="py-2 bg-gray-700/50 hover:bg-gray-600 border border-gray-600 rounded-lg text-xs font-bold text-gray-200 transition-colors">50rb</button>
+                            <button @click="quickCash(100000)" class="py-2 bg-gray-700/50 hover:bg-gray-600 border border-gray-600 rounded-lg text-xs font-bold text-gray-200 transition-colors">100rb</button>
+                        </div>
+
+                        <!-- Change Amount Display -->
+                        <div class="p-4 rounded-xl flex justify-between items-center border transition-colors duration-300 mt-4 shadow-inner" :class="cashChange >= 0 ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-red-500/10 border-red-500/30'">
+                            <span class="text-sm font-bold uppercase tracking-wider" :class="cashChange >= 0 ? 'text-emerald-500' : 'text-red-500'" x-text="cashChange >= 0 ? 'Kembalian' : 'Kurang'"></span>
+                            <span class="text-xl font-black font-mono tracking-tight" :class="cashChange >= 0 ? 'text-emerald-400' : 'text-red-400'" x-text="'Rp ' + formatRupiah(Math.abs(cashChange))"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="p-5 border-t border-gray-700/50 bg-gray-900 shrink-0">
+                <button @click="processCheckout()" :disabled="processing || (paymentMethod === 'Tunai' && cashChange < 0)" class="w-full py-3.5 bg-indigo-600 hover:bg-indigo-500 disabled:bg-gray-700 disabled:text-gray-500 disabled:cursor-not-allowed text-white rounded-xl text-base font-bold transition-all shadow-lg shadow-indigo-600/20 flex justify-center items-center gap-2 active:scale-[0.98]">
+                    <template x-if="processing">
+                        <i data-lucide="loader-2" class="w-5 h-5 animate-spin"></i>
+                    </template>
+                    <template x-if="!processing">
+                        <i data-lucide="zap" class="w-5 h-5"></i>    
+                    </template>
+                    <span x-text="processing ? 'Memproses...' : 'Selesaikan Transaksi'"></span>
+                </button>
             </div>
         </div>
-        <div class="modal-footer">
-            <button class="btn btn-primary" style="width:100%;height:50px" onclick="processCheckout()">
-                ⚡ Proses Transaksi
-            </button>
+    </div>
+
+    {{-- Success Modal --}}
+    <div x-show="modals.success" x-cloak style="display: none;" class="fixed inset-0 bg-gray-900/90 backdrop-blur-md z-[200] flex items-center justify-center p-4 transition-opacity">
+        <div class="bg-gray-800 border-[0.5px] border-b-4 border-gray-700 border-b-emerald-500 rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden flex flex-col items-center text-center p-8 transform transition-all scale-100 relative">
+            
+            <!-- Confetti abstract shapes background -->
+            <div class="absolute inset-0 overflow-hidden pointer-events-none opacity-20">
+                <div class="absolute top-10 left-10 w-4 h-4 rounded-full bg-emerald-500"></div>
+                <div class="absolute bottom-20 right-10 w-3 h-3 rounded-full bg-indigo-500"></div>
+                <div class="absolute top-20 right-20 w-4 h-4 rotate-45 bg-amber-500"></div>
+            </div>
+
+            <div class="w-24 h-24 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center mb-6 shadow-[0_0_30px_rgba(16,185,129,0.3)] border border-emerald-500/50 z-10">
+                <i data-lucide="check-circle" class="w-12 h-12"></i>
+            </div>
+            <h2 class="text-2xl font-black text-white mb-2 tracking-tight z-10">Transaksi Berhasil!</h2>
+            <p class="text-gray-400 text-sm mb-8 z-10">
+                Invoice <span class="font-bold text-indigo-400 font-mono tracking-wider px-2 py-0.5 bg-gray-900 rounded inline-block" x-text="successInvoice"></span> telah tercatat disistem.
+            </p>
+            
+            <div class="grid grid-cols-2 gap-3 w-full z-10">
+                <button @click="window.location.reload()" class="w-full py-3 bg-indigo-600 hover:bg-indigo-500 border border-indigo-500 text-white rounded-xl text-sm font-bold transition-all shadow-lg flex items-center justify-center gap-2">
+                    <i data-lucide="printer" class="w-4 h-4"></i> Cetak Struk
+                </button>
+                <button @click="window.location.reload()" class="w-full py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-xl text-sm font-bold transition-all border border-gray-600">
+                    Selesai
+                </button>
+            </div>
+        </div>
+    </div>
+
+    {{-- Add Customer Modal --}}
+    <div x-show="modals.customer" x-cloak style="display: none;" class="fixed inset-0 bg-gray-900/80 backdrop-blur-sm z-[150] flex items-center justify-center p-4 transition-opacity">
+        <div @click.away="modals.customer = false" class="bg-gray-800 border border-gray-700 rounded-xl shadow-2xl w-full max-w-sm overflow-hidden">
+            <div class="px-5 py-4 border-b border-gray-700/50 flex items-center justify-between">
+                <h3 class="font-bold text-white flex items-center gap-2">
+                    <i data-lucide="user-plus" class="w-5 h-5 text-indigo-400"></i> Tambah Customer Baru
+                </h3>
+                <button @click="modals.customer = false" class="text-gray-400 hover:text-white transition-colors bg-gray-900/50 hover:bg-gray-700 p-1.5 rounded-lg"><i data-lucide="x" class="w-4 h-4"></i></button>
+            </div>
+            <form @submit.prevent="saveCustomer" class="p-5 flex flex-col gap-4">
+                <div class="space-y-1.5">
+                    <label class="text-xs font-semibold text-gray-400 uppercase tracking-wider block">Nama Lengkap <span class="text-red-500">*</span></label>
+                    <input type="text" x-model="custForm.name" required class="w-full bg-gray-900/50 border border-gray-700 text-white rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all placeholder-gray-600 focus:bg-gray-900" placeholder="Nama customer">
+                </div>
+                <div class="space-y-1.5">
+                    <label class="text-xs font-semibold text-gray-400 uppercase tracking-wider block">Email</label>
+                    <input type="email" x-model="custForm.email" class="w-full bg-gray-900/50 border border-gray-700 text-white rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all placeholder-gray-600 focus:bg-gray-900" placeholder="customer@email.com">
+                </div>
+                <div class="space-y-1.5">
+                    <label class="text-xs font-semibold text-gray-400 uppercase tracking-wider block">No. Telepon</label>
+                    <input type="text" x-model="custForm.phone" class="w-full bg-gray-900/50 border border-gray-700 text-white rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all placeholder-gray-600 focus:bg-gray-900" placeholder="08xxxxxxxxxxx">
+                </div>
+                
+                <div class="mt-2 flex gap-3">
+                    <button type="button" @click="modals.customer = false" class="flex-1 py-2.5 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded-lg text-sm font-bold transition-colors border border-gray-600">Batal</button>
+                    <button type="submit" class="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm font-bold transition-colors shadow-lg shadow-indigo-600/20 active:scale-95" :disabled="savingCustomer" x-text="savingCustomer ? 'Menyimpan...' : 'Simpan Customer'"></button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
-
-{{-- Success Modal --}}
-<div id="modal-success" class="modal-overlay hidden">
-    <div class="modal" style="max-width:400px;text-align:center;padding:40px">
-        <div style="width:80px;height:80px;background:var(--success-500);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;color:white">
-            <i data-lucide="check" style="width:48px;height:48px"></i>
-        </div>
-        <h3 style="margin-bottom:8px">Transaksi Berhasil!</h3>
-        <p style="color:var(--text-tertiary);margin-bottom:24px">Invoice <span id="success-invoice" style="font-weight:600;color:var(--text-primary)"></span> telah dicatat.</p>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-            <button class="btn btn-primary" onclick="window.location.reload()"><i data-lucide="print"></i> Cetak Struk</button>
-            <button class="btn btn-ghost" onclick="window.location.reload()">Selesai</button>
-        </div>
-    </div>
-</div>
-
-{{-- Modal: Add Customer --}}
-<div id="modal-customer" class="modal-overlay hidden" onclick="if(event.target===this)this.classList.add('hidden')">
-    <div class="modal" style="max-width:400px">
-        <div class="modal-header">
-            <h3>👤 Tambah Customer Baru</h3>
-            <button class="btn-icon" onclick="document.getElementById('modal-customer').classList.add('hidden')"><i data-lucide="x"></i></button>
-        </div>
-        <div class="modal-body">
-            <div class="form-group">
-                <label>Nama Lengkap <span style="color:var(--danger-400)">*</span></label>
-                <input type="text" id="cust-name" class="form-control" placeholder="Nama customer">
-            </div>
-            <div class="form-group">
-                <label>Email</label>
-                <input type="email" id="cust-email" class="form-control" placeholder="example@email.com">
-            </div>
-            <div class="form-group">
-                <label>No. Telepon</label>
-                <input type="text" id="cust-phone" class="form-control" placeholder="08xxxxxxxx">
-            </div>
-        </div>
-        <div class="modal-footer">
-            <button class="btn btn-ghost" onclick="document.getElementById('modal-customer').classList.add('hidden')">Batal</button>
-            <button class="btn btn-primary" onclick="saveCustomer()">Simpan Customer</button>
-        </div>
-    </div>
-</div>
-
-@endsection
 
 @push('scripts')
 <script>
-let cart = [];
-let paymentMethod = 'Tunai';
-let currentDiscount = 0;
-let appliedRedeemCode = null;
-
-function switchMainTab(tab, btn) {
-    document.querySelectorAll('.main-tab-content').forEach(el => el.style.display = 'none');
-    document.querySelectorAll('.main-tab-content').previousElementSibling?.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-    // Fixed selector for general use
-    btn.parentElement.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-    
-    document.getElementById('main-tab-' + tab).style.display = 'block';
-    btn.classList.add('active');
-    if (window.lucide) lucide.createIcons();
-}
-
-function filterProducts() {
-    const search = document.getElementById('pos-search').value.toLowerCase();
-    const cat = document.getElementById('pos-category').value;
-    
-    document.querySelectorAll('.product-item').forEach(item => {
-        const matchSearch = item.dataset.name.includes(search) || item.dataset.sku.includes(search);
-        const matchCat = !cat || item.dataset.category === cat;
-        item.style.display = (matchSearch && matchCat) ? 'block' : 'none';
-    });
-}
-
-function addToCart(product) {
-    const existing = cart.find(item => item.id === product.id);
-    if (existing) {
-        if (existing.quantity >= product.stock) {
-            alert('Stok tidak mencukupi!');
-            return;
-        }
-        existing.quantity++;
-    } else {
-        cart.push({
-            id: product.id,
-            name: product.name,
-            price: parseFloat(product.price),
-            quantity: 1,
-            stock: product.stock
-        });
-    }
-    renderCart();
-}
-
-function removeFromCart(id) {
-    cart = cart.filter(item => item.id !== id);
-    renderCart();
-}
-
-function updateQty(id, delta) {
-    const item = cart.find(i => i.id === id);
-    if (item) {
-        const newQty = item.quantity + delta;
-        if (newQty > 0 && newQty <= item.stock) {
-            item.quantity = newQty;
-            renderCart();
-        } else if (newQty === 0) {
-            removeFromCart(id);
-        } else {
-            alert('Stok tidak mencukupi!');
-        }
-    }
-}
-
-function renderCart() {
-    const container = document.getElementById('cart-items');
-    const emptyMsg = document.getElementById('empty-cart');
-    
-    if (cart.length === 0) {
-        container.innerHTML = emptyMsg.outerHTML;
-        updateTotals(0);
-        return;
-    }
-
-    container.innerHTML = cart.map(item => `
-        <div style="display:flex;align-items:center;padding:12px 0;border-bottom:1px solid var(--border-color)">
-            <div style="flex:1">
-                <div style="font-weight:600;font-size:14px;margin-bottom:4px">${item.name}</div>
-                <div style="color:var(--text-tertiary);font-size:12px">Rp ${item.price.toLocaleString('id-ID')} / unit</div>
-            </div>
-            <div style="display:flex;align-items:center;gap:12px">
-                <div style="display:flex;align-items:center;background:var(--bg-tertiary);border-radius:4px">
-                    <button class="btn-icon" onclick="updateQty(${item.id}, -1)" style="padding:4px"><i data-lucide="minus" style="width:14px;height:14px"></i></button>
-                    <span style="font-weight:700;min-width:20px;text-align:center">${item.quantity}</span>
-                    <button class="btn-icon" onclick="updateQty(${item.id}, 1)" style="padding:4px"><i data-lucide="plus" style="width:14px;height:14px"></i></button>
-                </div>
-                <div style="font-weight:700;min-width:80px;text-align:right">Rp ${(item.price * item.quantity).toLocaleString('id-ID')}</div>
-            </div>
-        </div>
-    `).join('');
-    
-    const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-    updateTotals(total);
-    if (window.lucide) lucide.createIcons();
-}
-
-function updateTotals(total) {
-    document.getElementById('cart-subtotal').innerText = 'Rp ' + total.toLocaleString('id-ID');
-    
-    // Calculate final total based on discount
-    let finalTotal = total;
-    if (appliedRedeemCode) {
-        if (appliedRedeemCode.type === 'percentage') {
-            currentDiscount = (total * appliedRedeemCode.value) / 100;
-        } else {
-            currentDiscount = parseFloat(appliedRedeemCode.value);
-        }
+document.addEventListener('alpine:init', () => {
+    Alpine.data('posSystem', () => ({
+        activeTab: 'kasir',
+        searchQuery: '',
+        selectedCategory: '',
+        cart: [],
+        customerId: '{{ $customers->first()->id ?? '' }}',
         
-        // Ensure discount doesn't exceed total
-        currentDiscount = Math.min(currentDiscount, total);
-        finalTotal -= currentDiscount;
+        // Checkout state
+        paymentMethod: 'Tunai',
+        cashReceived: '',
+        cashChange: 0,
+        processing: false,
+        successInvoice: '',
         
-        document.getElementById('discount-row').style.display = 'flex';
-        document.getElementById('discount-code-name').innerText = appliedRedeemCode.code;
-        document.getElementById('cart-discount').innerText = '-Rp ' + currentDiscount.toLocaleString('id-ID');
-    } else {
-        document.getElementById('discount-row').style.display = 'none';
-        currentDiscount = 0;
-    }
-
-    document.getElementById('cart-total').innerText = 'Rp ' + finalTotal.toLocaleString('id-ID');
-}
-
-function openCheckoutModal() {
-    if (cart.length === 0) return alert('Keranjang kosong!');
-    const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-    document.getElementById('checkout-total-display').innerText = 'Rp ' + total.toLocaleString('id-ID');
-    document.getElementById('modal-checkout').classList.remove('hidden');
-    document.getElementById('cash-amount').focus();
-    calculateChange();
-}
-
-function setPaymentMethod(method, btn) {
-    paymentMethod = method;
-    document.querySelectorAll('.btn-payment').forEach(el => el.classList.remove('active'));
-    btn.classList.add('active');
-    
-    const cashGroup = document.getElementById('cash-input-group');
-    const changeGroup = document.getElementById('change-group');
-    
-    if (method === 'Transfer') {
-        cashGroup.style.opacity = '0.5';
-        cashGroup.style.pointerEvents = 'none';
-        changeGroup.style.display = 'none';
-    } else {
-        cashGroup.style.opacity = '1';
-        cashGroup.style.pointerEvents = 'auto';
-        changeGroup.style.display = 'flex';
-    }
-}
-
-function quickCash(amount) {
-    document.getElementById('cash-amount').value = amount;
-    calculateChange();
-}
-
-function calculateChange() {
-    const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-    const finalTotal = subtotal - currentDiscount;
-    const received = parseFloat(document.getElementById('cash-amount').value) || 0;
-    const change = Math.max(0, received - finalTotal);
-    document.getElementById('cash-change').innerText = 'Rp ' + change.toLocaleString('id-ID');
-}
-
-function applyRedeemCode() {
-    const code = document.getElementById('pos-redeem-code').value.trim();
-    const customerId = document.getElementById('cart-customer').value;
-    const msgEl = document.getElementById('redeem-code-msg');
-
-    if (!code) {
-        appliedRedeemCode = null;
-        renderCart();
-        msgEl.innerText = '';
-        return;
-    }
-
-    msgEl.innerText = 'Memvalidasi...';
-    msgEl.style.color = 'var(--text-tertiary)';
-
-    fetch("{{ route('pos.apply-redeem-code') }}", {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': "{{ csrf_token() }}"
+        // Redeem / Promo state
+        redeemCodeInput: '',
+        appliedRedeemCode: null,
+        redeemMsg: '',
+        redeemStatus: '', // none, loading, success, error
+        
+        // Modals
+        modals: {
+            checkout: false,
+            success: false,
+            customer: false
         },
-        body: JSON.stringify({ code: code, customer_id: customerId })
-    })
-    .then(res => res.json())
-    .then(data => {
-        if (data.success) {
-            appliedRedeemCode = data.code;
-            msgEl.innerText = data.message;
-            msgEl.style.color = 'var(--success-500)';
-            renderCart(); // recalculate total
-        } else {
-            appliedRedeemCode = null;
-            msgEl.innerText = data.message;
-            msgEl.style.color = 'var(--danger-500)';
-            renderCart();
+        
+        // Customer Form
+        custForm: { name: '', email: '', phone: '' },
+        savingCustomer: false,
+
+        init() {
+            this.$watch('cart', () => this.calculateChange());
+        },
+
+        // --- Catalog Logic ---
+        matchProduct(name, sku, cat) {
+            const query = this.searchQuery.toLowerCase();
+            const matchSearch = query === '' || name.includes(query) || sku.includes(query);
+            const matchCat = this.selectedCategory === '' || cat === this.selectedCategory;
+            return matchSearch && matchCat;
+        },
+
+        hasMatchingProducts() {
+            if (this.searchQuery === '' && this.selectedCategory === '') return true;
+            return true;
+        },
+
+        // --- Cart Logic ---
+        addToCart(product) {
+            const existing = this.cart.find(item => item.id === product.id);
+            if (existing) {
+                if (existing.quantity >= product.stock) return;
+                existing.quantity++;
+            } else {
+                if (product.stock > 0) {
+                    this.cart.push({
+                        id: product.id,
+                        name: product.name,
+                        price: parseFloat(product.price),
+                        quantity: 1,
+                        stock: product.stock
+                    });
+                }
+            }
+            this.$nextTick(() => { if (window.lucide) lucide.createIcons(); });
+        },
+
+        removeFromCart(id) {
+            this.cart = this.cart.filter(item => item.id !== id);
+        },
+
+        updateQty(id, delta) {
+            const item = this.cart.find(i => i.id === id);
+            if (item) {
+                const newQty = item.quantity + delta;
+                if (newQty > 0 && newQty <= item.stock) {
+                    item.quantity = newQty;
+                }
+            }
+        },
+
+        get totalItems() {
+            return this.cart.reduce((sum, item) => sum + item.quantity, 0);
+        },
+
+        get subtotal() {
+            return this.cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+        },
+
+        get discountAmount() {
+            if (!this.appliedRedeemCode) return 0;
+            
+            let amount = 0;
+            let val = Math.abs(parseFloat(this.appliedRedeemCode.value));
+            if (this.appliedRedeemCode.type === 'percentage') {
+                amount = (this.subtotal * val) / 100;
+            } else {
+                amount = val;
+            }
+            return Math.min(amount, this.subtotal);
+        },
+
+        get finalTotal() {
+            return Math.max(0, this.subtotal - this.discountAmount);
+        },
+
+        // --- Promo Logic ---
+        applyRedeemCode() {
+            if (!this.redeemCodeInput.trim()) return;
+            
+            this.redeemStatus = 'loading';
+            this.redeemMsg = 'Memvalidasi kode...';
+
+            fetch("{{ route('pos.apply-redeem-code') }}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': "{{ csrf_token() }}"
+                },
+                body: JSON.stringify({ 
+                    code: this.redeemCodeInput.trim().toUpperCase(), 
+                    customer_id: this.customerId 
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    this.appliedRedeemCode = data.code;
+                    this.redeemStatus = 'success';
+                    this.redeemMsg = 'Kode berhasil diterapkan!';
+                } else {
+                    this.appliedRedeemCode = null;
+                    this.redeemStatus = 'error';
+                    this.redeemMsg = data.message || 'Kode tidak valid.';
+                }
+                this.$nextTick(() => { if (window.lucide) lucide.createIcons(); });
+            })
+            .catch(err => {
+                this.appliedRedeemCode = null;
+                this.redeemStatus = 'error';
+                this.redeemMsg = 'Koneksi server terputus.';
+            });
+        },
+
+        removeRedeemCode() {
+            this.appliedRedeemCode = null;
+            this.redeemCodeInput = '';
+            this.redeemStatus = '';
+            this.redeemMsg = '';
+        },
+
+        // --- Checkout Logic ---
+        openCheckoutModal() {
+            if (this.cart.length === 0) return;
+            this.modals.checkout = true;
+            this.cashReceived = ''; 
+            this.calculateChange();
+            setTimeout(() => {
+                const input = document.querySelector('input[x-model\\.number="cashReceived"]');
+                if(input && this.paymentMethod === 'Tunai') input.focus();
+            }, 100);
+        },
+
+        quickCash(amount) {
+            this.cashReceived = amount;
+            this.calculateChange();
+        },
+
+        calculateChange() {
+            const received = parseFloat(this.cashReceived) || 0;
+            this.cashChange = received - this.finalTotal;
+        },
+
+        processCheckout() {
+            if (this.paymentMethod === 'Tunai' && this.cashChange < 0) return;
+            if (this.processing) return;
+
+            this.processing = true;
+            const received = parseFloat(this.cashReceived) || 0;
+
+            const data = {
+                customer_id: this.customerId,
+                items: this.cart.map(item => ({ product_id: item.id, quantity: item.quantity })),
+                payment_method: this.paymentMethod,
+                amount_paid: this.paymentMethod === 'Tunai' ? received : this.finalTotal,
+                redeem_code: this.appliedRedeemCode ? this.appliedRedeemCode.code : null,
+                _token: "{{ csrf_token() }}"
+            };
+
+            fetch("{{ route('pos.checkout') }}", {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            })
+            .then(res => res.json())
+            .then(res => {
+                this.processing = false;
+                if (res.success) {
+                    this.modals.checkout = false;
+                    this.successInvoice = res.invoice_no;
+                    this.modals.success = true;
+                } else {
+                    alert(res.message);
+                }
+            })
+            .catch(err => {
+                this.processing = false;
+                alert('Terjadi kesalahan menghubungkan ke server.');
+            });
+        },
+
+        // --- Customer Logic ---
+        saveCustomer() {
+            if (!this.custForm.name) return;
+            this.savingCustomer = true;
+
+            fetch("{{ route('pos.customer.store') }}", {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name: this.custForm.name,
+                    email: this.custForm.email,
+                    phone: this.custForm.phone,
+                    _token: "{{ csrf_token() }}"
+                })
+            })
+            .then(res => res.json())
+            .then(res => {
+                this.savingCustomer = false;
+                if (res.success) {
+                    const select = document.querySelector('select[x-model="customerId"]');
+                    if (select) {
+                        const option = new Option(res.customer.name, res.customer.id);
+                        select.add(option);
+                        this.customerId = res.customer.id;
+                    }
+                    this.modals.customer = false;
+                    this.custForm = { name: '', email: '', phone: '' };
+                } else {
+                    alert('Gagal menyimpan customer');
+                }
+            })
+            .catch(err => {
+                this.savingCustomer = false;
+                alert('Terjadi kesalahan sistem');
+            });
+        },
+
+        formatRupiah(num) {
+            return new Intl.NumberFormat('id-ID').format(num);
         }
-    })
-    .catch(err => {
-        appliedRedeemCode = null;
-        msgEl.innerText = 'Terjadi kesalahan sistem';
-        msgEl.style.color = 'var(--danger-500)';
-        renderCart();
-    });
-}
-
-function processCheckout() {
-    const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-    const finalTotal = subtotal - currentDiscount;
-    const received = parseFloat(document.getElementById('cash-amount').value) || 0;
-    
-    if (paymentMethod === 'Tunai' && received < finalTotal) {
-        return alert('Jumlah bayar kurang!');
-    }
-
-    const data = {
-        customer_id: document.getElementById('cart-customer').value,
-        items: cart.map(item => ({ product_id: item.id, quantity: item.quantity })),
-        payment_method: paymentMethod,
-        amount_paid: paymentMethod === 'Tunai' ? received : finalTotal,
-        redeem_code: appliedRedeemCode ? appliedRedeemCode.code : null,
-        _token: "{{ csrf_token() }}"
-    };
-
-    fetch("{{ route('pos.checkout') }}", {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
-    })
-    .then(res => res.json())
-    .then(res => {
-        if (res.success) {
-            document.getElementById('modal-checkout').classList.add('hidden');
-            document.getElementById('success-invoice').innerText = res.invoice_no;
-            document.getElementById('modal-success').classList.remove('hidden');
-            if (window.lucide) lucide.createIcons();
-            
-            // clear logic
-            cart = [];
-            appliedRedeemCode = null;
-            document.getElementById('pos-redeem-code').value = '';
-            document.getElementById('redeem-code-msg').innerText = '';
-        } else {
-            alert(res.message);
-        }
-    })
-    .catch(err => alert('Terjadi kesalahan sistem'));
-}
-function saveCustomer() {
-    const name = document.getElementById('cust-name').value;
-    const email = document.getElementById('cust-email').value;
-    const phone = document.getElementById('cust-phone').value;
-
-    if (!name) return alert('Nama wajib diisi!');
-
-    const data = {
-        name: name,
-        email: email,
-        phone: phone,
-        _token: "{{ csrf_token() }}"
-    };
-
-    fetch("{{ route('pos.customer.store') }}", {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
-    })
-    .then(res => res.json())
-    .then(res => {
-        if (res.success) {
-            // Add to dropdown
-            const select = document.getElementById('cart-customer');
-            const option = new Option(res.customer.name, res.customer.id);
-            select.add(option);
-            select.value = res.customer.id;
-            
-            // Close modal
-            document.getElementById('modal-customer').classList.add('hidden');
-            
-            // Clear inputs
-            document.getElementById('cust-name').value = '';
-            document.getElementById('cust-email').value = '';
-            document.getElementById('cust-phone').value = '';
-            
-            alert('Customer berhasil ditambahkan!');
-        } else {
-            alert('Gagal menyimpan customer');
-        }
-    })
-    .catch(err => alert('Terjadi kesalahan sistem'));
-}
+    }));
+});
 </script>
-
-<style>
-.btn-payment.active {
-    background: var(--primary-500);
-    color: white;
-    border-color: var(--primary-500);
-}
-.product-item:hover {
-    border-color: var(--primary-400) !important;
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-md);
-}
-</style>
 @endpush
+@endsection

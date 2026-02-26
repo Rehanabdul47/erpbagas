@@ -4,223 +4,250 @@
 @section('breadcrumb', 'Manage Users')
 
 @section('content')
-@if(session('success'))
-<div class="alert alert-success"><i data-lucide="check-circle" style="width:18px;height:18px"></i> {{ session('success') }}</div>
-@endif
-@if(session('error'))
-<div class="alert alert-error"><i data-lucide="x-circle" style="width:18px;height:18px"></i> {{ session('error') }}</div>
-@endif
+<div class="space-y-6" x-data="usersPage()">
+    {{-- Flash Messages --}}
+    @if(session('success'))
+    <div class="bg-emerald-500/10 border border-emerald-500/30 rounded-xl px-4 py-3 text-emerald-400 flex items-center gap-3">
+        <i data-lucide="check-circle" class="w-5 h-5 shrink-0"></i> 
+        <span class="font-medium">{{ session('success') }}</span>
+    </div>
+    @endif
+    @if(session('error'))
+    <div class="bg-red-500/10 border border-red-500/30 rounded-xl px-4 py-3 text-red-500 flex items-center gap-3">
+        <i data-lucide="x-circle" class="w-5 h-5 shrink-0"></i> 
+        <span class="font-medium">{{ session('error') }}</span>
+    </div>
+    @endif
 
-{{-- Stats --}}
-<div class="stats-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:24px">
-    <div class="card stat-card">
-        <div class="stat-icon" style="background:var(--primary-500)"><i data-lucide="users"></i></div>
-        <div class="stat-info"><span class="stat-value">{{ $stats['total'] }}</span><span class="stat-label">Total User</span></div>
-    </div>
-    <div class="card stat-card">
-        <div class="stat-icon" style="background:var(--success-500)"><i data-lucide="user-check"></i></div>
-        <div class="stat-info"><span class="stat-value">{{ $stats['active'] }}</span><span class="stat-label">User Aktif</span></div>
-    </div>
-    <div class="card stat-card">
-        <div class="stat-icon" style="background:var(--info-500,#3b82f6)"><i data-lucide="shield"></i></div>
-        <div class="stat-info"><span class="stat-value">{{ $stats['roles'] }}</span><span class="stat-label">Total Role</span></div>
-    </div>
-</div>
-
-{{-- User Table --}}
-<div class="card">
-    <div class="filter-bar" style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap;align-items:center">
-        <input type="text" id="search-user" class="form-control" placeholder="Cari user..." style="max-width:250px" onkeyup="filterUsers()">
-        <select id="filter-role" class="form-control" style="max-width:180px" onchange="filterUsers()">
-            <option value="">Semua Role</option>
-            @foreach($roles as $role)
-            <option value="{{ $role->name }}">{{ $role->name }}</option>
-            @endforeach
-        </select>
-        <div style="margin-left:auto">
-            <a href="{{ route('users.create') }}" class="btn btn-primary btn-sm"><i data-lucide="user-plus"></i> Tambah User</a>
+    {{-- Stats Container --}}
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 mb-6">
+        <div class="bg-gray-800 border-[0.5px] border-b-4 border-gray-700/50 border-b-indigo-500 rounded-xl p-5 shadow-sm">
+            <div class="w-10 h-10 rounded-lg bg-indigo-500/10 text-indigo-400 flex items-center justify-center mb-4"><i data-lucide="users" class="w-5 h-5"></i></div>
+            <div class="text-3xl font-black text-white mb-1 tracking-tight">{{ $stats['total'] }}</div>
+            <div class="text-gray-400 text-sm font-medium">Total User</div>
+        </div>
+        <div class="bg-gray-800 border-[0.5px] border-b-4 border-gray-700/50 border-b-emerald-500 rounded-xl p-5 shadow-sm">
+            <div class="w-10 h-10 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center mb-4"><i data-lucide="user-check" class="w-5 h-5"></i></div>
+            <div class="text-3xl font-black text-white mb-1 tracking-tight">{{ $stats['active'] }}</div>
+            <div class="text-gray-400 text-sm font-medium">User Aktif</div>
+        </div>
+        <div class="bg-gray-800 border-[0.5px] border-b-4 border-gray-700/50 border-b-amber-500 rounded-xl p-5 shadow-sm sm:col-span-2 md:col-span-1">
+            <div class="w-10 h-10 rounded-lg bg-amber-500/10 text-amber-400 flex items-center justify-center mb-4"><i data-lucide="shield" class="w-5 h-5"></i></div>
+            <div class="text-3xl font-black text-white mb-1 tracking-tight">{{ $stats['roles'] }}</div>
+            <div class="text-gray-400 text-sm font-medium">Total Role</div>
         </div>
     </div>
 
-    <div class="table-container">
-        <table id="users-table">
-            <thead>
-                <tr>
-                    <th>Nama</th><th>Email</th><th>Role</th><th>Department</th><th>Dibuat</th><th>Aksi</th>
-                </tr>
-            </thead>
-            <tbody>
-                @forelse($users as $u)
-                <tr class="user-row" style="cursor:pointer" data-user='@json($u->load("roles"))' data-name="{{ strtolower($u->name) }}" data-email="{{ strtolower($u->email) }}" data-role="{{ $u->roles->first()?->name ?? '' }}">
-                    <td>
-                        <div style="display:flex;align-items:center;gap:10px">
-                            <div style="width:36px;height:36px;border-radius:50%;background:var(--primary-500);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:600;font-size:14px;flex-shrink:0">
-                                {{ strtoupper(substr($u->name, 0, 1)) }}
+    {{-- User Table Card --}}
+    <div class="bg-gray-800 border border-gray-700/50 rounded-xl shadow-sm overflow-hidden flex flex-col p-4 sm:p-5">
+        
+        {{-- Toolbar / Filter Bar --}}
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-5">
+            <div class="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+                {{-- Search --}}
+                <div class="relative w-full sm:w-64 shrink-0">
+                    <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500"></i>
+                    <input type="text" x-model="searchQuery" class="w-full bg-gray-900 border border-gray-700 text-white rounded-lg pl-10 pr-4 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all placeholder-gray-500" placeholder="Cari nama atau email...">
+                </div>
+                {{-- Role Filter --}}
+                <div class="relative w-full sm:w-48 shrink-0">
+                    <select x-model="selectedRole" class="w-full bg-gray-900 border border-gray-700 text-white rounded-lg pl-3 pr-10 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all appearance-none cursor-pointer">
+                        <option value="">Semua Role</option>
+                        @foreach($roles as $role)
+                        <option value="{{ $role->name }}">{{ $role->name }}</option>
+                        @endforeach
+                    </select>
+                    <i data-lucide="chevron-down" class="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none"></i>
+                </div>
+            </div>
+            
+            <a href="{{ route('users.create') }}" class="flex items-center justify-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm font-medium transition-colors shadow-sm shadow-indigo-600/20 w-full sm:w-auto whitespace-nowrap">
+                <i data-lucide="user-plus" class="w-4 h-4"></i> Tambah User
+            </a>
+        </div>
+
+        {{-- Table Container --}}
+        <div class="overflow-x-auto w-full border border-gray-700/50 rounded-lg text-sm">
+            <table class="w-full text-left whitespace-nowrap">
+                <thead class="bg-gray-900/50 text-gray-400 text-xs uppercase tracking-wider border-b border-gray-700/50">
+                    <tr>
+                        <th class="px-5 py-3 font-medium">Pengguna</th>
+                        <th class="px-5 py-3 font-medium">Role</th>
+                        <th class="px-5 py-3 font-medium">Departemen</th>
+                        <th class="px-5 py-3 font-medium">Bergabung</th>
+                        <th class="px-5 py-3 font-medium text-right">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-700/50">
+                    @forelse($users as $u)
+                    <tr x-show="matchUser('{{ strtolower($u->name) }}', '{{ strtolower($u->email) }}', '{{ $u->roles->first()?->name ?? '' }}')" 
+                        @click="openModal({{ json_encode($u->load('roles')) }})"
+                        class="hover:bg-indigo-500/5 transition-colors group cursor-pointer active:bg-indigo-500/10">
+                        <td class="px-5 py-3">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-full bg-indigo-600 flex flex-col items-center justify-center text-white font-bold text-sm shrink-0 shadow-inner">
+                                    {{ strtoupper(substr($u->name, 0, 1)) }}
+                                </div>
+                                <div class="min-w-0">
+                                    <div class="font-bold text-white truncate max-w-[200px]">{{ $u->name }}</div>
+                                    <div class="text-xs text-gray-500 truncate mt-0.5 max-w-[200px]">{{ $u->email }}</div>
+                                </div>
                             </div>
-                            <span style="font-weight:600;color:var(--text-primary)">{{ $u->name }}</span>
-                        </div>
-                    </td>
-                    <td>{{ $u->email }}</td>
-                    <td>
-                        @php
-                            $roleName = $u->roles->first()?->name ?? '-';
-                            $roleBadge = match($roleName) {
-                                'Executive' => 'badge-primary',
-                                'Manager' => 'badge-info',
-                                'Staff Gudang' => 'badge-warning',
-                                'Staff Finance' => 'badge-success',
-                                'Staff Sales' => 'badge-danger',
-                                'Staff HR' => 'badge-info',
-                                default => '',
-                            };
-                        @endphp
-                        <span class="badge {{ $roleBadge }}">{{ $roleName }}</span>
-                    </td>
-                    <td style="text-transform:capitalize">{{ $u->department }}</td>
-                    <td>{{ $u->created_at->format('d M Y') }}</td>
-                    <td>
-                        <div style="display:flex;gap:4px">
-                            <a href="{{ route('users.edit', $u) }}" class="btn btn-ghost btn-xs" title="Edit" onclick="event.stopPropagation()"><i data-lucide="edit-2" style="width:14px;height:14px"></i></a>
-                            @if($u->id !== auth()->id())
-                            <form method="POST" action="{{ route('users.destroy', $u) }}" onsubmit="event.stopPropagation(); return confirm('Hapus user {{ $u->name }}?')" style="display:inline" onclick="event.stopPropagation()">
-                                @csrf @method('DELETE')
-                                <button type="submit" class="btn btn-ghost btn-xs" style="color:var(--danger-400)" title="Hapus"><i data-lucide="trash-2" style="width:14px;height:14px"></i></button>
-                            </form>
-                            @endif
-                        </div>
-                    </td>
-                </tr>
-                @empty
-                <tr><td colspan="6" style="text-align:center;padding:40px;color:var(--text-tertiary)">Belum ada data user</td></tr>
-                @endforelse
-            </tbody>
-        </table>
+                        </td>
+                        <td class="px-5 py-3">
+                            @php
+                                $roleName = $u->roles->first()?->name ?? '-';
+                                $roleBadge = match($roleName) {
+                                    'Executive' => 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
+                                    'Manager' => 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20',
+                                    'Staff Gudang' => 'bg-amber-500/10 text-amber-400 border-amber-500/20',
+                                    'Staff Finance' => 'bg-teal-500/10 text-teal-400 border-teal-500/20',
+                                    'Staff Sales' => 'bg-rose-500/10 text-rose-400 border-rose-500/20',
+                                    'Staff HR' => 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20',
+                                    default => 'bg-gray-500/10 text-gray-400 border-gray-500/20',
+                                };
+                            @endphp
+                            <span class="px-2.5 py-1 flex w-fit rounded-full text-xs font-bold border {{ $roleBadge }}">
+                                {{ $roleName }}
+                            </span>
+                        </td>
+                        <td class="px-5 py-3">
+                            <span class="text-gray-300 capitalize text-sm font-medium">{{ $u->department ?: '-' }}</span>
+                        </td>
+                        <td class="px-5 py-3 text-gray-400 text-xs font-mono">
+                            {{ $u->created_at->format('d M Y') }}
+                        </td>
+                        <td class="px-5 py-3 text-right">
+                            <div class="flex items-center justify-end gap-1 opacity-50 group-hover:opacity-100 transition-opacity">
+                                <a href="{{ route('users.edit', $u) }}" @click.stop class="p-1.5 rounded-lg text-gray-400 hover:text-indigo-400 hover:bg-indigo-500/10 transition-colors" title="Edit">
+                                    <i data-lucide="edit-2" class="w-4 h-4"></i>
+                                </a>
+                                @if($u->id !== auth()->id())
+                                <form method="POST" action="{{ route('users.destroy', $u) }}" @submit="return confirm('Hapus user {{ $u->name }}?')" @click.stop class="m-0">
+                                    @csrf 
+                                    @method('DELETE')
+                                    <button type="submit" class="p-1.5 rounded-lg text-gray-400 hover:text-red-400 hover:bg-red-500/10 transition-colors" title="Hapus">
+                                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                    </button>
+                                </form>
+                                @endif
+                            </div>
+                        </td>
+                    </tr>
+                    @empty
+                    <tr>
+                        <td colspan="5" class="text-center py-12 text-gray-500">
+                            <div class="flex flex-col items-center gap-3">
+                                <div class="w-16 h-16 rounded-full bg-gray-900/50 flex items-center justify-center text-gray-600">
+                                    <i data-lucide="users" class="w-8 h-8"></i>
+                                </div>
+                                <p class="text-sm font-medium">Belum ada data user</p>
+                            </div>
+                        </td>
+                    </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Empty filter state -->
+        <div x-show="!hasMatchingUsers()" x-cloak class="text-center py-10 text-gray-500 bg-gray-900/30 rounded-lg mt-4 border border-gray-700/50 border-dashed">
+            <p class="text-sm font-medium">Tidak ada user yang cocok dengan filter pencarian.</p>
+        </div>
     </div>
-</div>
 
-{{-- Detail User Modal --}}
-<div id="modal-user-view" class="modal-overlay hidden" onclick="if(event.target===this)closeModal('modal-user-view')">
-    <div class="modal" style="max-width:500px">
-        <div class="modal-header">
-            <h3><i data-lucide="user" style="display:inline-block;vertical-align:middle;margin-right:8px;color:var(--primary-500)"></i> Profil Pengguna</h3>
-            <button class="btn-icon" onclick="closeModal('modal-user-view')"><i data-lucide="x"></i></button>
-        </div>
-        <div class="modal-body" id="user-detail-content">
-            {{-- Content will be injected by JS --}}
-        </div>
-        <div class="modal-footer">
-            <button class="btn btn-secondary" onclick="closeModal('modal-user-view')">Tutup</button>
-            <a id="btn-edit-link" href="#" class="btn btn-primary">Edit Profil</a>
+    {{-- Detail User Modal --}}
+    <div x-show="modals.view" x-cloak style="display: none;" class="fixed inset-0 bg-gray-900/80 backdrop-blur-sm z-[150] flex items-center justify-center p-4 transition-opacity">
+        <div @click.away="modals.view = false" class="bg-gray-800 border border-gray-700 rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden flex flex-col pointer-events-auto transform transition-all relative">
+            
+            {{-- Abstract Graphic Header --}}
+            <div class="h-24 bg-gradient-to-br from-indigo-600 to-indigo-900 w-full absolute top-0 left-0">
+                <div class="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4IiBoZWlnaHQ9IjgiPgo8cmVjdCB3aWR0aD0iOCIgaGVpZ2h0PSI4IiBmaWxsPSIjZmZmIiBmaWxsLW9wYWNpdHk9IjAuMDUiLz4KPC9zdmc+')] opacity-20"></div>
+            </div>
+
+            {{-- Close Button --}}
+            <button @click="modals.view = false" class="absolute top-4 right-4 p-1.5 text-white/70 hover:text-white bg-black/20 hover:bg-black/40 rounded-full transition-colors z-10"><i data-lucide="x" class="w-4 h-4"></i></button>
+
+            <div class="px-5 pt-12 pb-6 relative z-10 flex flex-col items-center text-center">
+                {{-- Avatar --}}
+                <div class="w-20 h-20 rounded-full bg-indigo-500 border-4 border-gray-800 flex items-center justify-center text-white font-black text-3xl shadow-lg mb-3" x-text="activeUserInitials"></div>
+                <h4 class="text-xl font-bold text-white mb-0" x-text="activeUser?.name"></h4>
+                <div class="text-sm text-indigo-300 font-medium mb-4" x-text="activeUser?.email"></div>
+                
+                <span class="px-3 py-1 rounded-full text-xs font-bold border bg-gray-900/80 border-gray-700 text-gray-300 shadow-inner" x-text="activeUserRoles() || 'No Role'"></span>
+            </div>
+            
+            <div class="p-5 bg-gray-900/50 border-t border-gray-700/50">
+                <div class="grid grid-cols-2 gap-3 mb-5">
+                    <div class="bg-gray-800 border border-gray-700/50 rounded-xl p-3 shadow-inner">
+                        <div class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Departemen</div>
+                        <div class="text-sm font-bold text-white capitalize truncate" x-text="activeUser?.department || '-'"></div>
+                    </div>
+                    <div class="bg-gray-800 border border-gray-700/50 rounded-xl p-3 shadow-inner">
+                        <div class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Bergabung</div>
+                        <div class="text-sm font-bold text-white truncate" x-text="formatDate(activeUser?.created_at)"></div>
+                    </div>
+                </div>
+
+                <div class="flex gap-2 w-full">
+                    <button @click="modals.view = false" class="flex-1 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg text-sm font-medium transition-colors border border-gray-600">Tutup</button>
+                    <a :href="'/users/' + activeUser?.id + '/edit'" class="flex-1 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm font-medium transition-colors shadow-sm shadow-indigo-600/20 text-center flex items-center justify-center"><i data-lucide="edit-2" class="w-4 h-4 mr-2"></i> Edit Profil</a>
+                </div>
+            </div>
         </div>
     </div>
 </div>
-@endsection
 
 @push('scripts')
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    document.querySelectorAll('.user-row').forEach(row => {
-        row.addEventListener('click', function(e) {
-            // Don't trigger if clicking on actions or buttons
-            if (e.target.closest('.btn') || e.target.closest('form') || e.target.closest('a')) {
-                return;
-            }
-            try {
-                const userData = JSON.parse(this.getAttribute('data-user'));
-                viewUser(userData);
-            } catch (err) {
-                console.error('Error parsing user data', err);
-            }
-        });
-    });
-});
-
-function filterUsers() {
-    const search = document.getElementById('search-user').value.toLowerCase();
-    const role = document.getElementById('filter-role').value;
-    document.querySelectorAll('#users-table tbody tr').forEach(row => {
-        if (!row.dataset.name) return;
-        const matchSearch = !search || row.dataset.name.includes(search) || row.dataset.email.includes(search);
-        const matchRole = !role || row.dataset.role === role;
-        row.style.display = (matchSearch && matchRole) ? '' : 'none';
-    });
-}
-
-function viewUser(user) {
-    const roles = user.roles.map(r => r.name).join(', ') || '-';
-    const initials = user.name.substring(0, 1).toUpperCase();
-    const date = new Date(user.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
-    
-    document.getElementById('user-detail-content').innerHTML = `
-        <div style="text-align:center;margin-bottom:24px">
-            <div style="width:80px;height:80px;border-radius:50%;background:var(--primary-500);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:28px;margin:0 auto 12px;box-shadow:0 10px 15px -3px rgba(var(--primary-rgb), 0.3)">
-                ${initials}
-            </div>
-            <h4 style="font-size:20px;margin:0;font-weight:700;color:var(--text-primary)">${user.name}</h4>
-            <div style="color:var(--text-tertiary);font-size:14px;margin-top:4px">${user.email}</div>
-        </div>
+document.addEventListener('alpine:init', () => {
+    Alpine.data('usersPage', () => ({
+        searchQuery: '',
+        selectedRole: '',
+        modals: {
+            view: false
+        },
+        activeUser: null,
         
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-            <div class="detail-item">
-                <div style="font-size:11px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:1px;font-weight:700">Role / Akses</div>
-                <div style="font-weight:600;margin-top:4px;color:var(--text-primary)">${roles}</div>
-            </div>
-            <div class="detail-item">
-                <div style="font-size:11px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:1px;font-weight:700">Departemen</div>
-                <div style="font-weight:600;margin-top:4px;text-transform:capitalize;color:var(--text-primary)">${user.department || '-'}</div>
-            </div>
-            <div class="detail-item">
-                <div style="font-size:11px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:1px;font-weight:700">Bergabung</div>
-                <div style="font-weight:600;margin-top:4px;color:var(--text-primary)">${date}</div>
-            </div>
-            <div class="detail-item">
-                <div style="font-size:11px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:1px;font-weight:700">User ID</div>
-                <div style="font-weight:600;margin-top:4px;color:var(--text-primary)">#${user.id}</div>
-            </div>
-        </div>
-    `;
-    
-    document.getElementById('btn-edit-link').href = `/users/${user.id}/edit`;
-    document.getElementById('modal-user-view').classList.remove('hidden');
-    
-    if(window.lucide) lucide.createIcons();
-}
+        matchUser(name, email, role) {
+            const query = this.searchQuery.toLowerCase();
+            const matchSearch = query === '' || name.includes(query) || email.includes(query);
+            const matchRole = this.selectedRole === '' || role === this.selectedRole;
+            return matchSearch && matchRole;
+        },
 
-function closeModal(id) {
-    document.getElementById(id).classList.add('hidden');
-}
+        hasMatchingUsers() {
+            // Rough JS estimation if all are hidden; real logic via visual empty state is cleaner
+            // Alpine handles visibility directly on the rows anyway, this is just for the empty state div.
+            // Using DOM check fallback due to lack of full dataset reactivity in this implementation
+            const visibleRows = document.querySelectorAll('tbody tr[style*="display: none"]');
+            const totalRows = document.querySelectorAll('tbody tr').length;
+            // if not all rows are hidden
+            return visibleRows.length !== totalRows; 
+        },
+
+        openModal(user) {
+            this.activeUser = user;
+            this.modals.view = true;
+        },
+
+        get activeUserInitials() {
+            if (!this.activeUser || !this.activeUser.name) return '?';
+            return this.activeUser.name.substring(0, 1).toUpperCase();
+        },
+
+        activeUserRoles() {
+            if (!this.activeUser || !this.activeUser.roles) return '-';
+            return this.activeUser.roles.map(r => r.name).join(', ');
+        },
+
+        formatDate(dateString) {
+            if (!dateString) return '-';
+            const date = new Date(dateString);
+            return date.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+        }
+    }));
+});
 </script>
-<style>
-#users-table tbody tr:hover {
-    background: rgba(var(--primary-rgb), 0.05) !important;
-}
-.detail-item {
-    background: var(--bg-secondary);
-    padding: 12px;
-    border-radius: 8px;
-    border: 1px solid var(--border-color);
-}
-.modal-overlay {
-    position: fixed;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(15, 23, 42, 0.7);
-    backdrop-filter: blur(4px);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 1000;
-    padding: 20px;
-}
-.modal-overlay.hidden {
-    display: none;
-}
-.modal {
-    background: var(--bg-card, white);
-    padding: 24px;
-    border-radius: 16px;
-    border: 1px solid var(--border-color);
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-    width: 100%;
-}
-</style>
 @endpush
+@endsection

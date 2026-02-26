@@ -4,167 +4,156 @@
 @section('breadcrumb', 'Sales & CRM')
 
 @section('content')
-{{-- Flash Messages --}}
-@if(session('success'))
-<div class="alert alert-success" style="background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.3);border-radius:8px;padding:12px 16px;margin-bottom:16px;color:var(--success-400);display:flex;align-items:center;gap:8px;">
-    <i data-lucide="check-circle" style="width:18px;height:18px"></i> {{ session('success') }}
-</div>
-@endif
+<div x-data="salesData()">
+    {{-- Flash Messages --}}
+    @if(session('success'))
+    <div class="bg-emerald-500/10 border border-emerald-500/30 rounded-xl px-4 py-3 mb-6 text-emerald-400 flex items-center gap-3">
+        <i data-lucide="check-circle" class="w-5 h-5 shrink-0"></i> 
+        <span class="font-medium">{{ session('success') }}</span>
+    </div>
+    @endif
 
-{{-- Stats --}}
-<div class="stats-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:20px;margin-bottom:24px">
-    <div class="card stat-card">
-        <div class="stat-icon" style="background:var(--primary-500)"><i data-lucide="trending-up"></i></div>
-        <div class="stat-info">
-            <span class="stat-value">Rp {{ number_format($stats['totalRevenue'], 0, ',', '.') }}</span>
-            <span class="stat-label">Pendapatan (Bulan Ini)</span>
+    {{-- Stats --}}
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mb-6">
+        <div class="bg-gray-800 border-b-4 border-indigo-500 border-x border-t border-gray-700/50 rounded-xl p-5 shadow-sm">
+            <div class="w-10 h-10 rounded-lg bg-indigo-500/10 text-indigo-400 flex items-center justify-center mb-4"><i data-lucide="trending-up" class="w-5 h-5"></i></div>
+            <div class="text-3xl font-bold text-white mb-1 truncate" title="Rp {{ number_format($stats['totalRevenue'], 0, ',', '.') }}">Rp {{ number_format($stats['totalRevenue'], 0, ',', '.') }}</div>
+            <div class="text-gray-400 text-sm">Pendapatan (Bulan Ini)</div>
+        </div>
+        <div class="bg-gray-800 border-b-4 border-emerald-500 border-x border-t border-gray-700/50 rounded-xl p-5 shadow-sm">
+            <div class="w-10 h-10 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center mb-4"><i data-lucide="users" class="w-5 h-5"></i></div>
+            <div class="text-3xl font-bold text-white mb-1">{{ $stats['totalCustomers'] }}</div>
+            <div class="text-gray-400 text-sm">Total Customer</div>
+        </div>
+        <div class="bg-gray-800 border-b-4 border-amber-500 border-x border-t border-gray-700/50 rounded-xl p-5 shadow-sm">
+            <div class="w-10 h-10 rounded-lg bg-amber-500/10 text-amber-500 flex items-center justify-center mb-4"><i data-lucide="shopping-bag" class="w-5 h-5"></i></div>
+            <div class="text-3xl font-bold text-white mb-1">{{ number_format($stats['totalSales'], 0, ',', '.') }}</div>
+            <div class="text-gray-400 text-sm">Total Transaksi</div>
         </div>
     </div>
-    <div class="card stat-card">
-        <div class="stat-icon" style="background:var(--success-500)"><i data-lucide="users"></i></div>
-        <div class="stat-info">
-            <span class="stat-value">{{ $stats['totalCustomers'] }}</span>
-            <span class="stat-label">Total Customer</span>
-        </div>
-    </div>
-    <div class="card stat-card">
-        <div class="stat-icon" style="background:var(--warning-500)"><i data-lucide="shopping-bag"></i></div>
-        <div class="stat-info">
-            <span class="stat-value">{{ number_format($stats['totalSales']) }}</span>
-            <span class="stat-label">Total Transaksi</span>
-        </div>
-    </div>
-</div>
 
-<div class="card" style="margin-bottom:0">
-    <div class="tabs" style="display:flex;gap:0;border-bottom:1px solid var(--border-color);margin-bottom:20px">
-        <button class="tab-btn active" onclick="switchTab('customers', this)">👥 Customer (CRM)</button>
-        <button class="tab-btn" onclick="switchTab('history', this)">📜 Riwayat Penjualan</button>
-    </div>
-
-    {{-- Tab: Customer List --}}
-    <div id="tab-customers" class="tab-content">
-        <div class="filter-bar" style="display:flex;gap:12px;margin-bottom:16px;align-items:center">
-            <input type="text" id="search-customer" class="form-control" placeholder="Cari nama/phone..." style="max-width:300px" onkeyup="filterCustomers()">
-            <button class="btn btn-primary btn-sm" style="margin-left:auto" onclick="openAddCustomerModal()">
-                <i data-lucide="plus"></i> Tambah Customer
+    <div class="bg-gray-800 border border-gray-700/50 rounded-xl shadow-sm overflow-hidden flex flex-col">
+        <div class="flex overflow-x-auto border-b border-gray-700/50 hide-scrollbar bg-gray-900/20">
+            <button @click="activeTab = 'customers'" :class="activeTab === 'customers' ? 'text-indigo-400 border-b-2 border-indigo-500 bg-gray-800' : 'text-gray-400 hover:text-white hover:bg-gray-800/50'" class="whitespace-nowrap px-6 py-4 text-sm font-medium transition-colors flex items-center gap-2">
+                <i data-lucide="users" class="w-4 h-4"></i> Customer (CRM)
+            </button>
+            <button @click="activeTab = 'history'" :class="activeTab === 'history' ? 'text-indigo-400 border-b-2 border-indigo-500 bg-gray-800' : 'text-gray-400 hover:text-white hover:bg-gray-800/50'" class="whitespace-nowrap px-6 py-4 text-sm font-medium transition-colors flex items-center gap-2">
+                <i data-lucide="file-text" class="w-4 h-4"></i> Riwayat Penjualan
             </button>
         </div>
 
-        <div class="table-container">
-            <table id="customer-table">
-                <thead>
-                    <tr><th>Nama Customer</th><th>Phone</th><th>Status</th><th>Total Order</th><th>Aksi</th></tr>
-                </thead>
-                <tbody>
-                    @forelse($customers as $c)
-                    <tr class="clickable-row customer-row" style="cursor:pointer" data-customer='@json($c)' data-name="{{ strtolower($c->name) }}" data-phone="{{ $c->phone }}">
-                        <td style="font-weight:600;color:var(--text-primary)">{{ $c->name }}</td>
-                        <td>{{ $c->phone ?? '-' }}</td>
-                        <td>
-                            <span class="badge {{ $c->status === 'active' ? 'badge-success' : ($c->status === 'leads' ? 'badge-info' : 'badge-neutral') }}">
-                                {{ ucfirst($c->status) }}
-                            </span>
-                        </td>
-                        <td style="font-weight:700">{{ $c->sales_count }}</td>
-                        <td>
-                            <div style="display:flex;gap:4px">
-                                <button class="btn btn-ghost btn-xs" onclick='event.stopPropagation(); openEditCustomerModal({{ json_encode($c) }})'><i data-lucide="edit-2" style="width:14px"></i></button>
-                                <form method="POST" action="{{ route('sales.customers.destroy', $c) }}" onsubmit="event.stopPropagation(); return confirm('Hapus customer ini?')" onclick="event.stopPropagation()">
-                                    @csrf @method('DELETE')
-                                    <button type="submit" class="btn btn-ghost btn-xs" style="color:var(--danger-400)"><i data-lucide="trash-2" style="width:14px"></i></button>
-                                </form>
-                            </div>
-                        </td>
-                    </tr>
-                    @empty
-                    <tr><td colspan="5" style="text-align:center;padding:40px;color:var(--text-tertiary)">Belum ada data customer</td></tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
-    </div>
-
-    {{-- Tab: Sales History --}}
-    <div id="tab-history" class="tab-content" style="display:none">
-        <div class="table-container">
-            <table>
-                <thead>
-                    <tr><th>Invoice</th><th>Customer</th><th>Tanggal</th><th>Total Amount</th><th>Status</th></tr>
-                </thead>
-                <tbody>
-                    @forelse($sales as $s)
-                    <tr class="clickable-row sale-row" style="cursor:pointer" data-sale='@json($s->load("customer"))'>
-                        <td style="font-weight:600">#{{ $s->invoice_no }}</td>
-                        <td>{{ $s->customer->name }}</td>
-                        <td>{{ \Carbon\Carbon::parse($s->sale_date)->format('d M Y') }}</td>
-                        <td style="font-weight:700">Rp {{ number_format($s->total_amount, 0, ',', '.') }}</td>
-                        <td><span class="badge badge-success">{{ ucfirst($s->status) }}</span></td>
-                    </tr>
-                    @empty
-                    <tr><td colspan="5" style="text-align:center;padding:40px;color:var(--text-tertiary)">Belum ada riwayat penjualan</td></tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
-    </div>
-</div>
-
-{{-- Modal: Add/Edit Customer --}}
-<div id="modal-customer" class="modal-overlay hidden" onclick="if(event.target===this)this.classList.add('hidden')">
-    <div class="modal" style="max-width:500px">
-        <div class="modal-header">
-            <h3 id="modal-title">👥 Tambah Customer</h3>
-            <button class="btn-icon" onclick="document.getElementById('modal-customer').classList.add('hidden')"><i data-lucide="x"></i></button>
-        </div>
-        <form id="customer-form" method="POST" action="{{ route('sales.customers.store') }}">
-            @csrf
-            <input type="hidden" name="_method" id="form-method" value="POST">
-            <div class="modal-body">
-                <div class="form-group">
-                    <label>Nama Customer <span style="color:var(--danger-400)">*</span></label>
-                    <input type="text" name="name" id="c-name" class="form-control" required>
+        {{-- Tab: Customer List --}}
+        <div x-show="activeTab === 'customers'" class="p-5">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-5">
+                <div class="relative w-full sm:max-w-xs">
+                    <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500"></i>
+                    <input type="text" x-model="searchCustomer" class="w-full bg-gray-900 border border-gray-700 text-white rounded-lg pl-10 pr-4 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all placeholder-gray-500" placeholder="Cari nama/phone...">
                 </div>
-                <div class="form-group">
-                    <label>Email</label>
-                    <input type="email" name="email" id="c-email" class="form-control">
-                </div>
-                <div class="form-group">
-                    <label>Phone</label>
-                    <input type="text" name="phone" id="c-phone" class="form-control">
-                </div>
-                <div class="form-group">
-                    <label>Status <span style="color:var(--danger-400)">*</span></label>
-                    <select name="status" id="c-status" class="form-control" required>
-                        <option value="active">Active</option>
-                        <option value="leads">Leads</option>
-                        <option value="inactive">Inactive</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Address</label>
-                    <textarea name="address" id="c-address" class="form-control" rows="3"></textarea>
-                </div>
+                <button @click="openModalAddCustomer" class="flex items-center justify-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm font-medium transition-colors shadow-sm shadow-indigo-600/20 w-full sm:w-auto">
+                    <i data-lucide="plus" class="w-4 h-4"></i> Tambah Customer
+                </button>
             </div>
-            <div class="modal-footer">
-                <button type="submit" class="btn btn-primary">Simpan</button>
-            </div>
-        </form>
-    </div>
-</div>
 
-{{-- Modal: Detail View --}}
-<div id="modal-detail" class="modal-overlay hidden" onclick="if(event.target===this)closeModal('modal-detail')">
-    <div class="modal" style="max-width:550px">
-        <div class="modal-header">
-            <h3 id="detail-title">Detail</h3>
-            <button class="btn-icon" onclick="closeModal('modal-detail')"><i data-lucide="x"></i></button>
+            <div class="overflow-x-auto w-full border border-gray-700/50 rounded-lg">
+                <table class="w-full text-left text-sm whitespace-nowrap">
+                    <thead class="bg-gray-900/50 text-gray-400 text-xs uppercase tracking-wider border-b border-gray-700/50">
+                        <tr><th class="px-4 py-3 font-medium">Nama Customer</th><th class="px-4 py-3 font-medium">Phone</th><th class="px-4 py-3 font-medium">Status</th><th class="px-4 py-3 font-medium">Total Order</th><th class="px-4 py-3 font-medium text-right">Aksi</th></tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-700/50">
+                        @forelse($customers as $c)
+                        <tr x-show="matchCustomer('{{ strtolower($c->name) }}', '{{ $c->phone }}')" @click="viewCustomerDetail({{ json_encode($c) }})" class="hover:bg-indigo-500/10 transition-colors cursor-pointer group">
+                            <td class="px-4 py-3 font-bold text-white">{{ $c->name }}</td>
+                            <td class="px-4 py-3 text-gray-300 font-mono text-xs">{{ $c->phone ?? '-' }}</td>
+                            <td class="px-4 py-3">
+                                <span class="px-2 py-1 flex w-fit rounded-full text-[10px] font-bold border {{ $c->status === 'active' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : ($c->status === 'leads' ? 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20' : 'bg-gray-500/10 text-gray-400 border-gray-500/20') }}">
+                                    {{ ucfirst($c->status) }}
+                                </span>
+                            </td>
+                            <td class="px-4 py-3 font-bold text-white">{{ $c->sales_count }}</td>
+                            <td class="px-4 py-3 text-right">
+                                <div class="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <button @click.stop="openEditCustomerModal({{ json_encode($c) }})" class="p-1.5 rounded-lg text-gray-400 hover:text-indigo-400 hover:bg-indigo-500/10 transition-colors" title="Edit"><i data-lucide="edit-2" class="w-4 h-4"></i></button>
+                                    <form method="POST" action="{{ route('sales.customers.destroy', $c) }}" @submit.stop="return confirm('Hapus customer ini?')" @click.stop class="m-0">
+                                        @csrf @method('DELETE')
+                                        <button type="submit" class="p-1.5 rounded-lg text-gray-400 hover:text-red-400 hover:bg-red-500/10 transition-colors" title="Hapus"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        @empty
+                        <tr><td colspan="5" class="text-center py-10 text-gray-500">Belum ada data customer</td></tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
         </div>
-        <div class="modal-body" id="detail-content">
-            {{-- Content will be injected by JS --}}
+
+        {{-- Tab: Sales History --}}
+        <div x-show="activeTab === 'history'" x-cloak style="display: none;" class="p-5">
+            <div class="overflow-x-auto w-full border border-gray-700/50 rounded-lg">
+                <table class="w-full text-left text-sm whitespace-nowrap">
+                    <thead class="bg-gray-900/50 text-gray-400 text-xs uppercase tracking-wider border-b border-gray-700/50">
+                        <tr><th class="px-4 py-3 font-medium">Invoice</th><th class="px-4 py-3 font-medium">Customer</th><th class="px-4 py-3 font-medium">Tanggal</th><th class="px-4 py-3 font-medium">Total Amount</th><th class="px-4 py-3 font-medium">Status</th></tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-700/50">
+                        @forelse($sales as $s)
+                        <tr @click="viewSaleDetail({{ json_encode($s->load('customer')) }})" class="hover:bg-indigo-500/10 transition-colors cursor-pointer group">
+                            <td class="px-4 py-3 font-bold text-indigo-400 font-mono text-xs">#{{ $s->invoice_no }}</td>
+                            <td class="px-4 py-3 font-bold text-white">{{ $s->customer->name }}</td>
+                            <td class="px-4 py-3 text-gray-300">{{ \Carbon\Carbon::parse($s->sale_date)->format('d M Y') }}</td>
+                            <td class="px-4 py-3 font-bold text-white">Rp {{ number_format($s->total_amount, 0, ',', '.') }}</td>
+                            <td class="px-4 py-3">
+                                <span class="px-2 py-1 flex w-fit rounded-full text-[10px] font-bold border {{ $s->status === 'completed' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-gray-500/10 text-gray-400 border-gray-500/20' }}">
+                                    {{ ucfirst($s->status) }}
+                                </span>
+                            </td>
+                        </tr>
+                        @empty
+                        <tr><td colspan="5" class="text-center py-10 text-gray-500">Belum ada riwayat penjualan</td></tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
         </div>
-        <div class="modal-footer" id="detail-footer">
-            <button class="btn btn-secondary" onclick="closeModal('modal-detail')">Tutup</button>
+    </div>
+
+    {{-- Modal: Add/Edit Customer --}}
+    <div x-show="modals.customer" x-cloak style="display: none;" class="fixed inset-0 bg-gray-900/80 backdrop-blur-sm z-[150] flex items-center justify-center p-4 transition-opacity">
+        <div @click.away="modals.customer = false" class="bg-gray-800 border border-gray-700 rounded-xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col">
+            <div class="px-5 py-4 border-b border-gray-700/50 flex items-center justify-between">
+                <h3 class="font-bold text-white flex items-center gap-2" x-text="custForm.title"></h3>
+                <button @click="modals.customer = false" class="text-gray-400 hover:text-white transition-colors"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <form :action="custForm.action" method="POST">
+                @csrf
+                <input type="hidden" name="_method" value="PUT" x-show="custForm.method === 'PUT'" :disabled="custForm.method !== 'PUT'">
+                <div class="p-5 flex flex-col gap-4">
+                    <div class="space-y-1.5"><label class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Nama Customer <span class="text-red-500">*</span></label><input type="text" name="name" x-model="custForm.name" required class="w-full bg-gray-900 border border-gray-700 text-white rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"></div>
+                    <div class="space-y-1.5"><label class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Email</label><input type="email" name="email" x-model="custForm.email" class="w-full bg-gray-900 border border-gray-700 text-white rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"></div>
+                    <div class="space-y-1.5"><label class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Phone</label><input type="text" name="phone" x-model="custForm.phone" class="w-full bg-gray-900 border border-gray-700 text-white rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"></div>
+                    <div class="space-y-1.5"><label class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Status <span class="text-red-500">*</span></label><select name="status" x-model="custForm.status" required class="w-full bg-gray-900 border border-gray-700 text-white rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"><option value="active">Active</option><option value="leads">Leads</option><option value="inactive">Inactive</option></select></div>
+                    <div class="space-y-1.5"><label class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Alamat</label><textarea name="address" x-model="custForm.address" class="w-full bg-gray-900 border border-gray-700 text-white rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all" rows="3"></textarea></div>
+                </div>
+                <div class="px-5 py-4 border-t border-gray-700/50 bg-gray-800/50 flex justify-end gap-3">
+                    <button type="button" @click="modals.customer = false" class="px-4 py-2 hover:bg-gray-700 text-gray-300 rounded-lg text-sm font-medium transition-colors">Batal</button>
+                    <button type="submit" class="px-6 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm font-medium transition-colors shadow-sm shadow-indigo-600/20">Simpan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {{-- Modal: Detail View --}}
+    <div x-show="modals.detail" x-cloak style="display: none;" class="fixed inset-0 bg-gray-900/80 backdrop-blur-sm z-[150] flex items-center justify-center p-4 transition-opacity">
+        <div @click.away="modals.detail = false" class="bg-gray-800 border border-gray-700 rounded-xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col">
+            <div class="px-5 py-4 border-b border-gray-700/50 flex items-center justify-between">
+                <h3 class="font-bold text-white flex items-center gap-2" x-html="detail.title"></h3>
+                <button @click="modals.detail = false" class="text-gray-400 hover:text-white transition-colors"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <div class="p-5 overflow-y-auto max-h-[70vh]" x-html="detail.content">
+            </div>
+            <div class="px-5 py-4 border-t border-gray-700/50 bg-gray-800/50 flex justify-end">
+                <button @click="modals.detail = false" class="px-6 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg text-sm font-medium transition-colors">Tutup</button>
+            </div>
         </div>
     </div>
 </div>
@@ -172,185 +161,104 @@
 
 @push('scripts')
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Handle Customer Row Click
-    document.querySelectorAll('.customer-row').forEach(row => {
-        row.addEventListener('click', function(e) {
-            if (e.target.closest('button') || e.target.closest('form')) return;
-            const data = JSON.parse(this.getAttribute('data-customer'));
-            viewCustomerDetail(data);
-        });
-    });
+document.addEventListener('alpine:init', () => {
+    Alpine.data('salesData', () => ({
+        activeTab: 'customers',
+        searchCustomer: '',
+        modals: {
+            customer: false,
+            detail: false
+        },
+        custForm: { action: '', method: '', title: '', id: '', name: '', email: '', phone: '', status: 'active', address: '' },
+        detail: { title: '', content: '' },
 
-    // Handle Sale Row Click
-    document.querySelectorAll('.sale-row').forEach(row => {
-        row.addEventListener('click', function(e) {
-            const data = JSON.parse(this.getAttribute('data-sale'));
-            viewSaleDetail(data);
-        });
-    });
+        matchCustomer(name, phone) {
+            if (this.searchCustomer === '') return true;
+            const search = this.searchCustomer.toLowerCase();
+            return name.includes(search) || phone.includes(search);
+        },
+
+        openModalAddCustomer() {
+            this.custForm = { action: '{{ route("sales.customers.store") }}', method: 'POST', title: '👥 Tambah Customer', id: '', name: '', email: '', phone: '', status: 'active', address: '' };
+            this.modals.customer = true;
+        },
+
+        openEditCustomerModal(c) {
+            this.custForm = { action: `/sales/customers/${c.id}`, method: 'PUT', title: '👥 Edit Customer', id: c.id, name: c.name, email: c.email || '', phone: c.phone || '', status: c.status, address: c.address || '' };
+            this.modals.customer = true;
+        },
+
+        viewCustomerDetail(c) {
+            this.detail.title = '👥 Detail Customer';
+            const initials = c.name.substring(0, 1).toUpperCase();
+            
+            this.detail.content = `
+                <div class="text-center mb-6">
+                    <div class="w-20 h-20 rounded-full bg-indigo-500 text-white flex items-center justify-center text-3xl font-bold mx-auto mb-3 shadow-lg shadow-indigo-500/30">${initials}</div>
+                    <h4 class="text-xl font-bold text-white mb-1">${c.name}</h4>
+                    <div class="text-gray-400 text-sm font-medium">${c.email || 'Tanpa Email'}</div>
+                </div>
+                
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div class="bg-gray-900/50 border border-gray-700/50 p-3 rounded-xl">
+                        <div class="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Telepon / WA</div>
+                        <div class="text-gray-300 text-sm font-mono">${c.phone || '-'}</div>
+                    </div>
+                    <div class="bg-gray-900/50 border border-gray-700/50 p-3 rounded-xl">
+                        <div class="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Status</div>
+                        <div class="mt-1"><span class="px-2 py-1 flex w-fit rounded-full text-[10px] font-bold border ${c.status === 'active' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : (c.status === 'leads' ? 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20' : 'bg-gray-500/10 text-gray-400 border-gray-500/20')}">${c.status.toUpperCase()}</span></div>
+                    </div>
+                    <div class="bg-gray-900/50 border border-gray-700/50 p-4 rounded-xl sm:col-span-2">
+                        <div class="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Alamat</div>
+                        <div class="text-gray-300 text-sm italic">${c.address || '-'}</div>
+                    </div>
+                </div>
+            `;
+            this.modals.detail = true;
+        },
+
+        viewSaleDetail(s) {
+            this.detail.title = '📜 Detail Transaksi';
+            const amount = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(s.total_amount);
+            const date = new Date(s.sale_date).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+
+            this.detail.content = `
+                <div class="flex justify-between items-start mb-5 pb-5 border-b border-dashed border-gray-700/80">
+                    <div>
+                        <div class="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Nomor Invoice</div>
+                        <div class="text-xl font-bold text-indigo-400 font-mono">#${s.invoice_no}</div>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Tanggal</div>
+                        <div class="text-sm font-bold text-white">${date}</div>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-3 mb-5">
+                    <div class="bg-gray-900/50 border border-gray-700/50 p-3 rounded-xl">
+                        <div class="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Customer</div>
+                        <div class="text-gray-300 text-sm font-bold">${s.customer.name}</div>
+                    </div>
+                    <div class="bg-gray-900/50 border border-gray-700/50 p-3 rounded-xl">
+                        <div class="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Status</div>
+                        <div class="mt-1"><span class="px-2 py-1 flex w-fit rounded-full text-[10px] font-bold border ${s.status === 'completed' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-gray-500/10 text-gray-400 border-gray-500/20'}">${s.status.toUpperCase()}</span></div>
+                    </div>
+                </div>
+
+                <div class="bg-indigo-500/10 border border-indigo-500/30 p-5 rounded-xl text-center shadow-inner">
+                    <div class="text-xs text-indigo-400/80 font-bold uppercase tracking-wider mb-2">Total Pembayaran</div>
+                    <div class="text-3xl font-black text-indigo-400 font-mono tracking-tight">${amount}</div>
+                </div>
+                
+                <div class="mt-5 text-xs text-gray-500 italic flex items-start gap-2 bg-gray-900/30 p-3 rounded-lg border border-gray-800">
+                    <i data-lucide="info" class="w-4 h-4 mt-0.5 shrink-0"></i>
+                    Catatan: ${s.notes || 'Tidak ada catatan untuk transaksi ini.'}
+                </div>
+            `;
+            this.modals.detail = true;
+            this.$nextTick(() => { if (window.lucide) lucide.createIcons(); });
+        }
+    }));
 });
-
-function viewCustomerDetail(c) {
-    document.getElementById('detail-title').innerText = '👥 Detail Customer';
-    const initials = c.name.substring(0, 1).toUpperCase();
-    
-    document.getElementById('detail-content').innerHTML = `
-        <div style="text-align:center;margin-bottom:24px">
-            <div style="width:70px;height:70px;border-radius:50%;background:var(--primary-500);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:24px;margin:0 auto 12px;box-shadow:0 8px 15px -3px rgba(var(--primary-rgb), 0.3)">
-                ${initials}
-            </div>
-            <h4 style="font-size:18px;margin:0;font-weight:700;color:var(--text-primary)">${c.name}</h4>
-            <div style="color:var(--text-secondary);font-size:14px;margin-top:2px">${c.email || 'Tanpa Email'}</div>
-        </div>
-        
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-            <div class="detail-item">
-                <div class="detail-label">Telepon / WA</div>
-                <div class="detail-value">${c.phone || '-'}</div>
-            </div>
-            <div class="detail-item">
-                <div class="detail-label">Status</div>
-                <div class="detail-value"><span class="badge badge-success">${c.status}</span></div>
-            </div>
-            <div class="detail-item" style="grid-column: span 2">
-                <div class="detail-label">Alamat</div>
-                <div class="detail-value" style="font-weight:400">${c.address || '-'}</div>
-            </div>
-        </div>
-    `;
-    
-    document.getElementById('modal-detail').classList.remove('hidden');
-    if (window.lucide) lucide.createIcons();
-}
-
-function viewSaleDetail(s) {
-    document.getElementById('detail-title').innerText = '📜 Detail Transaksi';
-    const amount = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(s.total_amount);
-    const date = new Date(s.sale_date).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
-
-    document.getElementById('detail-content').innerHTML = `
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;padding-bottom:15px;border-bottom:1px dashed var(--border-color)">
-            <div>
-                <div style="font-size:12px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:1px">Nomor Invoice</div>
-                <div style="font-size:20px;font-weight:700;color:var(--primary-600)">#${s.invoice_no}</div>
-            </div>
-            <div style="text-align:right">
-                <div style="font-size:12px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:1px">Tanggal</div>
-                <div style="font-weight:600">${date}</div>
-            </div>
-        </div>
-        
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px">
-            <div class="detail-item">
-                <div class="detail-label">Customer</div>
-                <div class="detail-value">${s.customer.name}</div>
-            </div>
-            <div class="detail-item">
-                <div class="detail-label">Status</div>
-                <div class="detail-value"><span class="badge badge-success">${s.status}</span></div>
-            </div>
-        </div>
-
-        <div style="background:var(--bg-secondary);padding:16px;border-radius:12px;text-align:center;border:1px solid var(--border-color)">
-            <div style="font-size:13px;color:var(--text-secondary);margin-bottom:4px">Total Pembayaran</div>
-            <div style="font-size:24px;font-weight:800;color:var(--text-primary)">${amount}</div>
-        </div>
-        
-        <div style="margin-top:20px;font-size:13px;color:var(--text-tertiary);font-style:italic">
-            * Catatan: ${s.notes || 'Tidak ada catatan untuk transaksi ini.'}
-        </div>
-    `;
-    
-    document.getElementById('modal-detail').classList.remove('hidden');
-    if (window.lucide) lucide.createIcons();
-}
-
-function switchTab(tab, btn) {
-    document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
-    document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-    document.getElementById('tab-' + tab).style.display = 'block';
-    btn.classList.add('active');
-    if (window.lucide) lucide.createIcons();
-}
-
-function openAddCustomerModal() {
-    document.getElementById('modal-title').innerText = '👥 Tambah Customer';
-    document.getElementById('customer-form').action = "{{ route('sales.customers.store') }}";
-    document.getElementById('form-method').value = "POST";
-    document.getElementById('customer-form').reset();
-    document.getElementById('modal-customer').classList.remove('hidden');
-}
-
-function openEditCustomerModal(c) {
-    document.getElementById('modal-title').innerText = '👥 Edit Customer';
-    document.getElementById('customer-form').action = `/sales/customers/${c.id}`;
-    document.getElementById('form-method').value = "PUT";
-    
-    document.getElementById('c-name').value = c.name;
-    document.getElementById('c-email').value = c.email || '';
-    document.getElementById('c-phone').value = c.phone || '';
-    document.getElementById('c-status').value = c.status;
-    document.getElementById('c-address').value = c.address || '';
-    
-    document.getElementById('modal-customer').classList.remove('hidden');
-}
-
-function closeModal(id) {
-    document.getElementById(id).classList.add('hidden');
-}
-
-function filterCustomers() {
-    const search = document.getElementById('search-customer').value.toLowerCase();
-    document.querySelectorAll('#customer-table tbody tr').forEach(row => {
-        if (!row.dataset.name) return;
-        const match = row.dataset.name.includes(search) || row.dataset.phone.includes(search);
-        row.style.display = match ? '' : 'none';
-    });
-}
 </script>
-
-<style>
-.clickable-row:hover {
-    background: rgba(var(--primary-rgb), 0.05) !important;
-}
-.modal-overlay {
-    position: fixed;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(15, 23, 42, 0.7);
-    backdrop-filter: blur(4px);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 1000;
-    padding: 20px;
-}
-.modal-overlay.hidden { display: none; }
-.modal {
-    background: var(--bg-card, white);
-    padding: 24px;
-    border-radius: 16px;
-    border: 1px solid var(--border-color);
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-    width: 100%;
-}
-.detail-item {
-    background: var(--bg-secondary);
-    padding: 12px;
-    border-radius: 10px;
-    border: 1px solid var(--border-color);
-}
-.detail-label {
-    font-size: 11px;
-    color: var(--text-tertiary);
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    font-weight: 700;
-    margin-bottom: 4px;
-}
-.detail-value {
-    font-weight: 600;
-    color: var(--text-primary);
-}
-</style>
 @endpush

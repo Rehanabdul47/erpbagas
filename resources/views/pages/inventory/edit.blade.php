@@ -2,210 +2,203 @@
 
 @section('title', 'Edit Produk')
 @section('breadcrumb')
-<a href="{{ route('inventory.index') }}" style="color:var(--text-tertiary);text-decoration:none">Inventory</a>
-<span style="margin:0 8px;color:var(--text-tertiary)">/</span>
-<span>Edit {{ $product->name }}</span>
+<div class="flex items-center gap-2 text-sm">
+    <a href="{{ route('inventory.index') }}" class="text-gray-400 hover:text-white transition-colors">Inventory</a>
+    <span class="text-gray-600">/</span>
+    <span class="text-white font-medium">Edit {{ $product->name }}</span>
+</div>
 @endsection
 
 @section('content')
-<div class="card" style="max-width:700px">
-    <h3 style="margin-bottom:20px">✏️ Edit Produk — {{ $product->sku }}</h3>
+<div class="bg-gray-800 border border-gray-700/50 rounded-xl shadow-sm p-6 w-full max-w-4xl" 
+     x-data="{
+         type: '{{ old('type', $product->type) }}',
+         imageMode: 'url',
+         boms: {!! old('boms') ? json_encode(array_values(old('boms'))) : ($product->billOfMaterialsAsFinal->count() > 0 ? json_encode($product->billOfMaterialsAsFinal->map(function($b) { return ['raw_material_id' => $b->raw_material_id, 'quantity' => $b->quantity]; })->toArray()) : json_encode([['raw_material_id' => '', 'quantity' => 1]])) !!},
+         rawMaterials: {{ json_encode($rawMaterials) }},
+         addBom() {
+             this.boms.push({ raw_material_id: '', quantity: 1 });
+         },
+         removeBom(index) {
+             this.boms.splice(index, 1);
+         }
+     }">
+     
+    <div class="flex items-center gap-3 mb-6 pb-6 border-b border-gray-700/50">
+        <div class="w-10 h-10 rounded-lg bg-indigo-500/10 text-indigo-400 flex items-center justify-center">
+            <i data-lucide="edit" class="w-5 h-5"></i>
+        </div>
+        <div>
+            <h3 class="text-lg font-bold text-white flex items-center gap-2">Edit Produk <span class="bg-gray-700 text-gray-300 px-2 py-0.5 rounded text-sm font-mono">{{ $product->sku }}</span></h3>
+            <p class="text-xs text-gray-400">Update master data produk di sistem inventaris.</p>
+        </div>
+    </div>
 
     @if($errors->any())
-    <div style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:8px;padding:12px;margin-bottom:16px;color:#f87171;font-size:13px">
-        @foreach($errors->all() as $error)<div>• {{ $error }}</div>@endforeach
+    <div class="bg-red-500/10 border border-red-500/30 rounded-xl p-4 mb-6 text-red-400 text-sm">
+        <div class="flex items-center gap-2 font-bold mb-2">
+            <i data-lucide="alert-circle" class="w-4 h-4"></i> Terdapat Kesalahan:
+        </div>
+        <ul class="list-disc list-inside space-y-1 ml-1">
+            @foreach($errors->all() as $error)
+            <li>{{ $error }}</li>
+            @endforeach
+        </ul>
     </div>
     @endif
 
-    <form method="POST" action="{{ route('inventory.update', $product) }}" enctype="multipart/form-data">
+    <form method="POST" action="{{ route('inventory.update', $product) }}" enctype="multipart/form-data" class="space-y-6">
         @csrf @method('PUT')
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
-            {{-- Category, SKU, Name fields... --}}
-            <div class="form-group">
-                <label>SKU <span style="color:var(--danger-400)">*</span></label>
-                <input type="text" name="sku" class="form-control" value="{{ old('sku', $product->sku) }}" required>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="space-y-2">
+                <label class="text-xs font-semibold text-gray-400 uppercase tracking-wider">SKU <span class="text-red-500">*</span></label>
+                <input type="text" name="sku" value="{{ old('sku', $product->sku) }}" required
+                       class="w-full bg-gray-900 border border-gray-700 text-white rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all placeholder-gray-600">
             </div>
-            <div class="form-group">
-                <label>Nama Produk <span style="color:var(--danger-400)">*</span></label>
-                <input type="text" name="name" class="form-control" value="{{ old('name', $product->name) }}" required>
+            
+            <div class="space-y-2">
+                <label class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Nama Produk <span class="text-red-500">*</span></label>
+                <input type="text" name="name" value="{{ old('name', $product->name) }}" required
+                       class="w-full bg-gray-900 border border-gray-700 text-white rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all placeholder-gray-600">
             </div>
-            <div class="form-group">
-                <label>Kategori <span style="color:var(--danger-400)">*</span></label>
-                <select name="category_id" class="form-control" required>
+            
+            <div class="space-y-2">
+                <label class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Kategori <span class="text-red-500">*</span></label>
+                <select name="category_id" required class="w-full bg-gray-900 border border-gray-700 text-white rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all">
                     @foreach($categories as $cat)
                     <option value="{{ $cat->id }}" {{ old('category_id', $product->category_id) == $cat->id ? 'selected' : '' }}>{{ $cat->name }}</option>
                     @endforeach
                 </select>
             </div>
-            <div class="form-group">
-                <label>Lokasi</label>
-                <input type="text" name="location" class="form-control" value="{{ old('location', $product->location) }}">
+            
+            <div class="space-y-2">
+                <label class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Lokasi</label>
+                <input type="text" name="location" value="{{ old('location', $product->location) }}"
+                       class="w-full bg-gray-900 border border-gray-700 text-white rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all placeholder-gray-600">
             </div>
-            <div class="form-group" style="grid-column: span 2">
-                <label>Tipe Produk <span style="color:var(--danger-400)">*</span></label>
-                <select name="type" class="form-control" required>
-                    <option value="final_product" {{ old('type', $product->type) == 'final_product' ? 'selected' : '' }}>🌟 Final Product (Bisa dijual)</option>
-                    <option value="raw_material" {{ old('type', $product->type) == 'raw_material' ? 'selected' : '' }}>🧱 Raw Material (Bahan Baku)</option>
+            
+            <div class="space-y-2 md:col-span-2">
+                <label class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Tipe Produk <span class="text-red-500">*</span></label>
+                <select name="type" x-model="type" required class="w-full bg-gray-900 border border-gray-700 text-white rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all">
+                    <option value="final_product">🌟 Final Product (Barang Jadi / Siap Jual)</option>
+                    <option value="raw_material">🧱 Raw Material (Bahan Baku Produksi)</option>
                 </select>
             </div>
 
-            <div id="bom-section" style="grid-column: span 2; display: none;">
-                <div style="background:var(--bg-secondary);padding:16px;border-radius:var(--radius-md);border:1px dashed var(--border-color)">
-                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-                        <div>
-                            <label style="font-weight:700;margin:0">📋 Bill of Materials (Resep Produksi)</label>
-                            <div style="font-size:12px;color:var(--text-tertiary)">Bahan baku yang dibutuhkan untuk memproduksi 1 unit produk ini.</div>
-                        </div>
-                        <button type="button" class="btn btn-sm btn-outline" onclick="addBomRow()"><i data-lucide="plus"></i> Tambah Bahan</button>
+            <!-- Bill of Materials Section -->
+            <div x-show="type === 'final_product'" x-transition class="md:col-span-2 bg-gray-900/50 border border-indigo-500/20 rounded-xl p-5 shadow-inner">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-5 pb-4 border-b border-gray-800">
+                    <div>
+                        <h4 class="font-bold text-white flex items-center gap-2"><i data-lucide="clipboard-list" class="w-4 h-4 text-indigo-400"></i> Bill of Materials (BoM)</h4>
+                        <p class="text-xs text-gray-400 mt-1">Komposisi bahan baku yang dibutuhkan untuk memproduksi 1 unit produk ini.</p>
                     </div>
-                    
-                    <div id="bom-container" style="display:flex;flex-direction:column;gap:12px">
-                        <!-- dynamic rows -->
+                    <button type="button" @click="addBom()" class="shrink-0 flex items-center gap-2 px-3 py-1.5 bg-indigo-600/20 text-indigo-400 hover:bg-indigo-600 hover:text-white rounded-lg text-xs font-medium transition-colors border border-indigo-500/30">
+                        <i data-lucide="plus" class="w-3.5 h-3.5"></i> Tambah Bahan
+                    </button>
+                </div>
+                
+                <div class="space-y-3">
+                    <template x-for="(bom, index) in boms" :key="index">
+                        <div class="flex flex-col sm:flex-row items-end gap-3 bg-gray-800 p-3 rounded-lg border border-gray-700/50">
+                            <div class="w-full sm:flex-1 space-y-1.5">
+                                <label class="text-[10px] font-bold text-gray-500 uppercase">Bahan Baku (Raw Material)</label>
+                                <select :name="`boms[${index}][raw_material_id]`" x-model="bom.raw_material_id" required class="w-full bg-gray-900 border border-gray-700 text-white rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all">
+                                    <option value="">Pilih raw material...</option>
+                                    <template x-for="rm in rawMaterials" :key="rm.id">
+                                        <option :value="rm.id" x-text="`${rm.sku} — ${rm.name}`"></option>
+                                    </template>
+                                </select>
+                            </div>
+                            <div class="w-full sm:w-32 space-y-1.5">
+                                <label class="text-[10px] font-bold text-gray-500 uppercase">Kuantitas</label>
+                                <input type="number" :name="`boms[${index}][quantity]`" x-model="bom.quantity" min="0.01" step="0.01" required placeholder="Jumlah"
+                                       class="w-full bg-gray-900 border border-gray-700 text-white rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all">
+                            </div>
+                            <button type="button" @click="removeBom(index)" class="shrink-0 w-full sm:w-auto px-3 py-2.5 bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white rounded-lg transition-colors border border-red-500/20 flex justify-center items-center" title="Hapus baris">
+                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                    </template>
+                    <div x-show="boms.length === 0" class="text-center py-6 text-sm text-gray-500 border-2 border-dashed border-gray-700 rounded-lg">
+                        Tidak ada bahan baku yang dipilih. Klik "Tambah Bahan" untuk menyusun resep.
                     </div>
                 </div>
             </div>
-            <div class="form-group">
-                <label>Stok Saat Ini</label>
-                <input type="number" class="form-control" value="{{ $product->stock }}" disabled style="opacity:0.6">
-                <small style="color:var(--text-tertiary)">Gunakan Stok Masuk/Keluar untuk mengubah stok</small>
+
+            <div class="space-y-2">
+                <label class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Stok Saat Ini (Hanya Baca)</label>
+                <input type="number" value="{{ $product->stock }}" disabled
+                       class="w-full bg-gray-900/50 border border-gray-700 text-gray-400 rounded-xl px-4 py-3 text-sm cursor-not-allowed">
+                <p class="text-[10px] text-indigo-400">Gunakan fitur Stok Masuk/Keluar atau Opname untuk mengubah stok.</p>
             </div>
-            <div class="form-group">
-                <label>Safety Stock <span style="color:var(--danger-400)">*</span></label>
-                <input type="number" name="safety_stock" class="form-control" value="{{ old('safety_stock', $product->safety_stock) }}" min="0" required>
+            
+            <div class="space-y-2">
+                <label class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Safety Stock <span class="text-red-500">*</span></label>
+                <input type="number" name="safety_stock" value="{{ old('safety_stock', $product->safety_stock) }}" min="0" required
+                       class="w-full bg-gray-900 border border-gray-700 text-white rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all">
             </div>
+            
             @hasanyrole('Manager|Executive|SuperAdmin')
-            <div class="form-group">
-                <label>Harga Jual <span style="color:var(--danger-400)">*</span></label>
-                <input type="number" name="price" class="form-control" value="{{ old('price', $product->price) }}" min="0" step="1000" required>
+            <div class="space-y-2">
+                <label class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Harga Jual (Rp) <span class="text-red-500">*</span></label>
+                <input type="number" name="price" value="{{ old('price', $product->price) }}" min="0" step="1000" required
+                       class="w-full bg-gray-900 border border-gray-700 text-white rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all">
             </div>
-            <div class="form-group">
-                <label>COGS <span style="color:var(--danger-400)">*</span></label>
-                <input type="number" name="cogs" class="form-control" value="{{ old('cogs', $product->cogs) }}" min="0" step="1000" required>
+            <div class="space-y-2">
+                <label class="text-xs font-semibold text-gray-400 uppercase tracking-wider">COGS (Rp) <span class="text-red-500">*</span></label>
+                <input type="number" name="cogs" value="{{ old('cogs', $product->cogs) }}" min="0" step="1000" required
+                       class="w-full bg-gray-900 border border-gray-700 text-white rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all">
             </div>
             @else
             <input type="hidden" name="price" value="{{ $product->price }}">
             <input type="hidden" name="cogs" value="{{ $product->cogs }}">
             @endhasanyrole
 
-            <div class="form-group" style="grid-column:span 2;background:var(--bg-secondary);padding:16px;border-radius:var(--radius-md);border:1px dashed var(--border-color)">
-                <label style="margin-bottom:12px;display:block;font-weight:700">🖼️ Gambar Produk</label>
+            <div class="md:col-span-2 bg-gray-900/50 border border-dashed border-gray-700 rounded-xl p-5">
+                <label class="text-xs font-bold text-white uppercase tracking-wider mb-4 block">🖼️ Gambar Produk</label>
                 
                 @if($product->image)
-                <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;padding:8px;background:var(--bg-surface);border-radius:4px;border:1px solid var(--border-color)">
-                    <img src="{{ Str::startsWith($product->image, 'http') ? $product->image : asset($product->image) }}" style="width:48px;height:48px;object-fit:cover;border-radius:4px">
-                    <div style="font-size:12px;color:var(--text-tertiary)">Gambar saat ini: <br> <span style="color:var(--text-secondary)">{{ basename($product->image) }}</span></div>
+                <div class="flex items-center gap-4 p-3 bg-gray-800 rounded-lg border border-gray-700/50 mb-5">
+                    <img src="{{ Str::startsWith($product->image, 'http') ? $product->image : asset($product->image) }}" class="w-12 h-12 object-cover rounded shadow">
+                    <div>
+                        <div class="text-[10px] text-gray-400 uppercase font-bold tracking-wider">Gambar Saat Ini</div>
+                        <div class="text-sm text-gray-200 truncate max-w-xs">{{ basename($product->image) }}</div>
+                    </div>
                 </div>
                 @endif
 
-                <div style="display:flex;gap:12px;margin-bottom:16px">
-                    <button type="button" class="btn btn-sm btn-outline active" id="btn-mode-url" onclick="setImageMode('url')">Link URL</button>
-                    <button type="button" class="btn btn-sm btn-outline" id="btn-mode-upload" onclick="setImageMode('upload')">Upload File</button>
+                <div class="flex items-center gap-1 bg-gray-800 p-1 rounded-lg border border-gray-700 w-fit mb-4">
+                    <button type="button" @click="imageMode = 'url'" :class="imageMode === 'url' ? 'bg-gray-600 text-white shadow-sm' : 'text-gray-400 hover:text-white'" class="px-3 py-1 text-xs font-medium rounded-md transition-all">Ubah via URL</button>
+                    <button type="button" @click="imageMode = 'upload'" :class="imageMode === 'upload' ? 'bg-gray-600 text-white shadow-sm' : 'text-gray-400 hover:text-white'" class="px-3 py-1 text-xs font-medium rounded-md transition-all">Upload File Baru</button>
                 </div>
                 
-                <div id="input-url">
-                    <label style="font-size:12px;color:var(--text-tertiary)">Ganti URL gambar</label>
-                    <input type="text" name="image" class="form-control" value="{{ old('image', $product->image) }}" placeholder="https://example.com/image.jpg">
+                <div x-show="imageMode === 'url'" x-transition class="space-y-2">
+                    <div class="relative">
+                        <i data-lucide="link" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500"></i>
+                        <input type="url" name="image" value="{{ old('image', $product->image) }}" placeholder="https://example.com/image.jpg"
+                               class="w-full bg-gray-900 border border-gray-700 text-white pl-10 pr-4 py-3 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all placeholder-gray-600">
+                    </div>
                 </div>
                 
-                <div id="input-upload" style="display:none">
-                    <label style="font-size:12px;color:var(--text-tertiary)">Upload file baru (Max 2MB)</label>
-                    <input type="file" name="image_file" class="form-control" style="padding:8px">
+                <div x-show="imageMode === 'upload'" x-transition class="space-y-2" style="display: none;">
+                    <input type="file" name="image_file" accept="image/*"
+                           class="w-full bg-gray-900 border border-gray-700 text-white px-2 py-2 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-indigo-600 file:text-white hover:file:bg-indigo-500 cursor-pointer">
                 </div>
             </div>
 
-            <div class="form-group" style="grid-column:span 2">
-                <label>Batch</label>
-                <input type="text" name="batch" class="form-control" value="{{ old('batch', $product->batch) }}">
+            <div class="space-y-2 md:col-span-2">
+                <label class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Batch Produksi / ID Pembelian</label>
+                <input type="text" name="batch" value="{{ old('batch', $product->batch) }}"
+                       class="w-full bg-gray-900 border border-gray-700 text-white rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all placeholder-gray-600">
             </div>
         </div>
-        <div style="display:flex;gap:12px;margin-top:20px;margin-bottom:32px">
-            <button type="submit" class="btn btn-primary"><i data-lucide="save"></i> Update</button>
-            <a href="{{ route('inventory.index') }}" class="btn btn-ghost">Batal</a>
+        
+        <div class="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-6 border-t border-gray-700/50 mt-8">
+            <a href="{{ route('inventory.index') }}" class="px-6 py-3 bg-gray-800 hover:bg-gray-700 text-white rounded-xl text-sm font-medium transition-colors text-center border border-gray-700">Cancel</a>
+            <button type="submit" class="px-6 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-sm font-medium transition-colors flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/20">
+                <i data-lucide="save" class="w-4 h-4"></i> Simpan Perubahan
+            </button>
         </div>
     </form>
-
 </div>
-@push('scripts')
-<script>
-const existingBoms = @json($product->billOfMaterialsAsFinal);
-const rawMaterials = @json($rawMaterials);
-let bomIndex = 0;
-
-function toggleBom() {
-    const type = document.querySelector('select[name="type"]').value;
-    const bomSection = document.getElementById('bom-section');
-    const bomContainer = document.getElementById('bom-container');
-    
-    if (type === 'final_product') {
-        bomSection.style.display = 'block';
-        if (bomContainer.children.length === 0) {
-            if (existingBoms && existingBoms.length > 0) {
-                existingBoms.forEach(bom => {
-                    addBomRow(bom.raw_material_id, bom.quantity);
-                });
-            } else {
-                addBomRow();
-            }
-        }
-    } else {
-        bomSection.style.display = 'none';
-        bomContainer.innerHTML = '';
-        bomIndex = 0;
-    }
-}
-
-function addBomRow(selectedId = '', quantity = 1) {
-    let options = '<option value="">Pilih raw material...</option>';
-    rawMaterials.forEach(rm => {
-        const selected = (rm.id == selectedId) ? 'selected' : '';
-        options += `<option value="${rm.id}" ${selected}>${rm.sku} — ${rm.name}</option>`;
-    });
-
-    const row = document.createElement('div');
-    row.style.display = 'flex';
-    row.style.gap = '12px';
-    row.style.alignItems = 'flex-end';
-    row.innerHTML = `
-        <div class="form-group" style="flex:1;margin-bottom:0">
-            <select name="boms[${bomIndex}][raw_material_id]" class="form-control" required>
-                ${options}
-            </select>
-        </div>
-        <div class="form-group" style="width:150px;margin-bottom:0">
-            <input type="number" name="boms[${bomIndex}][quantity]" class="form-control" min="0.01" step="0.01" value="${quantity}" placeholder="Jumlah" required>
-        </div>
-        <button type="button" class="btn btn-sm" style="padding:0 12px;height:40px;background:rgba(239,68,68,0.1);color:var(--danger-400);border:1px solid rgba(239,68,68,0.2)" onclick="this.parentElement.remove()"><i data-lucide="trash-2" style="width:16px"></i></button>
-    `;
-    document.getElementById('bom-container').appendChild(row);
-    if(typeof lucide !== 'undefined') {
-        lucide.createIcons();
-    }
-    bomIndex++;
-}
-
-document.addEventListener('DOMContentLoaded', () => {
-    document.querySelector('select[name="type"]').addEventListener('change', toggleBom);
-    toggleBom();
-});
-
-function setImageMode(mode) {
-    const inputUrl = document.getElementById('input-url');
-    const inputUpload = document.getElementById('input-upload');
-    const btnUrl = document.getElementById('btn-mode-url');
-    const btnUpload = document.getElementById('btn-mode-upload');
-    
-    if (mode === 'url') {
-        inputUrl.style.display = 'block';
-        inputUpload.style.display = 'none';
-        btnUrl.classList.add('active');
-        btnUpload.classList.remove('active');
-    } else {
-        inputUrl.style.display = 'none';
-        inputUpload.style.display = 'block';
-        btnUrl.classList.remove('active');
-        btnUpload.classList.add('active');
-    }
-}
-</script>
-@endpush
 @endsection

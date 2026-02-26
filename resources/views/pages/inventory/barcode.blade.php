@@ -3,55 +3,52 @@
 @section('title', 'Barcode Produk - ' . $product->name)
 
 @section('content')
-<div class="card" style="max-width: 600px; margin: 0 auto; padding: 40px; text-align: center;">
-    <div style="margin-bottom: 30px;">
-        <h2 style="margin: 0 0 8px 0;">Barcode Produk</h2>
-        <p style="color: var(--text-tertiary); margin: 0;">{{ $product->name }}</p>
+<div class="bg-gray-800 border border-gray-700/50 rounded-xl shadow-sm max-w-2xl mx-auto p-10 text-center relative print:border-none print:shadow-none print:bg-white print:p-0">
+    <div class="mb-8 print:hidden">
+        <h2 class="text-2xl font-bold text-white mb-2">Barcode Produk</h2>
+        <p class="text-gray-400">{{ $product->name }}</p>
     </div>
 
-    <div class="barcode-container" style="background: white; padding: 40px; border: 1px solid var(--border-color); border-radius: var(--radius-lg); display: inline-block; margin-bottom: 30px;">
-        <div style="margin-bottom: 12px; font-weight: 700; font-size: 18px; color: black;">
+    <!-- Print Canvas Area -->
+    <div class="inline-block bg-white p-10 border border-gray-200 rounded-2xl mb-8 print:border-none print:m-0 print:p-4">
+        <div class="mb-3 font-bold text-xl text-black tracking-widest">
             {{ $product->sku }}
         </div>
         
-        <div style="margin-bottom: 12px;">
+        <div class="mb-3 flex justify-center">
             {!! Milon\Barcode\Facades\DNS1DFacade::getBarcodeHTML($product->sku, 'C128', 2, 80) !!}
         </div>
         
-        <div style="font-size: 14px; color: #555;">
-            {{ $product->name }} <br>
-            <span style="font-weight: 700;">Rp {{ number_format($product->price, 0, ',', '.') }}</span>
+        <div class="text-sm text-gray-700 mt-4">
+            <div class="font-medium mb-1">{{ $product->name }}</div>
+            <div class="font-black text-lg">Rp {{ number_format($product->price, 0, ',', '.') }}</div>
         </div>
     </div>
 
-    <div style="display: flex; gap: 12px; justify-content: center;" class="no-print">
-        <button onclick="window.print()" class="btn btn-primary">
-            <i data-lucide="printer"></i> Cetak Barcode
+    <div class="flex items-center justify-center gap-4 print:hidden">
+        <button onclick="window.print()" class="flex items-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-sm font-medium transition-colors shadow-lg shadow-indigo-600/20">
+            <i data-lucide="printer" class="w-5 h-5"></i> Cetak Barcode
         </button>
-        <a href="{{ route('inventory.index') }}" class="btn btn-ghost">
-            <i data-lucide="arrow-left"></i> Kembali
+        <a href="{{ route('inventory.index') }}" class="flex items-center gap-2 px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-xl text-sm font-medium transition-colors">
+            <i data-lucide="arrow-left" class="w-5 h-5"></i> Kembali
         </a>
     </div>
 </div>
 
+@push('styles')
 <style>
 @media print {
-    .sidebar, .navbar, .no-print, .breadcrumb-container {
-        display: none !important;
-    }
-    .main-content {
+    /* Hide everything else */
+    body > *:not(main) { display: none !important; }
+    main > *:not(#page-content) { display: none !important; }
+    
+    /* Layout adjustments for print */
+    body, main, #page-content {
         margin: 0 !important;
         padding: 0 !important;
-    }
-    .card {
-        border: none !important;
-        box-shadow: none !important;
-        padding: 0 !important;
-        margin: 0 auto !important;
-    }
-    body {
         background: white !important;
     }
 }
 </style>
+@endpush
 @endsection
