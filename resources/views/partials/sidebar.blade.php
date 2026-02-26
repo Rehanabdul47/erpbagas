@@ -5,6 +5,7 @@
         ]],
         ['section' => 'OPERASIONAL', 'items' => [
             ['id' => 'inventory', 'icon' => 'package', 'label' => 'Inventory', 'route' => 'inventory.index'],
+            ['id' => 'production', 'icon' => 'factory', 'label' => 'Produksi', 'route' => 'production.index'],
             ['id' => 'categories', 'icon' => 'tags', 'label' => 'Kategori', 'route' => 'categories.index'],
             ['id' => 'orders', 'icon' => 'shopping-cart', 'label' => 'Orders', 'route' => 'orders', 'badge' => 3],
             ['id' => 'sales', 'icon' => 'trending-up', 'label' => 'Sales & CRM', 'route' => 'sales.index'],

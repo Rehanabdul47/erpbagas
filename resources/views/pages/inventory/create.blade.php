@@ -42,6 +42,29 @@
                 <label>Lokasi</label>
                 <input type="text" name="location" class="form-control" value="{{ old('location') }}" placeholder="Rak A1">
             </div>
+            <div class="form-group" style="grid-column: span 2">
+                <label>Tipe Produk <span style="color:var(--danger-400)">*</span></label>
+                <select name="type" class="form-control" required>
+                    <option value="final_product" {{ old('type') == 'final_product' ? 'selected' : '' }}>🌟 Final Product (Bisa dijual)</option>
+                    <option value="raw_material" {{ old('type') == 'raw_material' ? 'selected' : '' }}>🧱 Raw Material (Bahan Baku)</option>
+                </select>
+            </div>
+
+            <div id="bom-section" style="grid-column: span 2; display: none;">
+                <div style="background:var(--bg-secondary);padding:16px;border-radius:var(--radius-md);border:1px dashed var(--border-color)">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+                        <div>
+                            <label style="font-weight:700;margin:0">📋 Bill of Materials (Resep Produksi)</label>
+                            <div style="font-size:12px;color:var(--text-tertiary)">Bahan baku yang dibutuhkan untuk memproduksi 1 unit produk ini.</div>
+                        </div>
+                        <button type="button" class="btn btn-sm btn-outline" onclick="addBomRow()"><i data-lucide="plus"></i> Tambah Bahan</button>
+                    </div>
+                    
+                    <div id="bom-container" style="display:flex;flex-direction:column;gap:12px">
+                        <!-- dynamic rows -->
+                    </div>
+                </div>
+            </div>
             <div class="form-group">
                 <label>Stok Awal <span style="color:var(--danger-400)">*</span></label>
                 <input type="number" name="stock" class="form-control" value="{{ old('stock', 0) }}" min="0" required>
@@ -50,6 +73,7 @@
                 <label>Safety Stock <span style="color:var(--danger-400)">*</span></label>
                 <input type="number" name="safety_stock" class="form-control" value="{{ old('safety_stock', 0) }}" min="0" required>
             </div>
+            @hasanyrole('Manager|Executive|SuperAdmin')
             <div class="form-group">
                 <label>Harga Jual <span style="color:var(--danger-400)">*</span></label>
                 <input type="number" name="price" class="form-control" value="{{ old('price', 0) }}" min="0" step="1000" required>
@@ -58,6 +82,10 @@
                 <label>COGS <span style="color:var(--danger-400)">*</span></label>
                 <input type="number" name="cogs" class="form-control" value="{{ old('cogs', 0) }}" min="0" step="1000" required>
             </div>
+            @else
+            <input type="hidden" name="price" value="0">
+            <input type="hidden" name="cogs" value="0">
+            @endhasanyrole
 
             <div class="form-group" style="grid-column:span 2;background:var(--bg-secondary);padding:16px;border-radius:var(--radius-md);border:1px dashed var(--border-color)">
                 <label style="margin-bottom:12px;display:block;font-weight:700">🖼️ Gambar Produk</label>
@@ -90,6 +118,59 @@
 </div>
 @push('scripts')
 <script>
+const rawMaterials = @json($rawMaterials);
+let bomIndex = 0;
+
+function toggleBom() {
+    const type = document.querySelector('select[name="type"]').value;
+    const bomSection = document.getElementById('bom-section');
+    const bomContainer = document.getElementById('bom-container');
+    
+    if (type === 'final_product') {
+        bomSection.style.display = 'block';
+        if (bomContainer.children.length === 0) {
+            addBomRow();
+        }
+    } else {
+        bomSection.style.display = 'none';
+        bomContainer.innerHTML = '';
+        bomIndex = 0;
+    }
+}
+
+function addBomRow() {
+    let options = '<option value="">Pilih raw material...</option>';
+    rawMaterials.forEach(rm => {
+        options += `<option value="${rm.id}">${rm.sku} — ${rm.name}</option>`;
+    });
+
+    const row = document.createElement('div');
+    row.style.display = 'flex';
+    row.style.gap = '12px';
+    row.style.alignItems = 'flex-end';
+    row.innerHTML = `
+        <div class="form-group" style="flex:1;margin-bottom:0">
+            <select name="boms[${bomIndex}][raw_material_id]" class="form-control" required>
+                ${options}
+            </select>
+        </div>
+        <div class="form-group" style="width:150px;margin-bottom:0">
+            <input type="number" name="boms[${bomIndex}][quantity]" class="form-control" min="0.01" step="0.01" value="1" placeholder="Jumlah" required>
+        </div>
+        <button type="button" class="btn btn-sm" style="padding:0 12px;height:40px;background:rgba(239,68,68,0.1);color:var(--danger-400);border:1px solid rgba(239,68,68,0.2)" onclick="this.parentElement.remove()"><i data-lucide="trash-2" style="width:16px"></i></button>
+    `;
+    document.getElementById('bom-container').appendChild(row);
+    if(typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
+    bomIndex++;
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    document.querySelector('select[name="type"]').addEventListener('change', toggleBom);
+    toggleBom();
+});
+
 function setImageMode(mode) {
     const inputUrl = document.getElementById('input-url');
     const inputUpload = document.getElementById('input-upload');

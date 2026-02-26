@@ -32,7 +32,8 @@ class InventoryController extends Controller
     public function create()
     {
         $categories = Category::all();
-        return view('pages.inventory.create', compact('categories'))
+        $rawMaterials = Product::where('type', 'raw_material')->get();
+        return view('pages.inventory.create', compact('categories', 'rawMaterials'))
             ->with('activePage', 'inventory');
     }
 
@@ -50,6 +51,10 @@ class InventoryController extends Controller
             'location' => 'nullable|string',
             'image' => 'nullable|string',
             'image_file' => 'nullable|image|max:2048',
+            'type' => 'required|in:raw_material,final_product',
+            'boms' => 'nullable|array',
+            'boms.*.raw_material_id' => 'required_with:boms|exists:products,id',
+            'boms.*.quantity' => 'required_with:boms|numeric|min:0.01',
         ]);
 
         if ($request->hasFile('image_file')) {
@@ -58,6 +63,18 @@ class InventoryController extends Controller
         }
 
         $product = Product::create($validated);
+
+        if ($product->type === 'final_product' && !empty($request->boms)) {
+            foreach ($request->boms as $bom) {
+                if (!empty($bom['raw_material_id']) && !empty($bom['quantity'])) {
+                    \App\Models\BillOfMaterial::create([
+                        'final_product_id' => $product->id,
+                        'raw_material_id' => $bom['raw_material_id'],
+                        'quantity' => $bom['quantity'],
+                    ]);
+                }
+            }
+        }
 
         if ($product->stock > 0) {
             StockMovement::create([
@@ -75,7 +92,12 @@ class InventoryController extends Controller
     public function edit(Product $product)
     {
         $categories = Category::all();
-        return view('pages.inventory.edit', compact('product', 'categories'))
+        $rawMaterials = Product::where('type', 'raw_material')
+                                ->where('id', '!=', $product->id)
+                                ->get();
+        $product->load('billOfMaterialsAsFinal.rawMaterial');
+
+        return view('pages.inventory.edit', compact('product', 'categories', 'rawMaterials'))
             ->with('activePage', 'inventory');
     }
 
@@ -92,6 +114,10 @@ class InventoryController extends Controller
             'location' => 'nullable|string',
             'image' => 'nullable|string',
             'image_file' => 'nullable|image|max:2048',
+            'type' => 'required|in:raw_material,final_product',
+            'boms' => 'nullable|array',
+            'boms.*.raw_material_id' => 'required_with:boms|exists:products,id',
+            'boms.*.quantity' => 'required_with:boms|numeric|min:0.01',
         ]);
 
         if ($request->hasFile('image_file')) {
@@ -100,6 +126,19 @@ class InventoryController extends Controller
         }
 
         $product->update($validated);
+
+        \App\Models\BillOfMaterial::where('final_product_id', $product->id)->delete();
+        if ($product->type === 'final_product' && !empty($request->boms)) {
+            foreach ($request->boms as $bom) {
+                if (!empty($bom['raw_material_id']) && !empty($bom['quantity'])) {
+                    \App\Models\BillOfMaterial::create([
+                        'final_product_id' => $product->id,
+                        'raw_material_id' => $bom['raw_material_id'],
+                        'quantity' => $bom['quantity'],
+                    ]);
+                }
+            }
+        }
 
         return redirect()->route('inventory.index')->with('success', "Produk {$product->name} berhasil diupdate");
     }

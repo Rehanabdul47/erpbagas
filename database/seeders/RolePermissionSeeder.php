@@ -20,6 +20,8 @@ class RolePermissionSeeder extends Seeder
             'view dashboard',
             // Inventory
             'view inventory', 'manage inventory', 'stock in', 'stock out', 'stock opname',
+            // Production
+            'manage production',
             // Orders
             'view orders', 'manage orders', 'advance orders',
             // Sales & CRM
@@ -35,47 +37,55 @@ class RolePermissionSeeder extends Seeder
         ];
 
         foreach ($permissions as $perm) {
-            Permission::create(['name' => $perm]);
+            Permission::firstOrCreate(['name' => $perm]);
         }
 
         // --- Roles ---
-        $executive = Role::create(['name' => 'Executive']);
-        $manager = Role::create(['name' => 'Manager']);
-        $staffGudang = Role::create(['name' => 'Staff Gudang']);
-        $staffFinance = Role::create(['name' => 'Staff Finance']);
-        $staffSales = Role::create(['name' => 'Staff Sales']);
-        $staffHR = Role::create(['name' => 'Staff HR']);
+        $executive = Role::firstOrCreate(['name' => 'Executive']);
+        $manager = Role::firstOrCreate(['name' => 'Manager']);
+        $staffGudang = Role::firstOrCreate(['name' => 'Staff Gudang']);
+        $staffFinance = Role::firstOrCreate(['name' => 'Staff Finance']);
+        $staffSales = Role::firstOrCreate(['name' => 'Staff Sales']);
+        $staffHR = Role::firstOrCreate(['name' => 'Staff HR']);
+        $staffToko = Role::firstOrCreate(['name' => 'Staff Toko']);
 
         // Executive = all permissions
-        $executive->givePermissionTo(Permission::all());
+        $executive->syncPermissions(Permission::all());
 
         // Manager = all permissions
-        $manager->givePermissionTo(Permission::all());
+        $manager->syncPermissions(Permission::all());
 
         // Staff Gudang
-        $staffGudang->givePermissionTo([
+        $staffGudang->syncPermissions([
             'view dashboard', 'view inventory', 'manage inventory',
             'stock in', 'stock out', 'stock opname',
+            'manage production',
             'view orders', 'manage orders', 'advance orders',
             'view procurement', 'manage po', 'manage vendors',
         ]);
 
         // Staff Finance
-        $staffFinance->givePermissionTo([
+        $staffFinance->syncPermissions([
             'view dashboard', 'view finance', 'manage invoices',
             'manage expenses', 'view reports',
         ]);
 
         // Staff Sales
-        $staffSales->givePermissionTo([
+        $staffSales->syncPermissions([
             'view dashboard', 'view orders', 'manage orders', 'advance orders',
             'view sales', 'manage leads', 'manage pipeline',
         ]);
 
         // Staff HR
-        $staffHR->givePermissionTo([
+        $staffHR->syncPermissions([
             'view dashboard', 'view hrm', 'manage employees',
             'manage attendance', 'manage payroll',
+        ]);
+
+        // Staff Toko
+        $staffToko->syncPermissions([
+            'view dashboard', 'view inventory',
+            'view orders', 'manage orders', 'view sales',
         ]);
 
         // --- Users (matching GUPALA ERP Store.users) ---
@@ -86,16 +96,19 @@ class RolePermissionSeeder extends Seeder
             ['name' => 'Siti Rahayu', 'email' => 'siti@gupala.com', 'department' => 'finance', 'role' => 'Staff Finance'],
             ['name' => 'Dewi Lestari', 'email' => 'dewi@gupala.com', 'department' => 'sales', 'role' => 'Staff Sales'],
             ['name' => 'Rina Wati', 'email' => 'rina@gupala.com', 'department' => 'hr', 'role' => 'Staff HR'],
+            ['name' => 'Eko Prasetyo', 'email' => 'eko@gupala.com', 'department' => 'store', 'role' => 'Staff Toko'],
         ];
 
         foreach ($users as $u) {
-            $user = User::create([
-                'name' => $u['name'],
-                'email' => $u['email'],
-                'password' => bcrypt('password'),
-                'department' => $u['department'],
-            ]);
-            $user->assignRole($u['role']);
+            $user = User::updateOrCreate(
+                ['email' => $u['email']],
+                [
+                    'name' => $u['name'],
+                    'password' => bcrypt('password'),
+                    'department' => $u['department'],
+                ]
+            );
+            $user->syncRoles([$u['role']]);
         }
     }
 }

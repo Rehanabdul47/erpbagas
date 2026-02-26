@@ -27,7 +27,7 @@ class UserController extends Controller
     public function create()
     {
         $roles = Role::all();
-        $departments = ['all', 'warehouse', 'finance', 'sales', 'hr'];
+        $departments = ['all', 'warehouse', 'finance', 'sales', 'hr', 'store'];
 
         return view('pages.users.create', compact('roles', 'departments'))
             ->with('activePage', 'users');
@@ -58,7 +58,7 @@ class UserController extends Controller
     public function edit(User $user)
     {
         $roles = Role::all();
-        $departments = ['all', 'warehouse', 'finance', 'sales', 'hr'];
+        $departments = ['all', 'warehouse', 'finance', 'sales', 'hr', 'store'];
 
         return view('pages.users.edit', compact('user', 'roles', 'departments'))
             ->with('activePage', 'users');

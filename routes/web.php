@@ -9,6 +9,8 @@ use App\Http\Controllers\CashController;
 use App\Http\Controllers\HrmController;
 use App\Http\Controllers\SalesController;
 use App\Http\Controllers\PosController;
+use App\Http\Controllers\ProductionController;
+use App\Http\Controllers\BomController;
 
 use App\Http\Controllers\RedeemCodeController;
 
@@ -42,6 +44,18 @@ Route::middleware('auth')->group(function () {
         Route::post('/stock-in', [InventoryController::class, 'stockIn'])->name('stock-in');
         Route::post('/stock-out', [InventoryController::class, 'stockOut'])->name('stock-out');
         Route::post('/stock-opname', [InventoryController::class, 'stockOpname'])->name('stock-opname');
+
+        // Bill of Materials (BoM)
+        Route::post('/{product}/bom', [BomController::class, 'store'])->name('bom.store');
+        Route::delete('/bom/{bom}', [BomController::class, 'destroy'])->name('bom.destroy');
+    });
+
+    // Production
+    Route::prefix('production')->name('production.')->group(function () {
+        Route::get('/', [ProductionController::class, 'index'])->name('index');
+        Route::get('/create', [ProductionController::class, 'create'])->name('create');
+        Route::post('/', [ProductionController::class, 'store'])->name('store');
+        Route::put('/{production}/status', [ProductionController::class, 'updateStatus'])->name('update-status');
     });
 
     // Users

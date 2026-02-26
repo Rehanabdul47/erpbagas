@@ -60,6 +60,11 @@
                 <option value="low">⚠️ Rendah</option>
                 <option value="out">🔴 Habis</option>
             </select>
+            <select id="filter-type" class="form-control" style="max-width:180px" onchange="filterProducts()">
+                <option value="">Semua Tipe</option>
+                <option value="final_product">🌟 Final Product</option>
+                <option value="raw_material">🧱 Raw Material</option>
+            </select>
             <div style="margin-left:auto;display:flex;gap:8px">
                 <a href="{{ route('inventory.create') }}" class="btn btn-primary btn-sm"><i data-lucide="plus"></i> Tambah Produk</a>
                 <button class="btn btn-success btn-sm" onclick="document.getElementById('modal-stock-in').classList.remove('hidden')"><i data-lucide="arrow-down-circle"></i> Stok Masuk</button>
@@ -71,13 +76,16 @@
             <table id="inventory-table">
                 <thead>
                     <tr>
-                        <th style="width:50px"></th><th>SKU</th><th>Produk</th><th>Kategori</th><th>Stok</th><th>Safety</th>
-                        <th>Harga</th><th>COGS</th><th>Lokasi</th><th>Status</th><th>Aksi</th>
+                        <th style="width:50px"></th><th>SKU</th><th>Produk</th><th>Tipe</th><th>Kategori</th><th>Stok</th><th>Safety</th>
+                        @hasanyrole('Manager|Executive|SuperAdmin')
+                        <th>Harga</th><th>COGS</th>
+                        @endhasanyrole
+                        <th>Lokasi</th><th>Status</th><th>Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
                     @forelse($products as $p)
-                    <tr data-sku="{{ strtolower($p->sku) }}" data-name="{{ strtolower($p->name) }}" data-category="{{ $p->category->name }}" data-status="{{ $p->status }}">
+                    <tr data-sku="{{ strtolower($p->sku) }}" data-name="{{ strtolower($p->name) }}" data-category="{{ $p->category->name }}" data-status="{{ $p->status }}" data-type="{{ $p->type }}">
                         <td>
                             @if($p->image)
                                 <img src="{{ Str::startsWith($p->image, 'http') ? $p->image : asset($p->image) }}" alt="{{ $p->name }}" style="width:32px;height:32px;object-fit:cover;border-radius:4px;border:1px solid var(--border-color)">
@@ -89,6 +97,13 @@
                         </td>
                         <td style="font-weight:600;color:var(--text-primary)">{{ $p->sku }}</td>
                         <td>{{ $p->name }}</td>
+                        <td>
+                            @if($p->type === 'final_product')
+                                <span class="badge badge-primary">🌟 Final Product</span>
+                            @else
+                                <span class="badge badge-neutral">🧱 Raw Material</span>
+                            @endif
+                        </td>
                         <td>{{ $p->category->name }}</td>
                         <td>
                             <div style="display:flex;align-items:center;gap:8px">
@@ -100,8 +115,10 @@
                             </div>
                         </td>
                         <td>{{ $p->safety_stock }}</td>
+                        @hasanyrole('Manager|Executive|SuperAdmin')
                         <td>Rp {{ number_format($p->price, 0, ',', '.') }}</td>
                         <td>Rp {{ number_format($p->cogs, 0, ',', '.') }}</td>
+                        @endhasanyrole
                         <td>{{ $p->location }}</td>
                         <td><span class="badge {{ $p->status_badge }}">{{ $p->status_label }}</span></td>
                         <td>
@@ -330,12 +347,14 @@ function filterProducts() {
     const search = document.getElementById('search-product').value.toLowerCase();
     const cat = document.getElementById('filter-category').value;
     const status = document.getElementById('filter-status').value;
+    const type = document.getElementById('filter-type').value;
     document.querySelectorAll('#inventory-table tbody tr').forEach(row => {
         if (!row.dataset.sku) return;
         const matchSearch = !search || row.dataset.sku.includes(search) || row.dataset.name.includes(search);
         const matchCat = !cat || row.dataset.category === cat;
         const matchStatus = !status || row.dataset.status === status;
-        row.style.display = (matchSearch && matchCat && matchStatus) ? '' : 'none';
+        const matchType = !type || row.dataset.type === type;
+        row.style.display = (matchSearch && matchCat && matchStatus && matchType) ? '' : 'none';
     });
 }
 </script>

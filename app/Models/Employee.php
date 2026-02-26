@@ -36,4 +36,5 @@ class Employee extends Model
     {
         return $this->hasMany(Payroll::class);
     }
+
 }

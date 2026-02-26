@@ -10,7 +10,7 @@ class Product extends Model
 {
     protected $fillable = [
         'sku', 'name', 'image', 'category_id', 'stock', 'safety_stock',
-        'price', 'cogs', 'batch', 'location',
+        'price', 'cogs', 'batch', 'location', 'type'
     ];
 
     protected $casts = [
@@ -26,6 +26,21 @@ class Product extends Model
     public function stockMovements(): HasMany
     {
         return $this->hasMany(StockMovement::class);
+    }
+
+    public function billOfMaterialsAsFinal(): HasMany
+    {
+        return $this->hasMany(BillOfMaterial::class, 'final_product_id');
+    }
+
+    public function billOfMaterialsAsRaw(): HasMany
+    {
+        return $this->hasMany(BillOfMaterial::class, 'raw_material_id');
+    }
+
+    public function productions(): HasMany
+    {
+        return $this->hasMany(Production::class);
     }
 
     public function getStatusAttribute(): string
