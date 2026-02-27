@@ -126,6 +126,7 @@ Route::middleware('auth')->group(function () {
     Route::prefix('pos')->name('pos.')->group(function () {
         Route::get('/', [PosController::class, 'index'])->name('index');
         Route::post('/checkout', [PosController::class, 'checkout'])->name('checkout');
+        Route::get('/checkout/invoice/{sale}', [PosController::class, 'invoice'])->name('invoice');
         Route::post('/customer', [SalesController::class, 'storeQuick'])->name('customer.store');
         Route::post('/apply-redeem-code', [RedeemCodeController::class, 'apply'])->name('apply-redeem-code');
     });

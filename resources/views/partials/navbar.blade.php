@@ -1,6 +1,6 @@
-<header class="fixed top-0 right-0 left-0 md:left-64 h-16 bg-gray-900/85 backdrop-blur-md border-b border-gray-700/50 flex items-center justify-between px-4 sm:px-6 z-[80] transition-all duration-300">
+<header :class="sidebarOpen ? 'lg:left-64' : 'left-0'" class="fixed top-0 right-0 h-16 bg-gray-900/85 backdrop-blur-md border-b border-gray-700/50 flex items-center justify-between px-4 sm:px-6 z-[80] transition-all duration-300">
     <div class="flex items-center gap-3 sm:gap-4">
-        <button @click="sidebarOpen = !sidebarOpen" class="md:hidden p-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 transition-colors">
+        <button @click="sidebarOpen = !sidebarOpen" class="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 transition-colors">
             <i data-lucide="menu" class="w-5 h-5"></i>
         </button>
         <div class="text-base font-semibold text-white hidden sm:block">

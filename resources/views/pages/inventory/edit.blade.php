@@ -102,7 +102,7 @@
                         <div class="flex flex-col sm:flex-row items-end gap-3 bg-gray-800 p-3 rounded-lg border border-gray-700/50">
                             <div class="w-full sm:flex-1 space-y-1.5">
                                 <label class="text-[10px] font-bold text-gray-500 uppercase">Bahan Baku (Raw Material)</label>
-                                <select :name="`boms[${index}][raw_material_id]`" x-model="bom.raw_material_id" required class="w-full bg-gray-900 border border-gray-700 text-white rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all">
+                                <select :name="`boms[${index}][raw_material_id]`" x-model="bom.raw_material_id" class="w-full bg-gray-900 border border-gray-700 text-white rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all">
                                     <option value="">Pilih raw material...</option>
                                     <template x-for="rm in rawMaterials" :key="rm.id">
                                         <option :value="rm.id" x-text="`${rm.sku} — ${rm.name}`"></option>
@@ -111,7 +111,7 @@
                             </div>
                             <div class="w-full sm:w-32 space-y-1.5">
                                 <label class="text-[10px] font-bold text-gray-500 uppercase">Kuantitas</label>
-                                <input type="number" :name="`boms[${index}][quantity]`" x-model="bom.quantity" min="0.01" step="0.01" required placeholder="Jumlah"
+                                <input type="number" :name="`boms[${index}][quantity]`" x-model="bom.quantity" min="0.01" step="0.01" placeholder="Jumlah"
                                        class="w-full bg-gray-900 border border-gray-700 text-white rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all">
                             </div>
                             <button type="button" @click="removeBom(index)" class="shrink-0 w-full sm:w-auto px-3 py-2.5 bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white rounded-lg transition-colors border border-red-500/20 flex justify-center items-center" title="Hapus baris">
@@ -176,12 +176,14 @@
                     <div class="relative">
                         <i data-lucide="link" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500"></i>
                         <input type="url" name="image" value="{{ old('image', $product->image) }}" placeholder="https://example.com/image.jpg"
+                               :disabled="imageMode !== 'url'"
                                class="w-full bg-gray-900 border border-gray-700 text-white pl-10 pr-4 py-3 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all placeholder-gray-600">
                     </div>
                 </div>
                 
                 <div x-show="imageMode === 'upload'" x-transition class="space-y-2" style="display: none;">
                     <input type="file" name="image_file" accept="image/*"
+                           :disabled="imageMode !== 'upload'"
                            class="w-full bg-gray-900 border border-gray-700 text-white px-2 py-2 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-indigo-600 file:text-white hover:file:bg-indigo-500 cursor-pointer">
                 </div>
             </div>

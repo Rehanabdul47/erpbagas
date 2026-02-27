@@ -30,13 +30,13 @@
     $activePage = $activePage ?? 'dashboard';
 @endphp
 
-<aside :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'" id="sidebar" class="fixed top-0 left-0 h-full w-64 bg-gray-800/95 border-r border-gray-700/50 flex flex-col z-[100] transition-transform duration-300">
+<aside :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'" id="sidebar" class="fixed top-0 left-0 h-full w-64 bg-gray-800/95 border-r border-gray-700/50 flex flex-col z-[100] transition-transform duration-300">
     <div class="h-16 flex items-center justify-between px-6 border-b border-gray-700/50 shrink-0">
         <div class="flex items-center gap-3 text-indigo-400 font-bold tracking-widest text-lg">
             <i data-lucide="hexagon" class="w-6 h-6"></i>
             <span>GUPALA</span>
         </div>
-        <button @click="sidebarOpen = false" id="sidebar-toggle" class="md:hidden p-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-700 transition-colors">
+        <button @click="sidebarOpen = false" id="sidebar-toggle" class="lg:hidden p-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-700 transition-colors">
             <i data-lucide="x" class="w-5 h-5"></i>
         </button>
     </div>

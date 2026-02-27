@@ -251,8 +251,8 @@
                                     </span>
                                 </td>
                                 <td class="px-5 py-3 text-right">
-                                    <button class="p-1.5 rounded-lg text-gray-400 hover:text-indigo-400 hover:bg-indigo-500/10 transition-colors opacity-50 group-hover:opacity-100" title="Detail Invoice">
-                                        <i data-lucide="eye" class="w-4 h-4"></i>
+                                    <button @click="printInvoice({{ $sale->id }})" class="p-1.5 rounded-lg text-gray-400 hover:text-indigo-400 hover:bg-indigo-500/10 transition-colors opacity-50 group-hover:opacity-100" title="Cetak Struk">
+                                        <i data-lucide="printer" class="w-4 h-4"></i>
                                     </button>
                                 </td>
                             </tr>
@@ -363,7 +363,7 @@
             </p>
             
             <div class="grid grid-cols-2 gap-3 w-full z-10">
-                <button @click="window.location.reload()" class="w-full py-3 bg-indigo-600 hover:bg-indigo-500 border border-indigo-500 text-white rounded-xl text-sm font-bold transition-all shadow-lg flex items-center justify-center gap-2">
+                <button @click="printInvoice(successSaleId)" class="w-full py-3 bg-indigo-600 hover:bg-indigo-500 border border-indigo-500 text-white rounded-xl text-sm font-bold transition-all shadow-lg flex items-center justify-center gap-2">
                     <i data-lucide="printer" class="w-4 h-4"></i> Cetak Struk
                 </button>
                 <button @click="window.location.reload()" class="w-full py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-xl text-sm font-bold transition-all border border-gray-600">
@@ -421,6 +421,7 @@ document.addEventListener('alpine:init', () => {
         cashChange: 0,
         processing: false,
         successInvoice: '',
+        successSaleId: null,
         
         // Redeem / Promo state
         redeemCodeInput: '',
@@ -609,6 +610,7 @@ document.addEventListener('alpine:init', () => {
                 if (res.success) {
                     this.modals.checkout = false;
                     this.successInvoice = res.invoice_no;
+                    this.successSaleId = res.sale_id;
                     this.modals.success = true;
                 } else {
                     alert(res.message);
@@ -618,6 +620,12 @@ document.addEventListener('alpine:init', () => {
                 this.processing = false;
                 alert('Terjadi kesalahan menghubungkan ke server.');
             });
+        },
+
+        printInvoice(saleId) {
+            const url = `{{ route('pos.invoice', ':id') }}`.replace(':id', saleId);
+            const win = window.open(url + '?print=true', '_blank');
+            if (win) win.focus();
         },
 
         // --- Customer Logic ---

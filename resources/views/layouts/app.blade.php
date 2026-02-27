@@ -3,14 +3,14 @@
 <head>
     @include('partials.head')
 </head>
-<body class="bg-gray-900 text-slate-100 min-h-screen text-sm font-sans antialiased" x-data="{ sidebarOpen: false }" :class="sidebarOpen ? 'overflow-hidden md:overflow-auto' : 'overflow-x-hidden'">
+<body class="bg-gray-900 text-slate-100 min-h-screen text-sm font-sans antialiased" x-data="{ sidebarOpen: window.innerWidth > 1024 }" :class="sidebarOpen ? 'overflow-hidden lg:overflow-auto' : 'overflow-x-hidden'">
     <!-- Mobile Sidebar Backdrop -->
-    <div x-show="sidebarOpen" x-transition.opacity x-cloak style="display: none;" class="fixed inset-0 bg-gray-900/80 backdrop-blur-sm z-[90] md:hidden" @click="sidebarOpen = false"></div>
+    <div x-show="sidebarOpen" x-transition.opacity x-cloak style="display: none;" class="fixed inset-0 bg-gray-900/80 backdrop-blur-sm z-[90] lg:hidden" @click="sidebarOpen = false"></div>
 
     @include('partials.sidebar')
 
     <!-- Main Content Wrapper -->
-    <main class="md:ml-64 flex flex-col min-h-screen transition-all duration-300" id="main-content">
+    <main class="flex flex-col min-h-screen transition-all duration-300" :class="sidebarOpen ? 'lg:ml-64' : 'ml-0'" id="main-content">
         @include('partials.navbar')
 
         <!-- Page Content -->

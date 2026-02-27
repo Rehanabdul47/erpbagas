@@ -53,8 +53,8 @@ class InventoryController extends Controller
             'image_file' => 'nullable|image|max:2048',
             'type' => 'required|in:raw_material,final_product',
             'boms' => 'nullable|array',
-            'boms.*.raw_material_id' => 'required_with:boms|exists:products,id',
-            'boms.*.quantity' => 'required_with:boms|numeric|min:0.01',
+            'boms.*.raw_material_id' => 'nullable|exists:products,id',
+            'boms.*.quantity' => 'nullable|numeric|min:0.01',
         ]);
 
         if ($request->hasFile('image_file')) {
@@ -116,8 +116,8 @@ class InventoryController extends Controller
             'image_file' => 'nullable|image|max:2048',
             'type' => 'required|in:raw_material,final_product',
             'boms' => 'nullable|array',
-            'boms.*.raw_material_id' => 'required_with:boms|exists:products,id',
-            'boms.*.quantity' => 'required_with:boms|numeric|min:0.01',
+            'boms.*.raw_material_id' => 'nullable|exists:products,id',
+            'boms.*.quantity' => 'nullable|numeric|min:0.01',
         ]);
 
         if ($request->hasFile('image_file')) {

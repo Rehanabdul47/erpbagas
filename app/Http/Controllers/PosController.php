@@ -145,6 +145,7 @@ class PosController extends Controller
                     'success' => true,
                     'message' => 'Transaksi berhasil diproses',
                     'invoice_no' => $invoiceNo,
+                    'sale_id' => $sale->id,
                     'total_amount' => $totalAmount,
                 ]);
             });
@@ -154,5 +155,11 @@ class PosController extends Controller
                 'message' => $e->getMessage(),
             ], 422);
         }
+    }
+
+    public function invoice(Sale $sale)
+    {
+        $sale->load(['customer', 'items.product', 'redeemCode']);
+        return view('pages.pos.invoice', compact('sale'));
     }
 }
