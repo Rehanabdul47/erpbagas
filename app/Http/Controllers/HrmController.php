@@ -189,16 +189,19 @@ class HrmController extends Controller
             ], 404);
         }
 
-        $today = date('Y-m-d');
-        $now = date('H:i:s');
+        $today = now()->format('Y-m-d');
+        $now = now()->format('H:i:s');
 
         // Handle Image
         $imageName = null;
         if ($request->image) {
             $imageData = $request->image;
-            $imageData = str_replace('data:image/png;base64,', '', $imageData);
+            if (preg_match('/^data:image\/(\w+);base64,/', $imageData, $type)) {
+                $imageData = substr($imageData, strpos($imageData, ',') + 1);
+                $type = strtolower($type[1]); // png, jpg, jpeg
+            }
             $imageData = str_replace(' ', '+', $imageData);
-            $imageName = $employee->nip . '_' . time() . '.png';
+            $imageName = $employee->nip . '_' . time() . '.' . ($type ?? 'png');
             \Storage::disk('public')->put('attendances/' . $imageName, base64_decode($imageData));
         }
 

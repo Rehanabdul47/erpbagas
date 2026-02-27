@@ -27,7 +27,7 @@
         </div>
         <div class="bg-gray-800 border border-gray-700/50 rounded-xl p-5 shadow-sm">
             <div class="w-10 h-10 rounded-lg bg-amber-500/10 text-amber-500 flex items-center justify-center mb-4"><i data-lucide="calendar-check" class="w-5 h-5"></i></div>
-            <div class="text-3xl font-bold text-white mb-1">{{ $stats['presentToday'] }}</div>
+            <div class="text-3xl font-bold text-white mb-1" id="stat-present-today">{{ $stats['presentToday'] }}</div>
             <div class="text-gray-400 text-sm">Hadir Hari Ini</div>
         </div>
         <div class="bg-gray-800 border border-gray-700/50 rounded-xl p-5 shadow-sm">
@@ -73,6 +73,7 @@
                                 </td>
                                 <td class="px-4 py-3 text-right">
                                     <div class="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <button @click.stop="viewQRCode({{ json_encode($emp) }})" class="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-gray-700 transition-colors" title="Lihat QR Code"><i data-lucide="qr-code" class="w-4 h-4"></i></button>
                                         <button @click.stop="editEmployee({{ json_encode($emp) }})" class="p-1.5 rounded-lg text-gray-400 hover:text-indigo-400 hover:bg-indigo-500/10 transition-colors" title="Edit"><i data-lucide="edit-2" class="w-4 h-4"></i></button>
                                         <form method="POST" action="{{ route('hrm.employees.destroy', $emp) }}" @submit.stop="return confirm('Hapus karyawan ini?')" @click.stop class="m-0">
                                             @csrf @method('DELETE')
@@ -116,13 +117,15 @@
                                     <div class="font-bold text-white">{{ $emp->name }}</div>
                                     <div class="text-[11px] text-gray-500 font-mono mt-0.5">NIP: {{ $emp->nip }}</div>
                                 </td>
-                                <td class="px-4 py-3 att-photos flex gap-1">
-                                    @if($att && $att->image)
-                                        <img src="{{ asset('storage/attendances/' . $att->image) }}" class="att-img-in w-8 h-8 rounded object-cover cursor-pointer border border-gray-700 shadow-sm" @click.stop="window.open($event.target.src)" title="Foto Masuk">
-                                    @endif
-                                    @if($att && $att->image_out)
-                                        <img src="{{ asset('storage/attendances/' . $att->image_out) }}" class="att-img-out w-8 h-8 rounded object-cover cursor-pointer border border-gray-700 shadow-sm" @click.stop="window.open($event.target.src)" title="Foto Keluar">
-                                    @endif
+                                <td class="px-4 py-3">
+                                    <div class="att-photos flex gap-1">
+                                        @if($att && $att->image)
+                                            <img src="{{ asset('storage/attendances/' . $att->image) }}" class="att-img-in w-10 h-10 rounded-lg object-cover cursor-pointer border border-gray-700 shadow-sm hover:scale-110 transition-transform" @click.stop="window.open($event.target.src)" title="Foto Masuk">
+                                        @endif
+                                        @if($att && $att->image_out)
+                                            <img src="{{ asset('storage/attendances/' . $att->image_out) }}" class="att-img-out w-10 h-10 rounded-lg object-cover cursor-pointer border border-gray-700 shadow-sm hover:scale-110 transition-transform" @click.stop="window.open($event.target.src)" title="Foto Keluar">
+                                        @endif
+                                    </div>
                                 </td>
                                 <td class="px-4 py-3 att-status">
                                     @if($att)
@@ -350,10 +353,40 @@
             </div>
         </div>
     </div>
+
+    {{-- Modal: QR Code Khusus NIP Karyawan --}}
+    <div x-show="modals.qrCode" x-cloak style="display: none;" class="fixed inset-0 bg-gray-900/80 backdrop-blur-sm z-[160] flex items-center justify-center p-4 transition-opacity">
+        <div @click.away="modals.qrCode = false" class="bg-gray-800 border-2 border-indigo-500/50 rounded-2xl shadow-[0_0_50px_-12px_rgba(99,102,241,0.5)] w-full max-w-sm overflow-hidden flex flex-col relative">
+            <div class="absolute top-0 inset-x-0 h-2 bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-500"></div>
+            
+            <div class="px-5 pt-8 pb-2 text-center relative z-10">
+                <div class="w-16 h-16 rounded-full bg-gradient-to-tr from-indigo-600 to-purple-600 p-1 mx-auto mb-3 shadow-lg">
+                    <div class="w-full h-full bg-gray-900 rounded-full flex items-center justify-center text-white font-bold text-xl" x-text="qrData.initials"></div>
+                </div>
+                <h3 class="font-bold text-white text-xl mb-0.5" x-text="qrData.name"></h3>
+                <p class="text-indigo-400 text-sm font-medium uppercase tracking-wider text-xs" x-text="qrData.position"></p>
+                <div class="mt-2 inline-block px-3 py-1 bg-gray-900 border border-gray-700 rounded text-gray-300 font-mono text-sm shadow-inner" x-text="qrData.nip"></div>
+            </div>
+
+            <div class="p-6 flex flex-col items-center justify-center bg-white m-5 rounded-xl shadow-inner relative group">
+                <div class="absolute inset-0 border-2 border-dashed border-gray-200 rounded-xl pointer-events-none"></div>
+                <div class="opacity-0 group-hover:opacity-100 absolute top-2 right-2 transition-opacity z-20">
+                    <button @click="downloadQR" class="p-1.5 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-lg shadow-sm" title="Download QR"><i data-lucide="download" class="w-4 h-4"></i></button>
+                </div>
+                <canvas id="employee-qrcode" class="w-full max-w-[200px] h-auto"></canvas>
+            </div>
+
+            <div class="px-5 py-4 border-t border-gray-700/50 bg-gray-900/50 flex justify-center">
+                <button @click="modals.qrCode = false" class="px-8 py-2.5 bg-gray-700 hover:bg-gray-600 text-white rounded-full text-sm font-bold transition-all shadow-md hover:shadow-lg focus:ring-2 focus:ring-gray-500 outline-none w-full">Tutup</button>
+            </div>
+        </div>
+    </div>
 </div>
 @endsection
 
 @push('scripts')
+<script src="{{ asset('js/qrcodegen.js') }}"></script>
+<script src="https://js.pusher.com/8.0/pusher.min.js"></script>
 <script>
 document.addEventListener('alpine:init', () => {
     Alpine.data('hrmData', () => ({
@@ -362,12 +395,14 @@ document.addEventListener('alpine:init', () => {
             employee: false,
             attendance: false,
             editPayroll: false,
-            detail: false
+            detail: false,
+            qrCode: false
         },
         empForm: { action: '', method: '', title: '', btnText: '', id: '', nip: '', name: '', email: '', phone: '', position: '', department: '', join_date: '', basic_salary: '', status: 'active' },
         attForm: { employee_id: '', employee_name: '', status: 'present', clock_in: '08:00', clock_out: '17:00', note: '', image: '', image_out: '' },
         payForm: { id: '', employee_name: '', period: '', basicStr: '', allowance: 0, deduction: 0, status: 'draft' },
         detail: { title: '', content: '' },
+        qrData: { nip: '', name: '', position: '', initials: '' },
         
         switchTab(tab) {
             this.activeTab = tab;
@@ -546,6 +581,53 @@ document.addEventListener('alpine:init', () => {
                 </div>
             `;
             this.modals.detail = true;
+        },
+
+        viewQRCode(emp) {
+            this.qrData = {
+                nip: emp.nip,
+                name: emp.name,
+                position: emp.position,
+                initials: emp.name.substring(0, 2).toUpperCase()
+            };
+            
+            this.modals.qrCode = true;
+
+            // Render QR shortly after modal opens so canvas is visible in DOM
+            this.$nextTick(() => {
+                try {
+                    if (typeof qrcodegen === 'undefined') {
+                        throw new Error("Pustaka QR Code (Nayuki) belum termuat.");
+                    }
+
+                    const canvas = document.getElementById("employee-qrcode");
+                    if (!canvas) {
+                        throw new Error("Elemen canvas tidak ditemukan.");
+                    }
+
+                    // Generate the QR Code
+                    const qr = qrcodegen.QrCode.encodeText(this.qrData.nip, qrcodegen.QrCode.Ecc.MEDIUM);
+                    
+                    // Use the library's built-in drawCanvas method
+                    // Parameters: scale, border, canvas
+                    qr.drawCanvas(8, 2, canvas);
+                    
+                    // Refresh lucide icons in the modal if any
+                    if (typeof lucide !== 'undefined') {
+                        lucide.createIcons();
+                    }
+                } catch (err) {
+                    console.error("Gagal membuat QR Code:", err.message);
+                }
+            });
+        },
+
+        downloadQR() {
+            const canvas = document.getElementById("employee-qrcode");
+            const link = document.createElement('a');
+            link.download = `QR_${this.qrData.nip}.png`;
+            link.href = canvas.toDataURL("image/png");
+            link.click();
         }
     }));
 });
@@ -553,45 +635,64 @@ document.addEventListener('alpine:init', () => {
 
 @if(config('broadcasting.connections.pusher.key'))
 <script>
-// Pusher Real-time Events
+// Pusher Real-time Events Synchronization
 document.addEventListener('DOMContentLoaded', () => {
-    if (typeof Pusher !== 'undefined') {
-        const pusher = new Pusher('{{ config('broadcasting.connections.pusher.key') }}', {
-            cluster: '{{ config('broadcasting.connections.pusher.options.cluster') }}',
-            forceTLS: true
-        });
-
-        const channel = pusher.subscribe('attendance');
-        channel.bind('App\\Events\\AttendanceRecorded', function(data) {
-            const att = data.attendance;
-            const empId = att.employee_id;
-            const row = document.getElementById('att-row-' + empId);
-            
-            if (row && '{{ $attendanceDate }}' === att.date) {
-                // Determine badge tailwind classes
-                const statusBadge = att.status === 'present' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : (att.status === 'absent' ? 'bg-red-500/10 text-red-500 border-red-500/20' : 'bg-amber-500/10 text-amber-500 border-amber-500/20');
-                
-                row.querySelector('.att-status').innerHTML = `<span class="px-2 py-1 flex w-fit rounded-full text-[10px] font-bold border ${statusBadge}">${att.status.charAt(0).toUpperCase() + att.status.slice(1)}</span>`;
-                row.querySelector('.att-in').textContent = att.clock_in || '-';
-                row.querySelector('.att-out').textContent = att.clock_out || '-';
-                row.querySelector('.att-note').innerHTML = att.note || '-';
-                
-                // Update Photos
-                let photosHtml = '';
-                if (att.image) {
-                    photosHtml += `<img src="/storage/attendances/${att.image}" class="w-8 h-8 rounded object-cover cursor-pointer border border-gray-700 shadow-sm" onclick="window.open(this.src)" title="Foto Masuk"> `;
-                }
-                if (att.image_out) {
-                    photosHtml += `<img src="/storage/attendances/${att.image_out}" class="w-8 h-8 rounded object-cover cursor-pointer border border-gray-700 shadow-sm" onclick="window.open(this.src)" title="Foto Keluar">`;
-                }
-                row.querySelector('.att-photos').innerHTML = photosHtml;
-                
-                // Highlight Effect
-                row.classList.add('bg-indigo-500/20');
-                setTimeout(() => { row.classList.remove('bg-indigo-500/20'); }, 2000);
-            }
-        });
+    if (typeof Pusher === 'undefined') {
+        console.warn("Pusher library not detected. Real-time sync disabled.");
+        return;
     }
+
+    const pusher = new Pusher('{{ config('broadcasting.connections.pusher.key') }}', {
+        cluster: '{{ config('broadcasting.connections.pusher.options.cluster') }}',
+        forceTLS: true
+    });
+
+    const channel = pusher.subscribe('attendance');
+    channel.bind('App\\Events\\AttendanceRecorded', function(data) {
+        const att = data.attendance;
+        const empId = att.employee_id;
+        const employee = att.employee || { name: 'Karyawan' };
+        
+        // 1. Sync HRM Table Row
+        const row = document.getElementById('att-row-' + empId);
+        // Normalize dates for comparison (att.date might be ISO string)
+        const attDateNormalized = att.date.includes('T') ? att.date.split('T')[0] : att.date;
+        
+        if (row && '{{ $attendanceDate }}' === attDateNormalized) {
+            const statusBadge = att.status === 'present' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : (att.status === 'absent' ? 'bg-red-500/10 text-red-500 border-red-500/20' : 'bg-amber-500/10 text-amber-500 border-amber-500/20');
+            
+            row.querySelector('.att-status').innerHTML = `<span class="px-2 py-1 flex w-fit rounded-full text-[10px] font-bold border ${statusBadge}">${att.status.charAt(0).toUpperCase() + att.status.slice(1)}</span>`;
+            row.querySelector('.att-in').textContent = att.clock_in ? att.clock_in.substring(0, 5) : '-';
+            row.querySelector('.att-out').textContent = att.clock_out ? att.clock_out.substring(0, 5) : '-';
+            
+            const noteEl = row.querySelector('.att-note');
+            if (noteEl) noteEl.innerHTML = att.note || '-';
+            
+            const photoEl = row.querySelector('.att-photos');
+            if (photoEl) {
+                let photosHtml = '';
+                if (att.image) photosHtml += `<img src="/storage/attendances/${att.image}" class="w-10 h-10 rounded-lg object-cover cursor-pointer border border-gray-700 shadow-sm hover:scale-110 transition-transform" onclick="window.open(this.src)" title="Foto Masuk"> `;
+                if (att.image_out) photosHtml += `<img src="/storage/attendances/${att.image_out}" class="w-10 h-10 rounded-lg object-cover cursor-pointer border border-gray-700 shadow-sm hover:scale-110 transition-transform" onclick="window.open(this.src)" title="Foto Keluar">`;
+                photoEl.innerHTML = photosHtml;
+            }
+            
+            row.classList.add('bg-indigo-500/20', 'transition-all');
+            setTimeout(() => row.classList.remove('bg-indigo-500/20'), 3000);
+        }
+
+        // 2. Sync Global Stats Counter
+        const todayStr = new Date().toISOString().split('T')[0];
+        if (att.date === todayStr && !att.clock_out) {
+            const statEl = document.getElementById('stat-present-today');
+            if (statEl) {
+                let current = parseInt(statEl.textContent) || 0;
+                statEl.textContent = current + 1;
+                const card = statEl.parentElement;
+                card.classList.add('ring-2', 'ring-amber-500', 'bg-amber-500/5');
+                setTimeout(() => card.classList.remove('ring-2', 'ring-amber-500', 'bg-amber-500/5'), 4000);
+            }
+        }
+    });
 });
 </script>
 @endif

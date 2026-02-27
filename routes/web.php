@@ -13,6 +13,8 @@ use App\Http\Controllers\ProductionController;
 use App\Http\Controllers\BomController;
 use App\Http\Controllers\ProductionDashboardController;
 use App\Http\Controllers\MarketingDashboardController;
+use App\Http\Controllers\FinanceDashboardController;
+use App\Http\Controllers\OrderController;
 
 use App\Http\Controllers\RedeemCodeController;
 
@@ -99,6 +101,7 @@ Route::middleware('auth')->group(function () {
     // Other pages (still JS-rendered for now)
     // Finance / Cash Book
     Route::prefix('finance')->name('finance.')->group(function () {
+        Route::get('/dashboard', [FinanceDashboardController::class, 'index'])->name('dashboard');
         Route::get('/', [CashController::class, 'index'])->name('index');
         Route::post('/', [CashController::class, 'store'])->name('store');
         Route::put('/{finance}', [CashController::class, 'update'])->name('update');
@@ -122,8 +125,12 @@ Route::middleware('auth')->group(function () {
         Route::put('/payroll/{payroll}', [HrmController::class, 'updatePayroll'])->name('payroll.update');
     });
 
-    // Orders
-    Route::get('/orders', fn() => view('pages.orders', ['activePage' => 'orders']))->name('orders');
+    // Orders (E-Commerce)
+    Route::prefix('orders')->name('orders')->group(function () {
+        Route::get('/', [OrderController::class, 'index']);
+        Route::post('/sync', [OrderController::class, 'syncApi'])->name('.sync');
+        Route::put('/{order}/status', [OrderController::class, 'updateStatus'])->name('.update-status');
+    });
 
     // POS System
     Route::prefix('pos')->name('pos.')->group(function () {

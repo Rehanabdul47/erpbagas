@@ -13,6 +13,7 @@
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
+    <script src="https://js.pusher.com/8.0/pusher.min.js"></script>
     <script>
         tailwind.config = {
             theme: {
@@ -73,8 +74,25 @@
         </form>
 
         <!-- Instructions -->
-        <div class="text-slate-500 flex items-center justify-center gap-2 text-sm md:text-base font-medium">
+        <div class="text-slate-500 flex items-center justify-center gap-2 text-sm md:text-base font-medium mb-8">
             <i data-lucide="info" class="w-5 h-5 text-slate-400"></i> Arahkan QR Code ke kamera atau ketik NIP
+        </div>
+
+        <!-- Live Activity Sync -->
+        <div class="w-full border-t border-slate-100 pt-6">
+            <div class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4 flex items-center justify-center gap-2">
+                <span class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span> Sinkronisasi Aktif
+            </div>
+            <div class="flex flex-wrap justify-center gap-2 overflow-hidden px-2 max-h-12">
+                <template x-for="(log, index) in recentLogs" :key="index">
+                    <div class="flex items-center gap-2 bg-slate-50 border border-slate-200 py-1.5 px-3 rounded-full animate-[fadeIn_0.5s_ease-out]">
+                        <div class="w-5 h-5 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center text-[10px] font-bold" x-text="log.initials"></div>
+                        <div class="text-[11px] font-medium text-slate-600" x-text="log.name"></div>
+                        <div class="text-[10px] text-slate-400 font-mono" x-text="log.time"></div>
+                    </div>
+                </template>
+                <div x-show="recentLogs.length === 0" class="text-xs text-slate-300 italic">Belum ada aktivitas hari ini</div>
+            </div>
         </div>
     </div>
 
@@ -85,13 +103,24 @@
 
     <!-- Message Overlay -->
     <div x-show="message.show" x-transition.opacity.duration.300ms class="fixed inset-0 bg-white/95 backdrop-blur-sm z-[100] flex flex-col items-center justify-center pointer-events-auto" style="display: none;">
-        <div class="w-32 h-32 rounded-full flex items-center justify-center mb-8 shadow-2xl transition-transform duration-500" :class="message.type === 'success' ? 'bg-emerald-500 shadow-emerald-500/30' : 'bg-red-500 shadow-red-500/30'" x-transition:enter="ease-out duration-500" x-transition:enter-start="scale-50 opacity-0" x-transition:enter-end="scale-100 opacity-100">
+        <div class="w-32 h-32 rounded-full flex items-center justify-center mb-8 shadow-2xl transition-transform duration-500" :class="message.type === 'success' ? 'bg-emerald-500 shadow-emerald-500/30' : 'bg-red-500 shadow-red-500/30'">
             <i data-lucide="check" x-show="message.type === 'success'" class="w-16 h-16 text-white"></i>
             <i data-lucide="x" x-show="message.type !== 'success'" class="w-16 h-16 text-white"></i>
         </div>
         <h2 class="text-4xl md:text-5xl font-bold mb-4 text-slate-800" :class="message.type === 'success' ? 'text-emerald-600' : 'text-red-500'" x-text="message.title"></h2>
         <p class="text-xl md:text-2xl text-slate-500 mb-3" x-text="message.desc"></p>
         <div class="text-2xl md:text-3xl font-bold text-slate-800 font-mono" x-show="message.time" x-text="message.time"></div>
+    </div>
+
+    <!-- Pose Countdown Overlay -->
+    <div x-show="isCountdown" x-transition.opacity class="fixed inset-0 bg-indigo-600/90 backdrop-blur-md z-[120] flex flex-col items-center justify-center text-white" style="display: none;">
+        <div class="text-8xl md:text-[12rem] font-black mb-10 animate-pulse text-white drop-shadow-2xl" x-text="countdown">5</div>
+        <div class="text-2xl md:text-4xl font-bold mb-4 text-center px-6">Siap-siap Pose! ✨</div>
+        <div class="text-xl md:text-2xl text-indigo-100 font-medium italic text-center px-10">"Fotonya mundurin dikit biar cakepnya kelihatan"</div>
+        <div class="mt-12 flex items-center gap-3 bg-white/20 px-6 py-3 rounded-full backdrop-blur-sm border border-white/30">
+            <i data-lucide="camera" class="w-6 h-6 animate-bounce"></i>
+            <span class="text-lg font-bold">Kamera akan memotret otomatis</span>
+        </div>
     </div>
 
     <!-- Script Block -->
@@ -103,11 +132,15 @@
                 cameraStatus: 'Menginisialisasi...',
                 nip: '',
                 isProcessing: false,
+                isCountdown: false,
+                countdown: 5,
                 message: { show: false, type: 'success', title: '', desc: '', time: '' },
+                recentLogs: [],
 
                 init() {
                     this.updateClock();
                     setInterval(() => this.updateClock(), 1000);
+                    this.initSync();
                     
                     // Init scanner
                     this.$nextTick(() => {
@@ -158,8 +191,26 @@
                 async processAttendance(scannedNip) {
                     if (this.isProcessing) return;
                     this.isProcessing = true;
+                    this.nip = scannedNip;
 
-                    // Capture Frame for proof
+                    // Start Countdown Before Processing
+                    this.isCountdown = true;
+                    this.countdown = 5;
+                    this.$nextTick(() => lucide.createIcons());
+
+                    const timer = setInterval(() => {
+                        this.countdown--;
+                        if (this.countdown <= 0) {
+                            clearInterval(timer);
+                            this.performFinalAttendance();
+                        }
+                    }, 1000);
+                },
+
+                async performFinalAttendance() {
+                    this.isCountdown = false;
+
+                    // Capture Frame for proof exactly AFTER countdown
                     let imageData = null;
                     const videoElem = document.querySelector('#reader video');
                     if (videoElem) {
@@ -181,7 +232,7 @@
                                 'X-CSRF-TOKEN': '{{ csrf_token() }}',
                                 'Accept': 'application/json'
                             },
-                            body: JSON.stringify({ nip: scannedNip, image: imageData })
+                            body: JSON.stringify({ nip: this.nip, image: imageData })
                         });
 
                         const data = await response.json();
@@ -198,18 +249,45 @@
                             this.isProcessing = false;
                             this.nip = '';
                             this.$refs.nipInput.focus();
-                        }, 4000); 
+                        }, 5000); 
                     }
                 },
 
                 showMessage(type, title, desc, time) {
-                    this.message = { show: true, type, title, desc, time };
+                    this.message = { show: true, type, title, desc: desc, time };
                     this.$nextTick(() => lucide.createIcons());
                     
                     setTimeout(() => {
                         this.message.show = false;
                         this.$nextTick(() => { this.$refs.nipInput.focus(); });
-                    }, 3000);
+                    }, 5000);
+                },
+
+                initSync() {
+                    @if(config('broadcasting.connections.pusher.key'))
+                    if (typeof Pusher !== 'undefined') {
+                        const pusher = new Pusher('{{ config('broadcasting.connections.pusher.key') }}', {
+                            cluster: '{{ config('broadcasting.connections.pusher.options.cluster') }}',
+                            forceTLS: true
+                        });
+                        
+                        const channel = pusher.subscribe('attendance');
+                        channel.bind('App\\Events\\AttendanceRecorded', (data) => {
+                            const att = data.attendance;
+                            const empName = att.employee ? att.employee.name : 'User';
+                            
+                            // Add to recent logs list
+                            this.recentLogs.unshift({
+                                name: empName.split(' ')[0],
+                                initials: empName.substring(0, 2).toUpperCase(),
+                                time: att.clock_in ? att.clock_in.substring(0, 5) : att.clock_out.substring(0, 5)
+                            });
+                            
+                            // Keep only last 4
+                            if (this.recentLogs.length > 4) this.recentLogs.pop();
+                        });
+                    }
+                    @endif
                 }
             }));
         });

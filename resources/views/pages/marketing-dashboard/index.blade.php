@@ -43,9 +43,9 @@
         </div>
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 pb-6">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 pb-6">
         {{-- Transaksi POS Terbaru --}}
-        <div class="bg-gray-800 border border-gray-700/50 rounded-xl shadow-sm flex flex-col h-full lg:col-span-2">
+        <div class="bg-gray-800 border border-gray-700/50 rounded-xl shadow-sm flex flex-col h-full lg:col-span-3">
             <div class="p-5 border-b border-gray-700/50 flex items-center justify-between">
                 <h4 class="font-bold text-white flex items-center gap-2">
                     <i data-lucide="shopping-bag" class="w-4 h-4 text-emerald-400"></i> Transaksi POS Terbaru
@@ -78,6 +78,44 @@
                                 <td colspan="4" class="px-5 py-8 text-center text-gray-500">
                                     <i data-lucide="file-x" class="w-8 h-8 mx-auto mb-2 text-gray-600"></i>
                                     Belum ada data transaksi.
+                                </td>
+                            </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        {{-- Produk Terlaris --}}
+        <div class="bg-gray-800 border border-gray-700/50 rounded-xl shadow-sm flex flex-col h-full">
+            <div class="p-5 border-b border-gray-700/50 flex items-center justify-between">
+                <h4 class="font-bold text-white flex items-center gap-2">
+                    <i data-lucide="award" class="w-4 h-4 text-amber-400"></i> Produk Terlaris
+                </h4>
+            </div>
+            <div class="p-0 flex-1 relative min-h-[250px]">
+                <div class="absolute inset-0 overflow-y-auto w-full">
+                    <table class="w-full text-left text-sm whitespace-nowrap">
+                        <thead class="bg-gray-900/50 text-gray-400 text-xs uppercase tracking-wider sticky top-0 z-10 border-b border-gray-700/50 backdrop-blur-md">
+                            <tr>
+                                <th class="px-5 py-3 font-medium">Produk</th>
+                                <th class="px-5 py-3 font-medium text-right">Terjual</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-700/50">
+                            @forelse($topProducts as $item)
+                            <tr class="hover:bg-gray-700/20 transition-colors">
+                                <td class="px-5 py-3 font-bold text-white">{{ collect(explode(' ', $item->product->name))->take(2)->implode(' ') }}...</td>
+                                <td class="px-5 py-3 text-right">
+                                    <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/10 text-amber-500">{{ number_format($item->total_sold) }}</span>
+                                </td>
+                            </tr>
+                            @empty
+                            <tr>
+                                <td colspan="2" class="px-5 py-8 text-center text-gray-500">
+                                    <i data-lucide="package-x" class="w-8 h-8 mx-auto mb-2 text-gray-600"></i>
+                                    Belum ada data penjualan.
                                 </td>
                             </tr>
                             @endforelse

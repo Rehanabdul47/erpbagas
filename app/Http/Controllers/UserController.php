@@ -43,16 +43,29 @@ class UserController extends Controller
             'role' => 'required|exists:roles,name',
         ]);
 
-        $user = User::create([
+        $user = \App\Models\User::create([
             'name' => $validated['name'],
             'email' => $validated['email'],
-            'password' => Hash::make($validated['password']),
+            'password' => \Illuminate\Support\Facades\Hash::make($validated['password']),
             'department' => $validated['department'],
         ]);
 
         $user->assignRole($validated['role']);
 
-        return redirect()->route('users.index')->with('success', "User {$user->name} berhasil ditambahkan");
+        // Auto-create Employee Record
+        \App\Models\Employee::create([
+            'nip' => 'EMP-' . now()->format('Ymd') . '-' . str_pad($user->id, 3, '0', STR_PAD_LEFT),
+            'name' => $user->name,
+            'email' => $user->email,
+            'phone' => '-', // Default phone
+            'position' => ucfirst(str_replace('_', ' ', $validated['role'])),
+            'department' => ucfirst($validated['department']),
+            'join_date' => now()->toDateString(),
+            'basic_salary' => 0,
+            'status' => 'active',
+        ]);
+
+        return redirect()->route('hrm.index')->with('success', "User {$user->name} berhasil ditambahkan dan data Pegawai otomatis dibuat.");
     }
 
     public function edit(User $user)

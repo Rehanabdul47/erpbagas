@@ -73,4 +73,9 @@ class Product extends Model
         if ($this->price == 0) return 0;
         return round((1 - $this->cogs / $this->price) * 100);
     }
+
+    public function ecommerceOrderItems()
+    {
+        return $this->hasMany(EcommerceOrderItem::class);
+    }
 }

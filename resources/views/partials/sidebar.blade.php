@@ -21,6 +21,7 @@
             ['id' => 'orders', 'icon' => 'shopping-cart', 'label' => 'Orders', 'route' => 'orders', 'badge' => 3],
         ]],
         ['section' => 'DIVISI KEUANGAN', 'items' => [
+            ['id' => 'finance-dashboard', 'icon' => 'line-chart', 'label' => 'Overview Keuangan', 'route' => 'finance.dashboard'],
             ['id' => 'finance', 'icon' => 'wallet', 'label' => 'Buku Kas', 'route' => 'finance.index'],
             ['id' => 'reports', 'icon' => 'bar-chart-3', 'label' => 'Laporan Keuangan', 'route' => 'finance.reports'],
         ]],

@@ -48,6 +48,18 @@ class MarketingDashboardController extends Controller
             ->take(5)
             ->get();
             
+        $topProducts = \App\Models\SaleItem::with('product')
+            ->select('product_id', \Illuminate\Support\Facades\DB::raw('SUM(quantity) as total_sold'))
+            ->whereHas('sale', function($q) use ($currentMonth, $currentYear) {
+                $q->whereMonth('sale_date', $currentMonth)
+                  ->whereYear('sale_date', $currentYear)
+                  ->where('status', 'completed');
+            })
+            ->groupBy('product_id')
+            ->orderByDesc('total_sold')
+            ->take(5)
+            ->get();
+            
         $activePage = 'marketing-dashboard';
 
         return view('pages.marketing-dashboard.index', compact(
@@ -58,6 +70,7 @@ class MarketingDashboardController extends Controller
             'recentTransactions',
             'newCustomers',
             'activeCoupons',
+            'topProducts',
             'activePage'
         ));
     }
