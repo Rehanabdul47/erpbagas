@@ -11,6 +11,8 @@ use App\Http\Controllers\SalesController;
 use App\Http\Controllers\PosController;
 use App\Http\Controllers\ProductionController;
 use App\Http\Controllers\BomController;
+use App\Http\Controllers\ProductionDashboardController;
+use App\Http\Controllers\MarketingDashboardController;
 
 use App\Http\Controllers\RedeemCodeController;
 
@@ -69,6 +71,7 @@ Route::middleware('auth')->group(function () {
 
     // Production
     Route::prefix('production')->name('production.')->group(function () {
+        Route::get('/dashboard', [ProductionDashboardController::class, 'index'])->name('dashboard');
         Route::get('/', [ProductionController::class, 'index'])->name('index');
         Route::get('/create', [ProductionController::class, 'create'])->name('create');
         Route::post('/', [ProductionController::class, 'store'])->name('store');
@@ -129,6 +132,11 @@ Route::middleware('auth')->group(function () {
         Route::get('/checkout/invoice/{sale}', [PosController::class, 'invoice'])->name('invoice');
         Route::post('/customer', [SalesController::class, 'storeQuick'])->name('customer.store');
         Route::post('/apply-redeem-code', [RedeemCodeController::class, 'apply'])->name('apply-redeem-code');
+    });
+
+    // Marketing
+    Route::prefix('marketing')->name('marketing.')->group(function () {
+        Route::get('/dashboard', [MarketingDashboardController::class, 'index'])->name('dashboard');
     });
 
     // Sales & CRM

@@ -3,22 +3,28 @@
         ['section' => 'OVERVIEW', 'items' => [
             ['id' => 'dashboard', 'icon' => 'layout-dashboard', 'label' => 'Dashboard', 'route' => 'dashboard'],
         ]],
-        ['section' => 'OPERASIONAL', 'items' => [
+        ['section' => 'DIVISI PRODUKSI', 'items' => [
+            ['id' => 'production-dashboard', 'icon' => 'layout-dashboard', 'label' => 'Overview Produksi', 'route' => 'production.dashboard'],
             ['id' => 'inventory', 'icon' => 'package', 'label' => 'Inventory', 'route' => 'inventory.index'],
             ['id' => 'purchase-orders', 'icon' => 'shopping-bag', 'label' => 'Purchase Order', 'route' => 'purchase-orders.index'],
             ['id' => 'suppliers', 'icon' => 'truck', 'label' => 'Suppliers', 'route' => 'suppliers.index'],
             ['id' => 'production', 'icon' => 'factory', 'label' => 'Produksi', 'route' => 'production.index'],
             ['id' => 'categories', 'icon' => 'tags', 'label' => 'Kategori', 'route' => 'categories.index'],
-            ['id' => 'orders', 'icon' => 'shopping-cart', 'label' => 'Orders', 'route' => 'orders', 'badge' => 3],
+        ]],
+        ['section' => 'DIVISI MARKETING', 'items' => [
+            ['id' => 'marketing-dashboard', 'icon' => 'line-chart', 'label' => 'Overview Marketing', 'route' => 'marketing.dashboard'],
             ['id' => 'sales', 'icon' => 'trending-up', 'label' => 'Sales & CRM', 'route' => 'sales.index'],
             ['id' => 'redeem-codes', 'icon' => 'ticket', 'label' => 'Redeem Codes', 'route' => 'redeem-codes.index'],
             ['id' => 'pos', 'icon' => 'monitor', 'label' => 'Point of Sale', 'route' => 'pos.index'],
         ]],
-        ['section' => 'KEUANGAN', 'items' => [
+        ['section' => 'OPERASIONAL', 'items' => [
+            ['id' => 'orders', 'icon' => 'shopping-cart', 'label' => 'Orders', 'route' => 'orders', 'badge' => 3],
+        ]],
+        ['section' => 'DIVISI KEUANGAN', 'items' => [
             ['id' => 'finance', 'icon' => 'wallet', 'label' => 'Buku Kas', 'route' => 'finance.index'],
             ['id' => 'reports', 'icon' => 'bar-chart-3', 'label' => 'Laporan Keuangan', 'route' => 'finance.reports'],
         ]],
-        ['section' => 'SDM', 'items' => [
+        ['section' => 'DIVISI SUMBER DAYA MANUSIA', 'items' => [
             ['id' => 'hrm', 'icon' => 'users', 'label' => 'HRM & Payroll', 'route' => 'hrm.index'],
             ['id' => 'kiosk', 'icon' => 'scan-line', 'label' => 'Presensi', 'route' => 'hrm.kiosk', 'target' => '_blank'],
         ]],
