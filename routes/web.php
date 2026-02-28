@@ -25,7 +25,8 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
 // Protected routes
 Route::middleware('auth')->group(function () {
-    Route::get('/dashboard', fn() => view('pages.dashboard', ['activePage' => 'dashboard']))->name('dashboard');
+    Route::get('/dashboard', [\App\Http\Controllers\DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/dashboard/chart-data', [\App\Http\Controllers\DashboardController::class, 'chartDataApi'])->name('dashboard.chart-data');
 
     // Redeem Codes
     Route::prefix('redeem-codes')->name('redeem-codes.')->group(function () {

@@ -29,97 +29,146 @@
         body { font-family: 'Outfit', sans-serif; }
         /* Camera Styles Overrides */
         #reader { border: none !important; width: 100%; }
-        #reader video { border-radius: 1rem; object-fit: cover; transform: scaleX(-1); }
+        #reader video { border-radius: 1.5rem; object-fit: cover; transform: scaleX(-1); }
         .hide-on-print { @media print { display: none !important; } }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
     </style>
 </head>
-<body class="bg-slate-50 relative min-h-screen flex flex-col items-center justify-center text-slate-800 overflow-hidden" x-data="kioskData()">
+<body class="bg-[#0b0f19] relative min-h-screen flex flex-col items-center justify-center text-white overflow-hidden" x-data="kioskData()">
 
-    <!-- Decorative Background -->
+    <!-- Decorative Background: Premium Mesh Gradient -->
     <div class="fixed inset-0 pointer-events-none z-0 overflow-hidden">
-        <div class="absolute -top-24 -left-24 w-96 h-96 bg-indigo-500/10 rounded-full blur-[80px]"></div>
-        <div class="absolute -bottom-48 -right-24 w-[32rem] h-[32rem] bg-emerald-500/10 rounded-full blur-[80px]"></div>
-        <div class="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,_#ffffff_0%,_transparent_100%)]"></div>
-    </div>
-
-    <!-- Header -->
-    <div class="absolute top-10 w-full text-center z-10 px-4">
-        <div class="flex items-center justify-center gap-3 text-indigo-600 text-3xl md:text-4xl font-bold mb-2">
-            <i data-lucide="scan-line" class="w-8 h-8 md:w-10 md:h-10"></i> Presensi
-        </div>
-        <div class="text-slate-500 font-medium text-sm md:text-base">Sistem Absensi Mandiri Karyawan</div>
-    </div>
-
-    <!-- Main Container -->
-    <div class="bg-white/80 backdrop-blur-xl px-8 py-10 md:py-12 md:px-12 rounded-[2rem] shadow-[0_20px_40px_-10px_rgba(0,0,0,0.1)] border border-white max-w-xl w-full mx-4 relative z-10 text-center flex flex-col items-center">
+        <div class="absolute -top-[10%] -left-[10%] w-[50%] h-[50%] bg-indigo-600/20 rounded-full blur-[120px] animate-pulse"></div>
+        <div class="absolute -bottom-[10%] -right-[10%] w-[60%] h-[60%] bg-fuchsia-600/20 rounded-full blur-[120px] animate-pulse" style="animation-delay: 2s"></div>
+        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-[radial-gradient(circle_at_50%_50%,_rgba(15,23,42,0)_0%,_rgba(11,15,25,1)_100%)]"></div>
         
-        <!-- Clock & Date -->
-        <div class="text-6xl md:text-[5rem] font-bold leading-none mb-2 text-slate-800 tracking-tighter" style="font-variant-numeric: tabular-nums;" x-text="timeString"></div>
-        <div class="text-lg md:text-xl font-medium text-indigo-600 mb-8 md:mb-10 uppercase tracking-wider" x-text="dateString"></div>
+        <!-- Subtle Grid Pattern -->
+        <div class="absolute inset-0 opacity-[0.03]" style="background-image: radial-gradient(#fff 1px, transparent 1px); background-size: 40px 40px;"></div>
+    </div>
 
-        <!-- Camera Container -->
-        <div class="w-full max-w-[320px] aspect-[4/3] bg-black rounded-2xl border-4 border-slate-100 shadow-lg relative overflow-hidden mb-6 flex flex-col">
-            <div id="reader" class="w-full h-full flex-1"></div>
-            <div class="absolute bottom-3 left-1/2 -translate-x-1/2 bg-black/50 text-white px-4 py-1.5 rounded-full text-xs flex items-center gap-2 backdrop-blur-sm whitespace-nowrap z-50">
-                <i data-lucide="scan" class="w-3.5 h-3.5"></i> <span x-text="cameraStatus">Memulai Kamera...</span>
+    <!-- Header: Refined and High Contrast -->
+    <div class="absolute top-8 w-full text-center z-10 px-4">
+        <div class="flex items-center justify-center gap-3 bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 via-white to-fuchsia-400 text-3xl md:text-5xl font-black mb-1 drop-shadow-sm tracking-tight">
+            <i data-lucide="scan" class="w-10 h-10 md:w-12 md:h-12 text-indigo-400"></i> Presensi Kiosk
+        </div>
+        <div class="text-slate-400 font-semibold text-xs md:text-sm uppercase tracking-[0.2em] opacity-80">Smart Attendance System v2.0</div>
+    </div>
+
+    <!-- Main Container: Glassmorphism Ultra -->
+    <div class="bg-slate-900/40 backdrop-blur-2xl px-8 py-10 md:py-14 md:px-14 rounded-[3rem] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.5)] border border-white/10 max-w-xl w-full mx-4 relative z-10 text-center flex flex-col items-center">
+        
+        <!-- Clock & Date: High Visibility -->
+        <div class="text-7xl md:text-[6rem] font-black leading-none mb-2 text-white tracking-tighter drop-shadow-2xl" 
+             style="font-variant-numeric: tabular-nums; text-shadow: 0 0 30px rgba(99,102,241,0.2);" 
+             x-text="timeString"></div>
+        <div class="text-sm md:text-lg font-bold text-indigo-400 mb-8 md:mb-12 uppercase tracking-[0.3em]" x-text="dateString"></div>
+
+        <!-- Camera Container: Fixed Visibility -->
+        <div class="group relative mb-8 w-full max-w-[340px] mx-auto">
+            <div class="absolute -inset-1 bg-gradient-to-r from-indigo-500 to-fuchsia-500 rounded-[2.2rem] blur opacity-25 group-hover:opacity-40 transition duration-700"></div>
+            <div class="relative bg-black rounded-[2rem] border-2 border-white/10 shadow-2xl overflow-hidden">
+                <div id="reader" class="w-full aspect-[4/3] bg-black"></div>
+                <div class="absolute bottom-3 left-1/2 -translate-x-1/2 bg-black/60 text-white px-5 py-2 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-2 backdrop-blur-md border border-white/10 z-50">
+                    <span class="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-ping"></span>
+                    <span x-text="cameraStatus">Initializing...</span>
+                </div>
             </div>
         </div>
 
-        <!-- Input Form -->
-        <form @submit.prevent="handleManualSubmit" class="w-full max-w-[400px] mb-6 object-center text-center mx-auto" >
-            <div class="relative w-full shadow-sm rounded-2xl group mx-auto text-center" >
-                <i data-lucide="user" class="absolute left-5 top-1/2 -translate-y-1/2 w-6 h-6 text-slate-400 group-focus-within:text-indigo-500 transition-colors"></i>
-                <input type="text" x-model="nip" x-ref="nipInput" class="w-full bg-slate-50/50 border-2 border-slate-200 focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-500/10 rounded-2xl py-5 pl-[4.5rem] pr-6 text-2xl font-bold text-center text-slate-800 placeholder-slate-300 outline-none transition-all block text-center" placeholder="Scan QR / Ketik NIP" autocomplete="off" autofocus>
+        <!-- Input Form: Premium Dark Field -->
+        <form @submit.prevent="handleManualSubmit" class="w-full max-w-[420px] mb-8">
+            <div class="relative w-full group">
+                <div class="absolute inset-0 bg-indigo-500/20 rounded-2xl blur-xl opacity-0 group-focus-within:opacity-100 transition-opacity duration-500"></div>
+                <div class="relative">
+                    <i data-lucide="user" class="absolute left-6 top-1/2 -translate-y-1/2 w-6 h-6 text-slate-500 group-focus-within:text-indigo-400 transition-colors"></i>
+                    <input type="text" x-model="nip" x-ref="nipInput" 
+                        class="w-full bg-slate-950/50 border-2 border-white/5 focus:border-indigo-500/50 focus:bg-slate-950 focus:ring-8 focus:ring-indigo-500/5 rounded-2xl py-5 pl-[4.5rem] pr-6 text-3xl font-black text-center text-white placeholder-slate-700 outline-none transition-all block" 
+                        placeholder="TAP QR / KETIK NIP" autocomplete="off" autofocus>
+                </div>
             </div>
         </form>
 
-        <!-- Instructions -->
-        <div class="text-slate-500 flex items-center justify-center gap-2 text-sm md:text-base font-medium mb-8">
-            <i data-lucide="info" class="w-5 h-5 text-slate-400"></i> Arahkan QR Code ke kamera atau ketik NIP
-        </div>
-
-        <!-- Live Activity Sync -->
-        <div class="w-full border-t border-slate-100 pt-6">
-            <div class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4 flex items-center justify-center gap-2">
-                <span class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span> Sinkronisasi Aktif
+        <!-- Live Activity Sync: Minimalist Dark -->
+        <div class="w-full border-t border-white/5 pt-8">
+            <div class="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] mb-5 flex items-center justify-center gap-3">
+                <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]"></span> LIVE ACTIVITY
             </div>
-            <div class="flex flex-wrap justify-center gap-2 overflow-hidden px-2 max-h-12">
+            <div class="flex flex-wrap justify-center gap-3 overflow-hidden px-2 max-h-16">
                 <template x-for="(log, index) in recentLogs" :key="index">
-                    <div class="flex items-center gap-2 bg-slate-50 border border-slate-200 py-1.5 px-3 rounded-full animate-[fadeIn_0.5s_ease-out]">
-                        <div class="w-5 h-5 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center text-[10px] font-bold" x-text="log.initials"></div>
-                        <div class="text-[11px] font-medium text-slate-600" x-text="log.name"></div>
-                        <div class="text-[10px] text-slate-400 font-mono" x-text="log.time"></div>
+                    <div class="flex items-center gap-3 bg-white/5 border border-white/10 py-2 px-4 rounded-2xl animate-[fadeIn_0.5s_ease-out]">
+                        <div class="w-6 h-6 bg-gradient-to-tr from-indigo-500 to-indigo-700 text-white rounded-full flex items-center justify-center text-[10px] font-black shadow-lg" x-text="log.initials"></div>
+                        <div class="text-xs font-bold text-slate-300" x-text="log.name"></div>
+                        <div class="text-[10px] text-slate-500 font-mono bg-black/20 px-1.5 py-0.5 rounded" x-text="log.time"></div>
                     </div>
                 </template>
-                <div x-show="recentLogs.length === 0" class="text-xs text-slate-300 italic">Belum ada aktivitas hari ini</div>
+                <div x-show="recentLogs.length === 0" class="text-xs text-slate-600 font-medium italic">Menunggu aktivitas masuk...</div>
             </div>
         </div>
     </div>
 
-    <!-- Home Button -->
-    <a href="{{ route('dashboard') }}" class="absolute bottom-10 flex items-center gap-2 px-6 py-3 bg-white border border-slate-200 rounded-full text-slate-500 font-medium shadow-sm hover:shadow-md hover:text-indigo-600 hover:border-indigo-300 hover:-translate-y-0.5 transition-all z-10">
-        <i data-lucide="arrow-left" class="w-5 h-5"></i> Kembali ke Dashboard
+    <!-- Home Button: Subtle Bottom -->
+    <a href="{{ route('dashboard') }}" class="absolute bottom-8 flex items-center gap-2 px-6 py-3 bg-white/5 border border-white/10 rounded-full text-slate-400 font-bold text-xs uppercase tracking-widest hover:bg-white/10 hover:text-white hover:border-white/20 transition-all z-10 backdrop-blur-md">
+        <i data-lucide="arrow-left" class="w-4 h-4"></i> Kembali ke Dashboard
     </a>
 
-    <!-- Message Overlay -->
-    <div x-show="message.show" x-transition.opacity.duration.300ms class="fixed inset-0 bg-white/95 backdrop-blur-sm z-[100] flex flex-col items-center justify-center pointer-events-auto" style="display: none;">
-        <div class="w-32 h-32 rounded-full flex items-center justify-center mb-8 shadow-2xl transition-transform duration-500" :class="message.type === 'success' ? 'bg-emerald-500 shadow-emerald-500/30' : 'bg-red-500 shadow-red-500/30'">
-            <i data-lucide="check" x-show="message.type === 'success'" class="w-16 h-16 text-white"></i>
-            <i data-lucide="x" x-show="message.type !== 'success'" class="w-16 h-16 text-white"></i>
+    <!-- Message Overlay: Immersive Status -->
+    <div x-show="message.show" x-transition.opacity.duration.400ms 
+        class="fixed inset-0 z-[200] flex flex-col items-center justify-center pointer-events-auto" 
+        :class="message.type === 'success' ? 'bg-emerald-950/95 backdrop-blur-xl' : 'bg-red-950/95 backdrop-blur-xl'"
+        style="display: none;">
+        
+        <div class="relative mb-10">
+            <div class="absolute inset-0 rounded-full blur-3xl opacity-50" 
+                 :class="message.type === 'success' ? 'bg-emerald-500' : 'bg-red-500'"></div>
+            <div class="relative w-40 h-40 rounded-full flex items-center justify-center shadow-2xl scale-110" 
+                 :class="message.type === 'success' ? 'bg-emerald-500' : 'bg-red-500'">
+                <i data-lucide="check" x-show="message.type === 'success'" class="w-20 h-20 text-white"></i>
+                <i data-lucide="x" x-show="message.type !== 'success'" class="w-20 h-20 text-white"></i>
+            </div>
         </div>
-        <h2 class="text-4xl md:text-5xl font-bold mb-4 text-slate-800" :class="message.type === 'success' ? 'text-emerald-600' : 'text-red-500'" x-text="message.title"></h2>
-        <p class="text-xl md:text-2xl text-slate-500 mb-3" x-text="message.desc"></p>
-        <div class="text-2xl md:text-3xl font-bold text-slate-800 font-mono" x-show="message.time" x-text="message.time"></div>
+
+        <h2 class="text-5xl md:text-7xl font-black mb-4 text-center px-6 tracking-tighter" 
+            :class="message.type === 'success' ? 'text-emerald-400' : 'text-red-400'" 
+            x-text="message.title"></h2>
+        
+        <p class="text-xl md:text-3xl text-white/70 font-medium mb-8 text-center px-10" x-text="message.desc"></p>
+        
+        <div class="px-8 py-4 bg-white/10 rounded-3xl border border-white/10 backdrop-blur-md" x-show="message.time">
+            <div class="text-[10px] font-black text-white/40 uppercase tracking-[0.4em] mb-1 text-center">Waktu Tercatat</div>
+            <div class="text-4xl md:text-6xl font-black text-white font-mono" x-text="message.time"></div>
+        </div>
     </div>
 
-    <!-- Pose Countdown Overlay -->
-    <div x-show="isCountdown" x-transition.opacity class="fixed inset-0 bg-indigo-600/90 backdrop-blur-md z-[120] flex flex-col items-center justify-center text-white" style="display: none;">
-        <div class="text-8xl md:text-[12rem] font-black mb-10 animate-pulse text-white drop-shadow-2xl" x-text="countdown">5</div>
-        <div class="text-2xl md:text-4xl font-bold mb-4 text-center px-6">Siap-siap Pose! ✨</div>
-        <div class="text-xl md:text-2xl text-indigo-100 font-medium italic text-center px-10">"Fotonya mundurin dikit biar cakepnya kelihatan"</div>
-        <div class="mt-12 flex items-center gap-3 bg-white/20 px-6 py-3 rounded-full backdrop-blur-sm border border-white/30">
-            <i data-lucide="camera" class="w-6 h-6 animate-bounce"></i>
-            <span class="text-lg font-bold">Kamera akan memotret otomatis</span>
+    <!-- Pose Countdown Overlay: Vibrant & Dynamic -->
+    <div x-show="isCountdown" x-transition.opacity.duration.500ms 
+        class="fixed inset-0 bg-gradient-to-br from-indigo-950 via-indigo-900 to-fuchsia-950 z-[250] flex flex-col items-center justify-center text-white p-6" 
+        style="display: none;">
+        
+        <div class="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10"></div>
+        
+        <div class="relative mb-12">
+            <div class="absolute inset-0 bg-white/20 rounded-full blur-[100px] animate-pulse"></div>
+            <div class="text-[12rem] md:text-[20rem] font-black leading-none animate-[bounce_1s_infinite] drop-shadow-[0_20px_50px_rgba(255,255,255,0.3)]" 
+                 x-text="countdown">5</div>
+        </div>
+
+        <div class="text-4xl md:text-6xl font-black mb-6 text-center tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-white via-indigo-200 to-white">
+            Siap-siap Pose! ✨
+        </div>
+        
+        <div class="text-xl md:text-3xl text-indigo-300/80 font-bold italic text-center max-w-2xl px-10 leading-relaxed">
+            "Fotonya mundurin dikit biar cakepnya kelihatan"
+        </div>
+
+        <div class="mt-16 flex items-center gap-4 bg-white/10 px-8 py-4 rounded-[2rem] backdrop-blur-xl border border-white/20 shadow-2xl">
+            <div class="w-12 h-12 bg-white rounded-full flex items-center justify-center text-indigo-950">
+                <i data-lucide="camera" class="w-6 h-6"></i>
+            </div>
+            <span class="text-lg md:text-xl font-black uppercase tracking-widest text-white">Shutter Otomatis</span>
         </div>
     </div>
 

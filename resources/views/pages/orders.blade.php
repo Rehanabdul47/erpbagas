@@ -94,10 +94,17 @@
                 </select>
             </form>
 
-            <form action="{{ route('orders.sync') }}" method="POST" class="w-full lg:w-auto m-0" onsubmit="return confirm('Simulasikan tarik pesanan dari API E-Commerce (Mock)?')">
+            <form action="{{ route('orders.sync') }}" method="POST" class="w-full lg:w-auto m-0" 
+                  x-data="{ isSyncing: false }" 
+                  @submit="isSyncing = true">
                 @csrf
-                <button type="submit" class="w-full lg:w-auto flex items-center justify-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm font-bold transition-all shadow-sm shadow-indigo-600/20 active:scale-95">
-                    <i data-lucide="refresh-cw" class="w-4 h-4"></i> Sync API (Simulasi)
+                <button type="submit" 
+                        :disabled="isSyncing"
+                        :class="isSyncing ? 'opacity-75 cursor-not-allowed hidden bg-indigo-500' : 'bg-indigo-600 hover:bg-indigo-500 shadow-sm shadow-indigo-600/20 active:scale-95'"
+                        class="w-full lg:w-auto flex items-center justify-center gap-2 px-4 py-2 text-white rounded-lg text-sm font-bold transition-all">
+                    <i data-lucide="refresh-cw" x-show="!isSyncing" class="w-4 h-4"></i>
+                    <i data-lucide="loader-2" x-show="isSyncing" x-cloak class="w-4 h-4 animate-spin hidden" style="display: none;"></i>
+                    <span x-text="isSyncing ? 'Menghubungi API...' : 'Sync API (Simulasi)'"></span>
                 </button>
             </form>
         </div>

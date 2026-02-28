@@ -84,67 +84,60 @@ class OrderController extends Controller
         });
     }
 
-    // Mock API Sync Endpoint
-    public function syncApi()
+    // Real / Mock API Sync Endpoint
+    public function syncApi(\App\Services\EcommerceApiService $apiService)
     {
-        // Define random platforms
-        $platforms = ['Shopee', 'Tokopedia', 'TikTok Shop'];
-        $couriers = ['J&T Express', 'JNE Reguler', 'Sicepat HALU', 'GoSend', 'GrabExpress'];
-        $statuses = ['pending', 'ready_to_ship'];
+        try {
+            // 1. Fetch data from our structured "API"
+            $response = $apiService->fetchRecentOrders();
 
-        $products = Product::where('stock', '>', 5)->inRandomOrder()->take(5)->get();
-
-        if ($products->isEmpty()) {
-            return redirect()->back()->with('error', 'Produk tidak mencukupi untuk simulasi pesanan.');
-        }
-
-        DB::transaction(function () use ($platforms, $couriers, $statuses, $products) {
-            // Generate 2-4 random orders
-            $orderCount = rand(2, 4);
-
-            for ($i = 0; $i < $orderCount; $i++) {
-                $platform = $platforms[array_rand($platforms)];
-                $shippingCost = rand(10, 50) * 1000;
-                
-                $order = EcommerceOrder::create([
-                    'order_number' => strtoupper(Str::random(3)) . '-' . time() . '-' . rand(100, 999),
-                    'platform' => $platform,
-                    'customer_name' => 'Online Customer ' . rand(1, 100),
-                    'customer_phone' => '081' . rand(100000000, 999999999),
-                    'shipping_address' => 'Jl. E-Commerce Mockup No.' . rand(1, 99) . ', Jakarta',
-                    'shipping_courier' => $couriers[array_rand($couriers)],
-                    'shipping_cost' => $shippingCost,
-                    'total_amount' => 0, // Calculated below
-                    'status' => $statuses[array_rand($statuses)],
-                    'order_date' => Carbon::now()->subMinutes(rand(1, 120))
-                ]);
-
-                $totalAmount = $shippingCost;
-                
-                // Add 1-3 items
-                $itemCount = rand(1, 3);
-                $selectedProducts = $products->random(min($itemCount, $products->count()));
-
-                foreach ($selectedProducts as $product) {
-                    $qty = rand(1, 3);
-                    $price = $product->price;
-                    $subtotal = $qty * $price;
-                    
-                    EcommerceOrderItem::create([
-                        'ecommerce_order_id' => $order->id,
-                        'product_id' => $product->id,
-                        'quantity' => $qty,
-                        'unit_price' => $price,
-                        'subtotal' => $subtotal,
-                    ]);
-
-                    $totalAmount += $subtotal;
-                }
-
-                $order->update(['total_amount' => $totalAmount]);
+            if (!$response['success']) {
+                return redirect()->back()->with('error', 'Gagal menyinkronkan data: ' . $response['message']);
             }
-        });
 
-        return redirect()->route('orders')->with('success', 'Berhasil menyinkronkan data pesanan baru dari platform E-Commerce.');
+            $ordersData = $response['data']['orders'] ?? [];
+            if (empty($ordersData)) {
+                return redirect()->route('orders')->with('success', 'Sinkronisasi selesai. Tidak ada pesanan baru.');
+            }
+
+            // 2. Process and save the API response into the database
+            DB::transaction(function () use ($ordersData) {
+                foreach ($ordersData as $apiOrder) {
+                    // Prevent duplicates based on external ID or order number
+                    $existingOrder = EcommerceOrder::where('order_number', $apiOrder['order_sn'])->first();
+                    
+                    if (!$existingOrder) {
+                        $order = EcommerceOrder::create([
+                            'order_number' => $apiOrder['order_sn'],
+                            'platform' => $apiOrder['platform'],
+                            'customer_name' => $apiOrder['buyer']['name'],
+                            'customer_phone' => $apiOrder['buyer']['phone'],
+                            'shipping_address' => $apiOrder['shipping']['address'],
+                            'shipping_courier' => $apiOrder['shipping']['courier'],
+                            'shipping_cost' => $apiOrder['financial']['shipping_fee'],
+                            'total_amount' => $apiOrder['financial']['total_amount'],
+                            'status' => $apiOrder['status'],
+                            'order_date' => Carbon::parse($apiOrder['created_at'])
+                        ]);
+
+                        foreach ($apiOrder['items'] as $apiItem) {
+                            EcommerceOrderItem::create([
+                                'ecommerce_order_id' => $order->id,
+                                'product_id' => $apiItem['internal_product_id'],
+                                'quantity' => $apiItem['quantity'],
+                                'unit_price' => $apiItem['unit_price'],
+                                'subtotal' => $apiItem['subtotal'],
+                            ]);
+                        }
+                    }
+                }
+            });
+
+            return redirect()->route('orders')->with('success', 'Berhasil menyinkronkan ' . count($ordersData) . ' pesanan baru dari platform E-Commerce.');
+
+        } catch (\Exception $e) {
+            // Handle network timeouts, API server errors, etc. gracefully
+            return redirect()->back()->with('error', 'Koneksi ke API E-Commerce gagal: ' . $e->getMessage());
+        }
     }
 }
