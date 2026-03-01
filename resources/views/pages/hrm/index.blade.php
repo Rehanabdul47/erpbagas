@@ -1,10 +1,32 @@
 @extends('layouts.app')
 
 @section('title', 'HRM & Payroll')
-@section('breadcrumb', 'HRM & Payroll')
+@section('breadcrumb')
+<span class="text-gray-200">Divisi Sumber Daya Manusia</span>
+<span class="mx-2 text-gray-600">/</span>
+<span class="text-gray-200">HRM & Payroll</span>
+@endsection
 
 @section('content')
 <div id="hrm-container" x-data="hrmData()">
+
+    <div class="flex items-center gap-3 mb-6">
+        <div class="w-10 h-10 rounded-xl bg-indigo-500/10 text-indigo-400 flex items-center justify-center shrink-0 shadow-lg shadow-indigo-500/10">
+            <i data-lucide="users" class="w-5 h-5"></i>
+        </div>
+        <div>
+            <h3 class="text-xl font-bold text-white m-0">Manajemen HRM & Payroll</h3>
+            <p class="text-xs text-gray-400 mt-0.5">Kelola data karyawan, presensi harian, cuti/izin, dan administrasi payroll terintegrasi.</p>
+        </div>
+        <div class="ml-auto flex gap-2">
+            <a href="{{ route('hrm.dashboard') }}" class="flex items-center justify-center gap-2 px-4 py-2 bg-indigo-600/10 text-indigo-400 border border-indigo-500/20 hover:bg-indigo-600/20 rounded-lg text-xs font-medium transition-colors">
+                <i data-lucide="layout-dashboard" class="w-3.5 h-3.5"></i> Dashboard Overview
+            </a>
+            <button @click="openModalAddEmployee()" class="flex items-center justify-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-medium transition-colors shadow-lg shadow-indigo-600/20">
+                <i data-lucide="plus" class="w-3.5 h-3.5"></i> Tambah Karyawan
+            </button>
+        </div>
+    </div>
 
     @if(session('success'))
     <div class="bg-emerald-500/10 border border-emerald-500/30 rounded-xl px-4 py-3 mb-6 text-emerald-400 flex items-center gap-3">
@@ -14,26 +36,29 @@
     @endif
     
     {{-- Stats --}}
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-6">
-        <div class="bg-gray-800 border border-gray-700/50 rounded-xl p-5 shadow-sm">
-            <div class="w-10 h-10 rounded-lg bg-indigo-500/10 text-indigo-400 flex items-center justify-center mb-4"><i data-lucide="users" class="w-5 h-5"></i></div>
-            <div class="text-3xl font-bold text-white mb-1">{{ $stats['totalEmployees'] }}</div>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8">
+        <div class="bg-gray-800 border border-gray-700/50 rounded-xl p-5 shadow-sm hover:border-indigo-500/30 transition-all group">
+            <div class="w-10 h-10 rounded-lg bg-indigo-500/10 text-indigo-400 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform"><i data-lucide="users" class="w-5 h-5"></i></div>
+            <div class="text-3xl font-bold text-white mb-1">{{ number_format($stats['totalEmployees']) }}</div>
             <div class="text-gray-400 text-sm">Total Karyawan</div>
         </div>
-        <div class="bg-gray-800 border border-gray-700/50 rounded-xl p-5 shadow-sm">
-            <div class="w-10 h-10 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center mb-4"><i data-lucide="user-check" class="w-5 h-5"></i></div>
-            <div class="text-3xl font-bold text-white mb-1">{{ $stats['activeEmployees'] }}</div>
-            <div class="text-gray-400 text-sm">Karyawan Aktif</div>
+        
+        <div class="bg-gray-800 border border-gray-700/50 rounded-xl p-5 shadow-sm hover:border-amber-500/30 transition-all group relative overflow-hidden" id="present-card">
+            <div class="w-10 h-10 rounded-lg bg-amber-500/10 text-amber-500 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform relative z-10"><i data-lucide="calendar-check" class="w-5 h-5"></i></div>
+            <div class="text-3xl font-bold text-white mb-1 relative z-10" id="stat-present-today">{{ number_format($stats['presentToday']) }}</div>
+            <div class="text-gray-400 text-sm relative z-10">Hadir Hari Ini</div>
         </div>
-        <div class="bg-gray-800 border border-gray-700/50 rounded-xl p-5 shadow-sm">
-            <div class="w-10 h-10 rounded-lg bg-amber-500/10 text-amber-500 flex items-center justify-center mb-4"><i data-lucide="calendar-check" class="w-5 h-5"></i></div>
-            <div class="text-3xl font-bold text-white mb-1" id="stat-present-today">{{ $stats['presentToday'] }}</div>
-            <div class="text-gray-400 text-sm">Hadir Hari Ini</div>
+
+        <div class="bg-gray-800 border border-gray-700/50 rounded-xl p-5 shadow-sm hover:border-emerald-500/30 transition-all group">
+            <div class="w-10 h-10 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform"><i data-lucide="clipboard-list" class="w-5 h-5"></i></div>
+            <div class="text-3xl font-bold text-white mb-1">{{ number_format($stats['leavesToday'] ?? 0) }}</div>
+            <div class="text-gray-400 text-sm">Cuti & Izin Hari Ini</div>
         </div>
-        <div class="bg-gray-800 border border-gray-700/50 rounded-xl p-5 shadow-sm">
-            <div class="w-10 h-10 rounded-lg bg-red-500/10 text-red-500 flex items-center justify-center mb-4"><i data-lucide="wallet" class="w-5 h-5"></i></div>
+
+        <div class="bg-gray-800 border border-gray-700/50 rounded-xl p-5 shadow-sm hover:border-red-500/30 transition-all group">
+            <div class="w-10 h-10 rounded-lg bg-red-500/10 text-red-500 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform"><i data-lucide="wallet" class="w-5 h-5"></i></div>
             <div class="text-2xl font-bold text-white mb-1 truncate" title="Rp {{ number_format($stats['payrollTotal'], 0, ',', '.') }}">Rp {{ number_format($stats['payrollTotal'], 0, ',', '.') }}</div>
-            <div class="text-gray-400 text-sm">Total Gaji Bulan Ini</div>
+            <div class="text-gray-400 text-sm">Payroll ({{ date('M Y') }})</div>
         </div>
     </div>
 
@@ -42,7 +67,9 @@
         <div class="flex overflow-x-auto border-b border-gray-700/50 hide-scrollbar bg-gray-900/20">
             <button @click="switchTab('employees')" :class="activeTab === 'employees' ? 'text-indigo-400 border-b-2 border-indigo-500 bg-gray-800' : 'text-gray-400 hover:text-white hover:bg-gray-800/50'" class="whitespace-nowrap px-6 py-4 text-sm font-medium transition-colors">Daftar Karyawan</button>
             <button @click="switchTab('attendance')" :class="activeTab === 'attendance' ? 'text-indigo-400 border-b-2 border-indigo-500 bg-gray-800' : 'text-gray-400 hover:text-white hover:bg-gray-800/50'" class="whitespace-nowrap px-6 py-4 text-sm font-medium transition-colors">Presensi Harian</button>
+            <button @click="switchTab('leaves')" :class="activeTab === 'leaves' ? 'text-indigo-400 border-b-2 border-indigo-500 bg-gray-800' : 'text-gray-400 hover:text-white hover:bg-gray-800/50'" class="whitespace-nowrap px-6 py-4 text-sm font-medium transition-colors">Cuti & Izin</button>
             <button @click="switchTab('payroll')" :class="activeTab === 'payroll' ? 'text-indigo-400 border-b-2 border-indigo-500 bg-gray-800' : 'text-gray-400 hover:text-white hover:bg-gray-800/50'" class="whitespace-nowrap px-6 py-4 text-sm font-medium transition-colors">Payroll / Gaji</button>
+            <button @click="switchTab('settings')" :class="activeTab === 'settings' ? 'text-indigo-400 border-b-2 border-indigo-500 bg-gray-800' : 'text-gray-400 hover:text-white hover:bg-gray-800/50'" class="whitespace-nowrap px-6 py-4 text-sm font-medium transition-colors">Pengaturan</button>
         </div>
 
         <div class="p-0">
@@ -80,12 +107,12 @@
                                     </span>
                                 </td>
                                 <td class="px-4 py-3 text-right">
-                                    <div class="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <button @click.stop="viewQRCode({{ json_encode($emp) }})" class="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-gray-700 transition-colors" title="Lihat QR Code"><i data-lucide="qr-code" class="w-4 h-4"></i></button>
-                                        <button @click.stop="editEmployee({{ json_encode($emp) }})" class="p-1.5 rounded-lg text-gray-400 hover:text-indigo-400 hover:bg-indigo-500/10 transition-colors" title="Edit"><i data-lucide="edit-2" class="w-4 h-4"></i></button>
+                                    <div class="flex items-center justify-end gap-1.5 opacity-0 group-hover:opacity-100 transition-all">
+                                        <button @click.stop="viewQRCode({{ json_encode($emp) }})" class="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-700 transition-colors" title="Lihat QR Code"><i data-lucide="qr-code" class="w-4 h-4"></i></button>
+                                        <button @click.stop="editEmployee({{ json_encode($emp) }})" class="p-2 rounded-lg text-gray-400 hover:text-indigo-400 hover:bg-indigo-500/10 transition-colors" title="Edit"><i data-lucide="edit-2" class="w-4 h-4"></i></button>
                                         <form method="POST" action="{{ route('hrm.employees.destroy', $emp) }}" @submit.stop="return confirm('Hapus karyawan ini?')" @click.stop class="m-0">
                                             @csrf @method('DELETE')
-                                            <button type="submit" class="p-1.5 rounded-lg text-gray-400 hover:text-red-400 hover:bg-red-500/10 transition-colors" title="Hapus"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                                            <button type="submit" class="p-2 rounded-lg text-gray-400 hover:text-red-400 hover:bg-red-500/10 transition-colors" title="Hapus"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
                                         </form>
                                     </div>
                                 </td>
@@ -140,6 +167,9 @@
                                     <span class="px-2 py-1 flex w-fit rounded-full text-[10px] font-bold border {{ $att->status === 'present' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : ($att->status === 'absent' ? 'bg-red-500/10 text-red-500 border-red-500/20' : 'bg-amber-500/10 text-amber-500 border-amber-500/20') }}">
                                         {{ ucfirst($att->status) }}
                                     </span>
+                                    @if($att->is_late)
+                                    <span class="mt-1 px-1.5 py-0.5 flex w-fit rounded bg-red-500/20 text-red-500 text-[9px] font-black tracking-tighter uppercase border border-red-500/30">Telat</span>
+                                    @endif
                                     @else
                                     <span class="text-xs text-gray-500 italic">Belum mencatat</span>
                                     @endif
@@ -148,12 +178,45 @@
                                 <td class="px-4 py-3 text-gray-300 font-mono att-out">{{ $att->clock_out ?? '-' }}</td>
                                 <td class="px-4 py-3 text-gray-400 text-xs att-note max-w-[150px] truncate" title="{{ $att->note ?? '' }}">{{ $att->note ?? '-' }}</td>
                                 <td class="px-4 py-3 text-right">
-                                    <button @click.stop="openAttendanceModal({{ json_encode($emp) }}, {{ json_encode($att) }})" class="btn-log flex items-center justify-center gap-1.5 px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-white rounded-lg text-xs font-medium transition-colors ml-auto">
-                                        <i data-lucide="clipboard-check" class="w-3.5 h-3.5"></i> Log
+                                    <button @click.stop="openAttendanceModal({{ json_encode($emp) }}, {{ json_encode($att) }})" class="opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center gap-1.5 px-3 py-1.5 bg-indigo-600/10 text-indigo-400 border border-indigo-500/20 hover:bg-indigo-600 hover:text-white rounded-lg text-xs font-bold ml-auto shadow-sm">
+                                        <i data-lucide="clipboard-check" class="w-3.5 h-3.5"></i> Log manual
                                     </button>
                                 </td>
                             </tr>
                             @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            {{-- LEAVES TAB --}}
+            <div x-show="activeTab === 'leaves'" x-cloak style="display: none;" class="p-5">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-5">
+                    <h4 class="font-bold text-white flex items-center gap-2"><i data-lucide="calendar" class="w-5 h-5 text-indigo-400"></i> Riwayat Cuti & Izin</h4>
+                    <button @click="openModalAddLeave()" class="flex items-center justify-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm font-medium transition-colors shadow-sm shadow-indigo-600/20 w-full sm:w-auto">
+                        <i data-lucide="plus" class="w-4 h-4"></i> Catat Cuti/Izin
+                    </button>
+                </div>
+                <div class="overflow-x-auto w-full border border-gray-700/50 rounded-lg">
+                    <table class="w-full text-left text-sm whitespace-nowrap">
+                        <thead class="bg-gray-900/50 text-gray-400 text-xs uppercase tracking-wider border-b border-gray-700/50">
+                            <tr><th class="px-4 py-3 font-medium">Tanggal</th><th class="px-4 py-3 font-medium">Karyawan</th><th class="px-4 py-3 font-medium">Status</th><th class="px-4 py-3 font-medium">Keterangan</th></tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-700/50">
+                            @forelse($leaves as $lv)
+                            <tr class="hover:bg-indigo-500/10 transition-colors group">
+                                <td class="px-4 py-3 font-mono text-gray-300">{{ Carbon\Carbon::parse($lv->date)->format('d M Y') }}</td>
+                                <td class="px-4 py-3 font-bold text-white">{{ $lv->employee->name }}</td>
+                                <td class="px-4 py-3">
+                                    <span class="px-2 py-1 flex w-fit rounded-full text-[10px] font-bold border {{ $lv->status === 'leave' ? 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20' : 'bg-red-500/10 text-red-500 border-red-500/20' }}">
+                                        {{ $lv->status === 'leave' ? 'Cuti/Izin' : 'Sakit' }}
+                                    </span>
+                                </td>
+                                <td class="px-4 py-3 text-gray-400 text-xs">{{ $lv->note }}</td>
+                            </tr>
+                            @empty
+                            <tr><td colspan="4" class="text-center py-10 text-gray-500">Belum ada data cuti/izin</td></tr>
+                            @endforelse
                         </tbody>
                     </table>
                 </div>
@@ -193,8 +256,8 @@
                                     </span>
                                 </td>
                                 <td class="px-4 py-3 text-right">
-                                    <button @click.stop="editPayroll({{ json_encode($pay) }})" class="p-1.5 rounded-lg text-gray-400 hover:text-indigo-400 hover:bg-indigo-500/10 transition-colors opacity-0 group-hover:opacity-100" title="Edit">
-                                        <i data-lucide="settings" class="w-4 h-4"></i>
+                                    <button @click.stop="editPayroll({{ json_encode($pay) }})" class="p-2 rounded-lg text-gray-400 hover:text-indigo-400 hover:bg-indigo-500/10 transition-all opacity-0 group-hover:opacity-100" title="Rincian & Bayar">
+                                        <i data-lucide="file-text" class="w-4 h-4"></i>
                                     </button>
                                 </td>
                             </tr>
@@ -203,6 +266,65 @@
                             @endforelse
                         </tbody>
                     </table>
+                </div>
+            </div>
+
+
+
+            {{-- SETTINGS TAB --}}
+            <div x-show="activeTab === 'settings'" x-cloak style="display: none;" class="p-8">
+                <div class="max-w-2xl mx-auto">
+                    <div class="mb-8 text-center sm:text-left">
+                        <h4 class="text-xl font-bold text-white mb-2 flex items-center justify-center sm:justify-start gap-2">
+                            <i data-lucide="settings" class="w-6 h-6 text-indigo-400"></i> Pengaturan HRM & Kebijakan
+                        </h4>
+                        <p class="text-gray-400 text-sm">Atur jam masuk kantor dan denda keterlambatan otomatis.</p>
+                    </div>
+
+                    <form action="{{ route('hrm.settings.update') }}" method="POST" class="space-y-6">
+                        @csrf
+                        <div class="bg-gray-900/50 p-6 rounded-2xl border border-gray-700/50 space-y-6">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div class="space-y-2">
+                                    <label class="text-xs font-black text-gray-400 uppercase tracking-widest">Waktu Masuk Kantor</label>
+                                    <div class="relative">
+                                        <i data-lucide="clock" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500"></i>
+                                        <input type="time" name="office_in" value="{{ $settings['office_in'] ?? '08:00' }}" 
+                                            class="w-full bg-gray-800 border-2 border-gray-700 focus:border-indigo-500 rounded-xl py-3 pl-10 pr-4 text-white outline-none transition-all">
+                                    </div>
+                                    <p class="text-[10px] text-gray-500 italic mt-1">Lateness dihitung setelah jam ini.</p>
+                                </div>
+                                
+                                <div class="space-y-2">
+                                    <label class="text-xs font-black text-gray-400 uppercase tracking-widest">Denda Per Terlambat</label>
+                                    <div class="relative">
+                                        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-500 font-bold">Rp</span>
+                                        <input type="number" name="late_deduction" value="{{ $settings['late_deduction'] ?? 10000 }}"
+                                            class="w-full bg-gray-800 border-2 border-gray-700 focus:border-indigo-500 rounded-xl py-3 pl-10 pr-4 text-white outline-none transition-all">
+                                    </div>
+                                    <p class="text-[10px] text-gray-500 italic mt-1">Akan otomatis memotong gaji saat generate payroll.</p>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div class="space-y-2">
+                                    <label class="text-xs font-black text-gray-400 uppercase tracking-widest">Tunjangan Lembur (Per Jam)</label>
+                                    <div class="relative">
+                                        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-500 font-bold">Rp</span>
+                                        <input type="number" name="overtime_per_hour" value="{{ $settings['overtime_per_hour'] ?? 15000 }}" 
+                                            class="w-full bg-gray-800 border-2 border-gray-700 focus:border-indigo-500 rounded-xl py-3 pl-10 pr-4 text-white outline-none transition-all">
+                                    </div>
+                                    <p class="text-[10px] text-gray-500 italic mt-1">Nilai lembur yang dihitung per jam kerja ekstra.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flex justify-end pt-4">
+                            <button type="submit" class="flex items-center gap-3 px-8 py-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl shadow-indigo-600/20 transition-all hover:scale-[1.02] active:scale-[0.98]">
+                                <i data-lucide="save" class="w-5 h-5"></i> Simpan Kebijakan
+                            </button>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>
@@ -225,8 +347,32 @@
                     <div class="space-y-1.5"><label class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Nama</label><input type="text" name="name" x-model="empForm.name" required class="w-full bg-gray-900 border border-gray-700 text-white rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"></div>
                     <div class="space-y-1.5"><label class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Email</label><input type="email" name="email" x-model="empForm.email" required class="w-full bg-gray-900 border border-gray-700 text-white rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"></div>
                     <div class="space-y-1.5"><label class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Telepon</label><input type="text" name="phone" x-model="empForm.phone" required class="w-full bg-gray-900 border border-gray-700 text-white rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"></div>
-                    <div class="space-y-1.5"><label class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Jabatan</label><input type="text" name="position" x-model="empForm.position" required class="w-full bg-gray-900 border border-gray-700 text-white rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"></div>
-                    <div class="space-y-1.5"><label class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Department</label><input type="text" name="department" x-model="empForm.department" required class="w-full bg-gray-900 border border-gray-700 text-white rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"></div>
+                    <div class="space-y-1.5">
+                        <label class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Jabatan</label>
+                        <select name="position" x-model="empForm.position" required class="w-full bg-gray-900 border border-gray-700 text-white rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all">
+                            <option value="">-- Pilih Jabatan --</option>
+                            <option value="Manager">Manager</option>
+                            <option value="Supervisor">Supervisor</option>
+                            <option value="Staff">Staff</option>
+                            <option value="Operator Produksi">Operator Produksi</option>
+                            <option value="Sales / Marketing">Sales / Marketing</option>
+                            <option value="Admin">Admin</option>
+                            <option value="Security">Security</option>
+                            <option value="Driver">Driver</option>
+                        </select>
+                    </div>
+                    <div class="space-y-1.5">
+                        <label class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Department</label>
+                        <select name="department" x-model="empForm.department" required class="w-full bg-gray-900 border border-gray-700 text-white rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all">
+                            <option value="">-- Pilih Department --</option>
+                            <option value="Produksi">Produksi</option>
+                            <option value="Marketing">Marketing</option>
+                            <option value="Keuangan">Keuangan</option>
+                            <option value="HRD & GA">HRD & GA</option>
+                            <option value="Warehouse / Logistik">Warehouse / Logistik</option>
+                            <option value="IT Support">IT Support</option>
+                        </select>
+                    </div>
                     <div class="space-y-1.5">
                         <label class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Cabang / Lokasi Kerja</label>
                         <select name="branch_id" x-model="empForm.branch_id" class="w-full bg-gray-900 border border-gray-700 text-white rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all">
@@ -238,6 +384,8 @@
                     </div>
                     <div class="space-y-1.5"><label class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Tgl Bergabung</label><input type="date" name="join_date" x-model="empForm.join_date" required class="w-full bg-gray-900 border border-gray-700 text-white rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"></div>
                     <div class="space-y-1.5"><label class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Gaji Pokok</label><input type="number" name="basic_salary" x-model="empForm.basic_salary" required class="w-full bg-gray-900 border border-gray-700 text-white rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"></div>
+                    <div class="space-y-1.5"><label class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Tunjangan Default</label><input type="number" name="allowance" x-model="empForm.allowance" class="w-full bg-gray-900 border border-gray-700 text-white rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"></div>
+                    <div class="space-y-1.5"><label class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Potongan Default</label><input type="number" name="deduction" x-model="empForm.deduction" class="w-full bg-gray-900 border border-gray-700 text-white rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"></div>
                     <div class="space-y-1.5" x-show="empForm.method === 'PUT'"><label class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Status</label><select name="status" x-model="empForm.status" class="w-full bg-gray-900 border border-gray-700 text-white rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"><option value="active">Aktif</option><option value="inactive">Non-Aktif</option></select></div>
                 </div>
                 <div class="px-5 py-4 border-t border-gray-700/50 bg-gray-800/50 flex justify-end gap-3">
@@ -356,6 +504,52 @@
         </div>
     </div>
 
+    {{-- Modal: Catat Cuti & Izin --}}
+    <div x-show="modals.leaveForm" x-cloak style="display: none;" class="fixed inset-0 bg-gray-900/80 backdrop-blur-sm z-[150] flex items-center justify-center p-4 transition-opacity">
+        <div @click.away="modals.leaveForm = false" class="bg-gray-800 border border-gray-700 rounded-xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col">
+            <div class="px-5 py-4 border-b border-gray-700/50 flex items-center justify-between">
+                <h3 class="font-bold text-white flex items-center gap-2"><i data-lucide="calendar" class="w-5 h-5 text-indigo-400"></i> Pengajuan Cuti & Izin</h3>
+                <button type="button" @click="modals.leaveForm = false" class="text-gray-400 hover:text-white transition-colors"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <form action="{{ route('hrm.leave.store') }}" method="POST">
+                @csrf
+                <div class="p-5 flex flex-col gap-4">
+                    <div class="space-y-1.5">
+                        <label class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Karyawan</label>
+                        <select name="employee_id" required class="w-full bg-gray-900 border border-gray-700 text-white rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all">
+                            <option value="">Pilih Karyawan</option>
+                            @foreach($employees->where('status', 'active') as $emp)
+                            <option value="{{ $emp->id }}">{{ $emp->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="space-y-1.5"><label class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Mulai Tgl</label><input type="date" name="start_date" required class="w-full bg-gray-900 border border-gray-700 text-white rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"></div>
+                        <div class="space-y-1.5"><label class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Sampai Tgl</label><input type="date" name="end_date" required class="w-full bg-gray-900 border border-gray-700 text-white rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"></div>
+                    </div>
+                    
+                    <div class="space-y-1.5">
+                        <label class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Tipe</label>
+                        <select name="status" required class="w-full bg-gray-900 border border-gray-700 text-white rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all">
+                            <option value="leave">Izin / Cuti</option>
+                            <option value="sick">Sakit</option>
+                        </select>
+                    </div>
+                    
+                    <div class="space-y-1.5">
+                        <label class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Keterangan / Alasan</label>
+                        <textarea name="note" required rows="3" class="w-full bg-gray-900 border border-gray-700 text-white rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"></textarea>
+                    </div>
+                </div>
+                <div class="px-5 py-4 border-t border-gray-700/50 bg-gray-800/50 flex justify-end gap-3">
+                    <button type="button" @click="modals.leaveForm = false" class="px-4 py-2 hover:bg-gray-700 text-gray-300 rounded-lg text-sm font-medium transition-colors">Batal</button>
+                    <button type="submit" class="px-6 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm font-medium transition-colors shadow-sm">Simpan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     {{-- Modal: Detail View --}}
     <div x-show="modals.detail" x-cloak style="display: none;" class="fixed inset-0 bg-gray-900/80 backdrop-blur-sm z-[150] flex items-center justify-center p-4 transition-opacity">
         <div @click.away="modals.detail = false" class="bg-gray-800 border border-gray-700 rounded-xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col">
@@ -413,9 +607,10 @@ document.addEventListener('alpine:init', () => {
             attendance: false,
             editPayroll: false,
             detail: false,
-            qrCode: false
+            qrCode: false,
+            leaveForm: false
         },
-        empForm: { action: '', method: '', title: '', btnText: '', id: '', nip: '', name: '', email: '', phone: '', position: '', department: '', branch_id: '', join_date: '', basic_salary: '', status: 'active' },
+        empForm: { action: '', method: '', title: '', btnText: '', id: '', nip: '', name: '', email: '', phone: '', position: '', department: '', branch_id: '', join_date: '', basic_salary: '', allowance: 0, deduction: 0, status: 'active' },
         attForm: { employee_id: '', employee_name: '', status: 'present', clock_in: '08:00', clock_out: '17:00', note: '', image: '', image_out: '' },
         payForm: { id: '', employee_name: '', period: '', basicStr: '', allowance: 0, deduction: 0, status: 'draft' },
         detail: { title: '', content: '' },
@@ -429,7 +624,7 @@ document.addEventListener('alpine:init', () => {
         },
         
         openModalAddEmployee() {
-            this.empForm = { action: '{{ route("hrm.employees.store") }}', method: 'POST', title: '👤 Tambah Karyawan', btnText: 'Simpan', id: '', nip: '', name: '', email: '', phone: '', position: '', department: '', branch_id: '', join_date: '', basic_salary: '', status: 'active' };
+            this.empForm = { action: '{{ route("hrm.employees.store") }}', method: 'POST', title: '👤 Tambah Karyawan', btnText: 'Simpan', id: '', nip: '', name: '', email: '', phone: '', position: '', department: '', branch_id: '', join_date: '', basic_salary: '', allowance: 0, deduction: 0, status: 'active' };
             this.modals.employee = true;
         },
         
@@ -438,9 +633,13 @@ document.addEventListener('alpine:init', () => {
                 action: '/hrm/employees/' + emp.id, method: 'PUT', title: '✏️ Edit Karyawan', btnText: 'Update Karyawan',
                 id: emp.id, nip: emp.nip, name: emp.name, email: emp.email, phone: emp.phone, position: emp.position, department: emp.department, 
                 branch_id: emp.branch_id || '',
-                join_date: emp.join_date ? emp.join_date.split('T')[0] : '', basic_salary: emp.basic_salary, status: emp.status 
+                join_date: emp.join_date ? emp.join_date.split('T')[0] : '', basic_salary: emp.basic_salary, allowance: emp.allowance || 0, deduction: emp.deduction || 0, status: emp.status 
             };
             this.modals.employee = true;
+        },
+
+        openModalAddLeave() {
+            this.modals.leaveForm = true;
         },
         
         openAttendanceModal(emp, att) {
@@ -679,8 +878,11 @@ document.addEventListener('DOMContentLoaded', () => {
         
         if (row && '{{ $attendanceDate }}' === attDateNormalized) {
             const statusBadge = att.status === 'present' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : (att.status === 'absent' ? 'bg-red-500/10 text-red-500 border-red-500/20' : 'bg-amber-500/10 text-amber-500 border-amber-500/20');
-            
-            row.querySelector('.att-status').innerHTML = `<span class="px-2 py-1 flex w-fit rounded-full text-[10px] font-bold border ${statusBadge}">${att.status.charAt(0).toUpperCase() + att.status.slice(1)}</span>`;
+            let statusHtml = `<span class="px-2 py-1 flex w-fit rounded-full text-[10px] font-bold border ${statusBadge}">${att.status.charAt(0).toUpperCase() + att.status.slice(1)}</span>`;
+            if (att.is_late) {
+                statusHtml += `<span class="mt-1 px-1.5 py-0.5 flex w-fit rounded bg-red-500/20 text-red-500 text-[9px] font-black tracking-tighter uppercase border border-red-500/30">Telat</span>`;
+            }
+            row.querySelector('.att-status').innerHTML = statusHtml;
             row.querySelector('.att-in').textContent = att.clock_in ? att.clock_in.substring(0, 5) : '-';
             row.querySelector('.att-out').textContent = att.clock_out ? att.clock_out.substring(0, 5) : '-';
             
@@ -701,14 +903,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // 2. Sync Global Stats Counter
         const todayStr = new Date().toISOString().split('T')[0];
-        if (att.date === todayStr && !att.clock_out) {
+        if (attDateNormalized === todayStr && !att.clock_out) {
             const statEl = document.getElementById('stat-present-today');
             if (statEl) {
-                let current = parseInt(statEl.textContent) || 0;
-                statEl.textContent = current + 1;
-                const card = statEl.parentElement;
-                card.classList.add('ring-2', 'ring-amber-500', 'bg-amber-500/5');
-                setTimeout(() => card.classList.remove('ring-2', 'ring-amber-500', 'bg-amber-500/5'), 4000);
+                let current = parseInt(statEl.textContent.replace(/\D/g,'')) || 0;
+                statEl.textContent = (current + 1).toLocaleString();
+                
+                const card = document.getElementById('present-card');
+                if (card) {
+                    card.classList.add('ring-2', 'ring-amber-500', 'bg-amber-500/10');
+                    setTimeout(() => card.classList.remove('ring-2', 'ring-amber-500', 'bg-amber-500/10'), 4000);
+                }
             }
         }
     });

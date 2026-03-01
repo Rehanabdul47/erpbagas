@@ -102,7 +102,7 @@
                             <th class="px-4 py-3 font-medium">Kategori</th>
                             <th class="px-4 py-3 font-medium">Stok</th>
                             <th class="px-4 py-3 font-medium">Safety</th>
-                            @hasanyrole('Manager|Executive|SuperAdmin')
+                            @hasanyrole('Executive|Manager')
                             <th class="px-4 py-3 font-medium">Harga</th>
                             <th class="px-4 py-3 font-medium">COGS</th>
                             @endhasanyrole
@@ -143,7 +143,7 @@
                                 </div>
                             </td>
                             <td class="px-4 py-3 text-gray-400">{{ $p->safety_stock }}</td>
-                            @hasanyrole('Manager|Executive|SuperAdmin')
+                            @hasanyrole('Executive|Manager')
                             <td class="px-4 py-3 text-gray-300">Rp {{ number_format($p->price, 0, ',', '.') }}</td>
                             <td class="px-4 py-3 text-gray-300">Rp {{ number_format($p->cogs, 0, ',', '.') }}</td>
                             @endhasanyrole

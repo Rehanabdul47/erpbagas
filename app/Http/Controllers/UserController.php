@@ -12,7 +12,8 @@ class UserController extends Controller
     public function index()
     {
         $users = User::with('roles')->get();
-        $roles = Role::all();
+        $requestedRoles = ['Executive', 'Manager', 'Supervisor', 'Staff', 'Operator Produksi', 'Sales/Marketing', 'Admin', 'Security', 'Driver'];
+        $roles = Role::whereIn('name', $requestedRoles)->get();
 
         $stats = [
             'total' => $users->count(),
@@ -26,8 +27,9 @@ class UserController extends Controller
 
     public function create()
     {
-        $roles = Role::all();
-        $departments = ['all', 'warehouse', 'finance', 'sales', 'hr', 'store'];
+        $requestedRoles = ['Executive', 'Manager', 'Supervisor', 'Staff', 'Operator Produksi', 'Sales/Marketing', 'Admin', 'Security', 'Driver'];
+        $roles = Role::whereIn('name', $requestedRoles)->get();
+        $departments = ['All', 'Produksi', 'Marketing', 'Keuangan', 'HRD & GA', 'Warehouse/Logistik', 'IT Support'];
 
         return view('pages.users.create', compact('roles', 'departments'))
             ->with('activePage', 'users');
@@ -70,8 +72,9 @@ class UserController extends Controller
 
     public function edit(User $user)
     {
-        $roles = Role::all();
-        $departments = ['all', 'warehouse', 'finance', 'sales', 'hr', 'store'];
+        $requestedRoles = ['Executive', 'Manager', 'Supervisor', 'Staff', 'Operator Produksi', 'Sales/Marketing', 'Admin', 'Security', 'Driver'];
+        $roles = Role::whereIn('name', $requestedRoles)->get();
+        $departments = ['All', 'Produksi', 'Marketing', 'Keuangan', 'HRD & GA', 'Warehouse/Logistik', 'IT Support'];
 
         return view('pages.users.edit', compact('user', 'roles', 'departments'))
             ->with('activePage', 'users');

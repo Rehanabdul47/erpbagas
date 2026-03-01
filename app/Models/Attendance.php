@@ -16,6 +16,7 @@ class Attendance extends Model
         'status',
         'clock_in',
         'clock_out',
+        'is_late',
         'note',
         'image',
         'image_out',
@@ -23,6 +24,7 @@ class Attendance extends Model
 
     protected $casts = [
         'date' => 'date',
+        'is_late' => 'boolean',
     ];
 
     public function employee(): BelongsTo

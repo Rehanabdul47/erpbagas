@@ -50,9 +50,15 @@
 
                     <div class="space-y-2">
                         <label class="text-xs font-bold text-gray-400 uppercase tracking-wider">Kepala Toko / Manager</label>
-                        <input type="text" name="manager_name" value="{{ old('manager_name') }}" 
-                               class="w-full bg-gray-900 border border-gray-700 text-white rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all placeholder-gray-600" 
-                               placeholder="Nama kepala toko">
+                        <select name="manager_name" 
+                                class="w-full bg-gray-900 border border-gray-700 text-white rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all">
+                            <option value="">Pilih Kepala Toko</option>
+                            @foreach($employees as $emp)
+                            <option value="{{ $emp->name }}" {{ old('manager_name') == $emp->name ? 'selected' : '' }}>
+                                {{ $emp->name }} ({{ $emp->position }})
+                            </option>
+                            @endforeach
+                        </select>
                     </div>
 
                     <div class="space-y-2 md:col-span-2">

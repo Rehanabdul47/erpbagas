@@ -100,10 +100,13 @@
                                 $roleBadge = match($roleName) {
                                     'Executive' => 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
                                     'Manager' => 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20',
-                                    'Staff Gudang' => 'bg-amber-500/10 text-amber-400 border-amber-500/20',
-                                    'Staff Finance' => 'bg-teal-500/10 text-teal-400 border-teal-500/20',
-                                    'Staff Sales' => 'bg-rose-500/10 text-rose-400 border-rose-500/20',
-                                    'Staff HR' => 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20',
+                                    'Supervisor' => 'bg-amber-500/10 text-amber-400 border-amber-500/20',
+                                    'Staff' => 'bg-blue-500/10 text-blue-400 border-blue-500/20',
+                                    'Operator Produksi' => 'bg-orange-500/10 text-orange-400 border-orange-500/20',
+                                    'Sales/Marketing' => 'bg-rose-500/10 text-rose-400 border-rose-500/20',
+                                    'Admin' => 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20',
+                                    'Security' => 'bg-slate-500/10 text-slate-400 border-slate-500/20',
+                                    'Driver' => 'bg-stone-500/10 text-stone-400 border-stone-500/20',
                                     default => 'bg-gray-500/10 text-gray-400 border-gray-500/20',
                                 };
                             @endphp

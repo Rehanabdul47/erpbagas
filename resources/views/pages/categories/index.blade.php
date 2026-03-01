@@ -57,7 +57,7 @@
         <div class="overflow-x-auto w-full border border-gray-700/50 rounded-lg">
             <table class="w-full text-left text-sm whitespace-nowrap">
                 <thead class="bg-gray-900/50 text-gray-400 text-xs uppercase tracking-wider border-b border-gray-700/50">
-                    <tr><th class="px-5 py-3 font-medium">Nama Kategori</th><th class="px-5 py-3 font-medium">Jumlah SKU</th><th class="px-5 py-3 font-medium">Total Unit (Stok)</th><th class="px-5 py-3 font-medium">Dibuat</th><th class="px-5 py-3 font-medium text-right">Aksi</th></tr>
+                    <tr><th class="px-5 py-3 font-medium">Nama Kategori</th><th class="px-5 py-3 font-medium">Tahapan Produksi</th><th class="px-5 py-3 font-medium">Jumlah SKU</th><th class="px-5 py-3 font-medium">Total Unit (Stok)</th><th class="px-5 py-3 font-medium">Dibuat</th><th class="px-5 py-3 font-medium text-right">Aksi</th></tr>
                 </thead>
                 <tbody class="divide-y divide-gray-700/50">
                     @forelse($categories as $cat)
@@ -68,6 +68,17 @@
                                     <i data-lucide="tag" class="w-4 h-4"></i>
                                 </div>
                                 {{ $cat->name }}
+                            </div>
+                        </td>
+                        <td class="px-5 py-3">
+                            <div class="flex flex-wrap gap-1 max-w-xs">
+                                @if($cat->production_stages && is_array($cat->production_stages))
+                                    @foreach($cat->production_stages as $stage)
+                                        <span class="px-2 py-0.5 bg-gray-700 text-gray-300 rounded text-[10px]">{{ $stage }}</span>
+                                    @endforeach
+                                @else
+                                    <span class="text-xs text-gray-500 italic">Default</span>
+                                @endif
                             </div>
                         </td>
                         <td class="px-5 py-3">
@@ -84,7 +95,7 @@
                         <td class="px-5 py-3 text-gray-400 text-xs">{{ $cat->created_at->format('d M Y') }}</td>
                         <td class="px-5 py-3 text-right">
                             <div class="flex items-center justify-end gap-2 opacity-50 group-hover:opacity-100 transition-opacity">
-                                <button @click="openEditModal({{ $cat->id }}, '{{ addslashes($cat->name) }}')" class="p-1.5 rounded-lg text-gray-400 hover:text-indigo-400 hover:bg-indigo-500/10 transition-colors" title="Edit">
+                                <button @click="openEditModal({{ $cat->id }}, '{{ addslashes($cat->name) }}', '{{ is_array($cat->production_stages) ? implode(', ', $cat->production_stages) : '' }}')" class="p-1.5 rounded-lg text-gray-400 hover:text-indigo-400 hover:bg-indigo-500/10 transition-colors" title="Edit">
                                     <i data-lucide="edit-2" class="w-4 h-4"></i>
                                 </button>
                                 @if($cat->products_count === 0)
@@ -130,6 +141,11 @@
                         <label class="text-xs font-semibold text-gray-400 uppercase tracking-wider block">Nama Kategori <span class="text-red-500">*</span></label>
                         <input type="text" name="name" x-model="form.name" class="w-full bg-gray-900 border border-gray-700 text-white rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all" placeholder="Masukkan nama kategori" required autofocus>
                     </div>
+                    <div class="space-y-1.5">
+                        <label class="text-xs font-semibold text-gray-400 uppercase tracking-wider block">Tahapan Produksi</label>
+                        <input type="text" name="production_stages" x-model="form.production_stages" class="w-full bg-gray-900 border border-gray-700 text-white rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all placeholder-gray-600" placeholder="Contoh: Potong, Jahit, Sablon, Finishing">
+                        <div class="text-[10px] text-gray-500 mt-1">Pisahkan setiap tahapan dengan tanda koma (,). Kosongkan jika ingin memakai tahapan Default.</div>
+                    </div>
                 </div>
                 <div class="px-5 py-4 border-t border-gray-700/50 bg-gray-800/50 flex justify-end gap-3">
                     <button type="button" @click="modals.show = false" class="px-4 py-2 hover:bg-gray-700 text-gray-300 rounded-lg text-sm font-medium transition-colors">Batal</button>
@@ -151,7 +167,8 @@ document.addEventListener('alpine:init', () => {
         },
         form: {
             action: '{{ route('categories.store') }}',
-            name: ''
+            name: '',
+            production_stages: ''
         },
 
         matchSearch(name) {
@@ -163,13 +180,15 @@ document.addEventListener('alpine:init', () => {
             this.modals.mode = 'add';
             this.form.action = '{{ route('categories.store') }}';
             this.form.name = '';
+            this.form.production_stages = '';
             this.modals.show = true;
         },
 
-        openEditModal(id, name) {
+        openEditModal(id, name, stages) {
             this.modals.mode = 'edit';
             this.form.action = `/categories/${id}`;
             this.form.name = name;
+            this.form.production_stages = stages || '';
             this.modals.show = true;
         }
     }));

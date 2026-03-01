@@ -15,6 +15,8 @@ use App\Http\Controllers\ProductionDashboardController;
 use App\Http\Controllers\MarketingDashboardController;
 use App\Http\Controllers\FinanceDashboardController;
 use App\Http\Controllers\OrderController;
+use App\Http\Controllers\HrmDashboardController;
+use App\Http\Controllers\TailorController; // Added TailorController import
 
 use App\Http\Controllers\RedeemCodeController;
 
@@ -78,8 +80,14 @@ Route::middleware('auth')->group(function () {
         Route::get('/', [ProductionController::class, 'index'])->name('index');
         Route::get('/create', [ProductionController::class, 'create'])->name('create');
         Route::post('/', [ProductionController::class, 'store'])->name('store');
-        Route::put('/{production}/status', [ProductionController::class, 'updateStatus'])->name('update-status');
+        Route::put('/{production}/update-status', [ProductionController::class, 'updateStatus'])->name('update-status');
+        Route::put('/{production}/advance-stage', [ProductionController::class, 'advanceStage'])->name('advance-stage');
+        Route::put('/{production}/assign-tailor', [ProductionController::class, 'assignTailor'])->name('assign-tailor');
     });
+
+    // M. Tailors
+    Route::get('/tailors/monitoring', [TailorController::class, 'monitoring'])->name('tailors.monitoring');
+    Route::resource('tailors', TailorController::class);
 
     // Users
     Route::prefix('users')->name('users.')->group(function () {
@@ -112,11 +120,13 @@ Route::middleware('auth')->group(function () {
 
     // HRM & Payroll
     Route::prefix('hrm')->name('hrm.')->group(function () {
+        Route::get('/dashboard', [HrmDashboardController::class, 'index'])->name('dashboard');
         Route::get('/', [HrmController::class, 'index'])->name('index');
         Route::post('/employees', [HrmController::class, 'storeEmployee'])->name('employees.store');
         Route::put('/employees/{employee}', [HrmController::class, 'updateEmployee'])->name('employees.update');
         Route::delete('/employees/{employee}', [HrmController::class, 'destroyEmployee'])->name('employees.destroy');
         Route::post('/attendance', [HrmController::class, 'storeAttendance'])->name('attendance.store');
+        Route::post('/leave', [HrmController::class, 'storeLeave'])->name('leave.store');
         
         // Kiosk
         Route::get('/kiosk', [HrmController::class, 'kiosk'])->name('kiosk');
@@ -124,11 +134,13 @@ Route::middleware('auth')->group(function () {
 
         Route::post('/payroll/generate', [HrmController::class, 'generatePayroll'])->name('payroll.generate');
         Route::put('/payroll/{payroll}', [HrmController::class, 'updatePayroll'])->name('payroll.update');
+        Route::post('/settings', [HrmController::class, 'updateSettings'])->name('settings.update');
     });
 
     // Orders (E-Commerce)
     Route::prefix('orders')->name('orders')->group(function () {
         Route::get('/', [OrderController::class, 'index']);
+        Route::get('/{order}', [OrderController::class, 'show'])->name('.show');
         Route::post('/sync', [OrderController::class, 'syncApi'])->name('.sync');
         Route::put('/{order}/status', [OrderController::class, 'updateStatus'])->name('.update-status');
     });

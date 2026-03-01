@@ -44,34 +44,60 @@
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 pb-6">
-        {{-- Transaksi POS Terbaru --}}
+        {{-- Transaksi Terbaru (Unified POS & E-Commerce) --}}
         <div class="bg-gray-800 border border-gray-700/50 rounded-xl shadow-sm flex flex-col h-full lg:col-span-3">
             <div class="p-5 border-b border-gray-700/50 flex items-center justify-between">
                 <h4 class="font-bold text-white flex items-center gap-2">
-                    <i data-lucide="shopping-bag" class="w-4 h-4 text-emerald-400"></i> Transaksi POS Terbaru
+                    <i data-lucide="shopping-bag" class="w-4 h-4 text-emerald-400"></i> Transaksi Terbaru
                 </h4>
-                <a href="{{ route('pos.index') }}" class="text-xs text-indigo-400 hover:text-indigo-300">Buka POS →</a>
+                <div class="flex gap-3">
+                    <a href="{{ route('orders') }}" class="text-xs text-indigo-400 hover:text-indigo-300">Buka E-Commerce →</a>
+                    <a href="{{ route('pos.index') }}" class="text-xs text-indigo-400 hover:text-indigo-300 border-l border-gray-600 pl-3">Buka POS →</a>
+                </div>
             </div>
             <div class="p-0 flex-1 relative min-h-[250px]">
                 <div class="absolute inset-0 overflow-y-auto w-full">
                     <table class="w-full text-left text-sm whitespace-nowrap">
                         <thead class="bg-gray-900/50 text-gray-400 text-xs uppercase tracking-wider sticky top-0 z-10 border-b border-gray-700/50 backdrop-blur-md">
                             <tr>
-                                <th class="px-5 py-3 font-medium">Invoice</th>
+                                <th class="px-5 py-3 font-medium">Ref / Platform</th>
                                 <th class="px-5 py-3 font-medium">Pelanggan</th>
-                                <th class="px-5 py-3 font-medium">Tanggal</th>
+                                <th class="px-5 py-3 font-medium">Waktu</th>
+                                <th class="px-5 py-3 font-medium">Status / Tipe</th>
                                 <th class="px-5 py-3 font-medium">Total Nominal</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-700/50">
                             @forelse($recentTransactions as $sale)
                             <tr class="hover:bg-gray-700/20 transition-colors">
-                                <td class="px-5 py-3 font-mono font-bold text-white text-xs">
-                                    <a href="{{ route('pos.invoice', $sale) }}" target="_blank" class="hover:text-indigo-400 transition-colors">{{ $sale->invoice_no }}</a>
+                                <td class="px-5 py-3">
+                                    <div class="flex flex-col">
+                                        <a href="{{ $sale->route }}" target="_blank" class="font-mono font-bold text-indigo-400 text-xs hover:text-indigo-300 transition-colors">{{ $sale->reference }}</a>
+                                        <span class="text-[10px] text-gray-500 font-medium uppercase">{{ $sale->platform }}</span>
+                                    </div>
                                 </td>
-                                <td class="px-5 py-3 text-gray-300">{{ $sale->customer->name ?? 'Walk-in Customer' }}</td>
-                                <td class="px-5 py-3 text-gray-400">{{ \Carbon\Carbon::parse($sale->sale_date)->format('d M Y H:i') }}</td>
-                                <td class="px-5 py-3 font-bold text-emerald-400">Rp {{ number_format($sale->total_amount, 0, ',', '.') }}</td>
+                                <td class="px-5 py-3 text-gray-300">{{ $sale->customer_name }}</td>
+                                <td class="px-5 py-3 text-gray-400">{{ \Carbon\Carbon::parse($sale->date)->format('d M Y H:i') }}</td>
+                                <td class="px-5 py-3">
+                                    <div class="flex gap-1.5 flex-wrap">
+                                        @if($sale->status === 'completed' || $sale->status === 'delivered')
+                                            <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Selesai</span>
+                                        @elseif($sale->status === 'shipped')
+                                            <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-500/10 text-blue-400 border border-blue-500/20">Dikirim</span>
+                                        @elseif($sale->status === 'ready_to_ship')
+                                            <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">Siap Kirim</span>
+                                        @else
+                                            <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/10 text-amber-500 border border-amber-500/20">{{ ucfirst($sale->status) }}</span>
+                                        @endif
+
+                                        @if($sale->is_redeem)
+                                            <span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-500 text-gray-900 border border-amber-400 flex items-center gap-1">
+                                                <i data-lucide="ticket" class="w-3 h-3"></i> Kupon
+                                            </span>
+                                        @endif
+                                    </div>
+                                </td>
+                                <td class="px-5 py-3 font-bold text-emerald-400">Rp {{ number_format($sale->amount, 0, ',', '.') }}</td>
                             </tr>
                             @empty
                             <tr>

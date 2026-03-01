@@ -138,7 +138,7 @@
                        class="w-full bg-gray-900 border border-gray-700 text-white rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all">
             </div>
             
-            @hasanyrole('Manager|Executive|SuperAdmin')
+            @hasanyrole('Executive|Manager')
             <div class="space-y-2">
                 <label class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Harga Jual (Rp) <span class="text-red-500">*</span></label>
                 <input type="number" name="price" value="{{ old('price', $product->price) }}" min="0" step="1000" required

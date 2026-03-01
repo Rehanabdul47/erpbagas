@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Branch;
+use App\Models\Employee;
 
 class BranchController extends Controller
 {
@@ -15,7 +16,8 @@ class BranchController extends Controller
 
     public function create()
     {
-        return view('pages.branches.create')->with('activePage', 'branches');
+        $employees = Employee::where('status', 'active')->orderBy('name')->get();
+        return view('pages.branches.create', compact('employees'))->with('activePage', 'branches');
     }
 
     public function store(Request $request)
@@ -38,7 +40,8 @@ class BranchController extends Controller
 
     public function edit(Branch $branch)
     {
-        return view('pages.branches.edit', compact('branch'))->with('activePage', 'branches');
+        $employees = Employee::where('status', 'active')->orderBy('name')->get();
+        return view('pages.branches.edit', compact('branch', 'employees'))->with('activePage', 'branches');
     }
 
     public function update(Request $request, Branch $branch)

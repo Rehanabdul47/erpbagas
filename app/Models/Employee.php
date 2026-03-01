@@ -20,6 +20,8 @@ class Employee extends Model
         'branch_id',
         'join_date',
         'basic_salary',
+        'allowance',
+        'deduction',
         'status',
     ];
 

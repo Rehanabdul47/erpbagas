@@ -21,7 +21,14 @@ class CategoryController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255|unique:categories,name',
+            'production_stages' => 'nullable|string'
         ]);
+
+        if (!empty($validated['production_stages'])) {
+            $validated['production_stages'] = array_values(array_filter(array_map('trim', explode(',', $validated['production_stages']))));
+        } else {
+            $validated['production_stages'] = null;
+        }
 
         Category::create($validated);
 
@@ -32,7 +39,14 @@ class CategoryController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255|unique:categories,name,' . $category->id,
+            'production_stages' => 'nullable|string'
         ]);
+
+        if (!empty($validated['production_stages'])) {
+            $validated['production_stages'] = array_values(array_filter(array_map('trim', explode(',', $validated['production_stages']))));
+        } else {
+            $validated['production_stages'] = null;
+        }
 
         $category->update($validated);
 

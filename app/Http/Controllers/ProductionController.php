@@ -13,15 +13,17 @@ class ProductionController extends Controller
 {
     public function index()
     {
-        $productions = Production::with(['product', 'user'])->latest()->get();
-        return view('pages.production.index', compact('productions'))
+        $productions = Production::with(['product.category', 'user', 'tailor'])->latest()->get();
+        $tailors = \App\Models\Tailor::all();
+        return view('pages.production.index', compact('productions', 'tailors'))
             ->with('activePage', 'production');
     }
 
     public function create()
     {
         $finalProducts = Product::where('type', 'final_product')->with('billOfMaterialsAsFinal.rawMaterial')->get();
-        return view('pages.production.create', compact('finalProducts'))
+        $tailors = \App\Models\Tailor::all();
+        return view('pages.production.create', compact('finalProducts', 'tailors'))
             ->with('activePage', 'production');
     }
 
@@ -31,6 +33,7 @@ class ProductionController extends Controller
             'product_id' => 'required|exists:products,id',
             'quantity' => 'required|integer|min:1',
             'date' => 'required|date',
+            'tailor_id' => 'nullable|exists:tailors,id',
             'notes' => 'nullable|string',
         ]);
 
@@ -65,10 +68,15 @@ class ProductionController extends Controller
                 'product_id' => $finalProduct->id,
                 'quantity' => $validated['quantity'],
                 'date' => $validated['date'],
+                'tailor_id' => $validated['tailor_id'] ?? null,
                 'user_id' => Auth::id(),
                 'status' => 'processing',
                 'notes' => $validated['notes'],
             ]);
+
+            // Set the first stage dynamically
+            $production->stage = $production->stages[0] ?? 'Proses Pembuatan';
+            $production->save();
 
             DB::commit();
             return redirect()->route('production.index')->with('success', "Produksi {$finalProduct->name} berhasil dimulai.");
@@ -125,6 +133,72 @@ class ProductionController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
             return back()->with('error', 'Terjadi kesalahan sistem: ' . $e->getMessage());
+        }
+    }
+
+    public function advanceStage(Request $request, Production $production)
+    {
+        if ($production->status !== 'processing') {
+            return back()->with('error', 'Hanya produksi yang sedang diproses yang dapat dimajukan tahapannya.');
+        }
+
+        $nextStage = $production->getNextStage();
+
+        if (!$nextStage) {
+            return back()->with('error', 'Produksi sudah berada di tahap akhir atau tidak valid.');
+        }
+
+        DB::beginTransaction();
+        try {
+            if ($nextStage === 'completed') {
+                $production->status = 'completed';
+                $production->save();
+
+                // Add final product to stock
+                $production->product->increment('stock', $production->quantity);
+                
+                StockMovement::create([
+                    'product_id' => $production->product_id,
+                    'type' => 'in',
+                    'quantity' => $production->quantity,
+                    'reference' => 'Hasil Produksi #' . $production->id . ' (Selesai)',
+                    'method' => 'Production Result',
+                ]);
+
+                $message = "Produksi selesai. Barang jadi telah ditambahkan ke stok.";
+            } else {
+                $production->stage = $nextStage;
+                $production->save();
+                
+                $message = "Tahapan produksi dilanjutkan ke: " . $production->stage_label;
+            }
+
+            DB::commit();
+            return redirect()->route('production.index')->with('success', $message);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->with('error', 'Terjadi kesalahan sistem: ' . $e->getMessage());
+        }
+    }
+
+    public function assignTailor(Request $request, Production $production)
+    {
+        $validated = $request->validate([
+            'tailor_id' => 'nullable|exists:tailors,id',
+        ]);
+
+        if ($production->status !== 'processing') {
+            return back()->with('error', 'Hanya produksi berjalan yang dapat ditugaskan ke penjahit.');
+        }
+
+        $production->tailor_id = $validated['tailor_id'];
+        $production->save();
+
+        if ($validated['tailor_id']) {
+            $tailor = \App\Models\Tailor::find($validated['tailor_id']);
+            return back()->with('success', "Produksi ditugaskan ke vendor penjahit: {$tailor->name}.");
+        } else {
+            return back()->with('success', "Penugasan vendor penjahit dilepas dari produksi.");
         }
     }
 }

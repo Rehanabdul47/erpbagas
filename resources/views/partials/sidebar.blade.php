@@ -1,38 +1,43 @@
 @php
+    $user = auth()->user();
+    $isMgmt = $user && $user->hasAnyRole(['Manager', 'Executive', 'SuperAdmin']);
+    $dept = $user ? $user->department : null;
+
     $menuConfig = [
-        ['section' => 'OVERVIEW', 'items' => [
-            ['id' => 'dashboard', 'icon' => 'layout-dashboard', 'label' => 'Dashboard', 'route' => 'dashboard'],
+        ['section' => 'OVERVIEW', 'visible' => true, 'items' => [
+            ['id' => 'dashboard', 'icon' => 'layout-dashboard', 'label' => 'Dashboard', 'route' => 'dashboard', 'visible' => true],
         ]],
-        ['section' => 'DIVISI PRODUKSI', 'items' => [
-            ['id' => 'production-dashboard', 'icon' => 'layout-dashboard', 'label' => 'Overview Produksi', 'route' => 'production.dashboard'],
-            ['id' => 'inventory', 'icon' => 'package', 'label' => 'Inventory', 'route' => 'inventory.index'],
-            ['id' => 'purchase-orders', 'icon' => 'shopping-bag', 'label' => 'Purchase Order', 'route' => 'purchase-orders.index'],
-            ['id' => 'suppliers', 'icon' => 'truck', 'label' => 'Suppliers', 'route' => 'suppliers.index'],
-            ['id' => 'production', 'icon' => 'factory', 'label' => 'Produksi', 'route' => 'production.index'],
-            ['id' => 'categories', 'icon' => 'tags', 'label' => 'Kategori', 'route' => 'categories.index'],
+        ['section' => 'DIVISI PRODUKSI', 'visible' => $isMgmt || in_array($dept, ['Produksi', 'Warehouse/Logistik']) || ($user && $user->hasRole('Operator Produksi')), 'items' => [
+            ['id' => 'production-dashboard', 'icon' => 'layout-dashboard', 'label' => 'Overview Produksi', 'route' => 'production.dashboard', 'visible' => true],
+            ['id' => 'inventory', 'icon' => 'package', 'label' => 'Inventory', 'route' => 'inventory.index', 'visible' => true],
+            ['id' => 'purchase-orders', 'icon' => 'shopping-bag', 'label' => 'Purchase Order', 'route' => 'purchase-orders.index', 'visible' => true],
+            ['id' => 'suppliers', 'icon' => 'truck', 'label' => 'Suppliers', 'route' => 'suppliers.index', 'visible' => true],
+            ['id' => 'production', 'icon' => 'factory', 'label' => 'Produksi', 'route' => 'production.index', 'visible' => true],
+            ['id' => 'tailors', 'icon' => 'scissors', 'label' => 'Data Penjahit', 'route' => 'tailors.index', 'visible' => true],
+            ['id' => 'tailors-monitoring', 'icon' => 'activity', 'label' => 'Monitor Penjahit', 'route' => 'tailors.monitoring', 'visible' => true],
+            ['id' => 'categories', 'icon' => 'tags', 'label' => 'Kategori', 'route' => 'categories.index', 'visible' => true],
         ]],
-        ['section' => 'DIVISI MARKETING', 'items' => [
-            ['id' => 'marketing-dashboard', 'icon' => 'line-chart', 'label' => 'Overview Marketing', 'route' => 'marketing.dashboard'],
-            ['id' => 'sales', 'icon' => 'trending-up', 'label' => 'Sales & CRM', 'route' => 'sales.index'],
-            ['id' => 'redeem-codes', 'icon' => 'ticket', 'label' => 'Redeem Codes', 'route' => 'redeem-codes.index'],
-            ['id' => 'pos', 'icon' => 'monitor', 'label' => 'Point of Sale', 'route' => 'pos.index'],
+        ['section' => 'DIVISI MARKETING', 'visible' => $isMgmt || $dept === 'Marketing' || ($user && $user->hasRole('Sales/Marketing')), 'items' => [
+            ['id' => 'marketing-dashboard', 'icon' => 'line-chart', 'label' => 'Overview Marketing', 'route' => 'marketing.dashboard', 'visible' => true],
+            ['id' => 'sales', 'icon' => 'trending-up', 'label' => 'Sales & CRM', 'route' => 'sales.index', 'visible' => true],
+            ['id' => 'orders', 'icon' => 'shopping-cart', 'label' => 'Orders', 'route' => 'orders', 'badge' => 3, 'visible' => true],
+            ['id' => 'redeem-codes', 'icon' => 'ticket', 'label' => 'Redeem Codes', 'route' => 'redeem-codes.index', 'visible' => true],
+            ['id' => 'pos', 'icon' => 'monitor', 'label' => 'Point of Sale', 'route' => 'pos.index', 'visible' => true],
         ]],
-        ['section' => 'OPERASIONAL', 'items' => [
-            ['id' => 'orders', 'icon' => 'shopping-cart', 'label' => 'Orders', 'route' => 'orders', 'badge' => 3],
+        ['section' => 'DIVISI KEUANGAN', 'visible' => $isMgmt || $dept === 'Keuangan', 'items' => [
+            ['id' => 'finance-dashboard', 'icon' => 'line-chart', 'label' => 'Overview Keuangan', 'route' => 'finance.dashboard', 'visible' => true],
+            ['id' => 'finance', 'icon' => 'wallet', 'label' => 'Buku Kas', 'route' => 'finance.index', 'visible' => true],
+            ['id' => 'reports', 'icon' => 'bar-chart-3', 'label' => 'Laporan Keuangan', 'route' => 'finance.reports', 'visible' => true],
         ]],
-        ['section' => 'DIVISI KEUANGAN', 'items' => [
-            ['id' => 'finance-dashboard', 'icon' => 'line-chart', 'label' => 'Overview Keuangan', 'route' => 'finance.dashboard'],
-            ['id' => 'finance', 'icon' => 'wallet', 'label' => 'Buku Kas', 'route' => 'finance.index'],
-            ['id' => 'reports', 'icon' => 'bar-chart-3', 'label' => 'Laporan Keuangan', 'route' => 'finance.reports'],
+        ['section' => 'DIVISI SUMBER DAYA MANUSIA', 'visible' => $isMgmt || $dept === 'HRD & GA', 'items' => [
+            ['id' => 'hrm-dashboard', 'icon' => 'layout-dashboard', 'label' => 'Overview HRM', 'route' => 'hrm.dashboard', 'visible' => true],
+            ['id' => 'hrm', 'icon' => 'users', 'label' => 'HRM & Payroll', 'route' => 'hrm.index', 'visible' => true],
+            ['id' => 'kiosk', 'icon' => 'scan-line', 'label' => 'Presensi', 'route' => 'hrm.kiosk', 'target' => '_blank', 'visible' => true],
         ]],
-        ['section' => 'DIVISI SUMBER DAYA MANUSIA', 'items' => [
-            ['id' => 'hrm', 'icon' => 'users', 'label' => 'HRM & Payroll', 'route' => 'hrm.index'],
-            ['id' => 'kiosk', 'icon' => 'scan-line', 'label' => 'Presensi', 'route' => 'hrm.kiosk', 'target' => '_blank'],
-        ]],
-        ['section' => 'SISTEM', 'items' => [
-            ['id' => 'branches', 'icon' => 'store', 'label' => 'Cabang / Toko', 'route' => 'branches.index'],
-            ['id' => 'users', 'icon' => 'user-cog', 'label' => 'Manage Users', 'route' => 'users.index'],
-            ['id' => 'settings', 'icon' => 'settings', 'label' => 'Settings', 'route' => 'settings'],
+        ['section' => 'SISTEM', 'visible' => $isMgmt || ($user && $user->hasRole('Admin')), 'items' => [
+            ['id' => 'branches', 'icon' => 'store', 'label' => 'Cabang / Toko', 'route' => 'branches.index', 'visible' => true],
+            ['id' => 'users', 'icon' => 'user-cog', 'label' => 'Manage Users', 'route' => 'users.index', 'visible' => true],
+            ['id' => 'settings', 'icon' => 'settings', 'label' => 'Settings', 'route' => 'settings', 'visible' => true],
         ]],
     ];
     $activePage = $activePage ?? 'dashboard';
@@ -51,10 +56,12 @@
 
     <nav class="flex-1 overflow-y-auto py-4 scrollbar-thin scrollbar-thumb-gray-700 hover:scrollbar-thumb-gray-600" id="sidebar-nav">
         @foreach($menuConfig as $section)
+        @if(isset($section['visible']) && !$section['visible']) @continue @endif
         <div class="mb-6 px-4">
             <div class="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2 px-2">{{ $section['section'] }}</div>
             <div class="space-y-1">
                 @foreach($section['items'] as $item)
+                @if(isset($item['visible']) && !$item['visible']) @continue @endif
                 <a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors {{ $activePage === $item['id'] ? 'bg-indigo-600 border border-indigo-500 text-white shadow-lg shadow-indigo-600/20' : 'text-gray-400 hover:text-white hover:bg-gray-700/50' }}" 
                     @if(Route::has($item['route'])) href="{{ route($item['route']) }}" @else href="#" @endif 
                     data-id="{{ $item['id'] }}" @if(isset($item['target'])) target="{{ $item['target'] }}" @endif>

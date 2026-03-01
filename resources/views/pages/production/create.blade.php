@@ -67,6 +67,19 @@
                     <input type="date" name="date" class="w-full bg-gray-900 border border-gray-700 text-white rounded-lg pl-10 pr-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all" value="{{ old('date', date('Y-m-d')) }}" required>
                 </div>
             </div>
+
+            <div class="space-y-1.5">
+                <label class="text-xs font-semibold text-gray-400 uppercase tracking-wider block">Penjahit Vendor (Opsional)</label>
+                <div class="relative">
+                    <select name="tailor_id" class="w-full bg-gray-900 border border-gray-700 text-white rounded-lg pl-4 pr-10 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all appearance-none cursor-pointer">
+                        <option value="">-- Internal / Tanpa Vendor --</option>
+                        @foreach($tailors as $t)
+                            <option value="{{ $t->id }}" {{ old('tailor_id') == $t->id ? 'selected' : '' }}>{{ $t->name }}</option>
+                        @endforeach
+                    </select>
+                    <i data-lucide="scissors" class="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none"></i>
+                </div>
+            </div>
             
             <!-- BoM Auto Calculator -->
             <div class="md:col-span-2 bg-gray-900/50 border border-gray-700 rounded-xl p-5 mt-2">

@@ -157,7 +157,9 @@
                             <div class="text-[10px] text-gray-500 font-mono">{{ $p->sku }}</div>
                         </div>
                         <div class="ml-auto text-right">
+                            @hasanyrole('Executive|Manager')
                             <div class="text-[10px] font-bold text-indigo-400">Rp {{ number_format($p->cogs, 0, ',', '.') }}</div>
+                            @endhasanyrole
                             <div class="text-[9px] text-gray-500">Stok: {{ $p->stock }}</div>
                         </div>
                     </div>
@@ -191,7 +193,11 @@ function poStore() {
                     name: product.name,
                     sku: product.sku,
                     quantity: 1,
+                    @hasanyrole('Executive|Manager')
                     cost_price: product.cogs || 0
+                    @else
+                    cost_price: 0
+                    @endhasanyrole
                 });
             }
             setTimeout(() => lucide.createIcons(), 50);

@@ -7,7 +7,11 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Category extends Model
 {
-    protected $fillable = ['name'];
+    protected $fillable = ['name', 'production_stages'];
+
+    protected $casts = [
+        'production_stages' => 'array',
+    ];
 
     public function products(): HasMany
     {
