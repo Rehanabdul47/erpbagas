@@ -57,15 +57,23 @@
                 <div class="overflow-x-auto w-full border border-gray-700/50 rounded-lg">
                     <table class="w-full text-left text-sm whitespace-nowrap">
                         <thead class="bg-gray-900/50 text-gray-400 text-xs uppercase tracking-wider border-b border-gray-700/50">
-                            <tr><th class="px-4 py-3 font-medium">NIP</th><th class="px-4 py-3 font-medium">Nama</th><th class="px-4 py-3 font-medium">Jabatan</th><th class="px-4 py-3 font-medium">Departemen</th><th class="px-4 py-3 font-medium">Status</th><th class="px-4 py-3 font-medium text-right">Aksi</th></tr>
+                            <tr><th class="px-4 py-3 font-medium">NIP</th><th class="px-4 py-3 font-medium">Nama</th><th class="px-4 py-3 font-medium">Jabatan</th><th class="px-4 py-3 font-medium">Lokasi Kerja</th><th class="px-4 py-3 font-medium">Status</th><th class="px-4 py-3 font-medium text-right">Aksi</th></tr>
                         </thead>
                         <tbody class="divide-y divide-gray-700/50">
                             @forelse($employees as $emp)
                             <tr @click="viewEmployeeDetail({{ json_encode($emp) }})" class="hover:bg-indigo-500/10 transition-colors cursor-pointer group">
                                 <td class="px-4 py-3"><span class="font-mono text-gray-400 bg-gray-900 px-2 py-1 rounded text-xs">{{ $emp->nip }}</span></td>
                                 <td class="px-4 py-3 font-bold text-white">{{ $emp->name }}</td>
-                                <td class="px-4 py-3 text-gray-300">{{ $emp->position }}</td>
-                                <td class="px-4 py-3 text-gray-400">{{ $emp->department }}</td>
+                                <td class="px-4 py-3 text-gray-300">
+                                    {{ $emp->position }}
+                                    <div class="text-[10px] text-gray-500 uppercase">{{ $emp->department }}</div>
+                                </td>
+                                <td class="px-4 py-3">
+                                    <div class="flex items-center gap-1.5 text-indigo-400">
+                                        <i data-lucide="map-pin" class="w-3.5 h-3.5"></i>
+                                        <span class="text-xs font-medium">{{ $emp->branch ? $emp->branch->name : 'Kantor Pusat' }}</span>
+                                    </div>
+                                </td>
                                 <td class="px-4 py-3">
                                     <span class="px-2 py-1 flex w-fit rounded-full text-[10px] font-bold border {{ $emp->status === 'active' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-red-500/10 text-red-500 border-red-500/20' }}">
                                         {{ $emp->status === 'active' ? 'Aktif' : 'Non-Aktif' }}
@@ -219,6 +227,15 @@
                     <div class="space-y-1.5"><label class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Telepon</label><input type="text" name="phone" x-model="empForm.phone" required class="w-full bg-gray-900 border border-gray-700 text-white rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"></div>
                     <div class="space-y-1.5"><label class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Jabatan</label><input type="text" name="position" x-model="empForm.position" required class="w-full bg-gray-900 border border-gray-700 text-white rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"></div>
                     <div class="space-y-1.5"><label class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Department</label><input type="text" name="department" x-model="empForm.department" required class="w-full bg-gray-900 border border-gray-700 text-white rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"></div>
+                    <div class="space-y-1.5">
+                        <label class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Cabang / Lokasi Kerja</label>
+                        <select name="branch_id" x-model="empForm.branch_id" class="w-full bg-gray-900 border border-gray-700 text-white rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all">
+                            <option value="">Kantor Pusat</option>
+                            @foreach($branches as $b)
+                            <option value="{{ $b->id }}">{{ $b->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
                     <div class="space-y-1.5"><label class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Tgl Bergabung</label><input type="date" name="join_date" x-model="empForm.join_date" required class="w-full bg-gray-900 border border-gray-700 text-white rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"></div>
                     <div class="space-y-1.5"><label class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Gaji Pokok</label><input type="number" name="basic_salary" x-model="empForm.basic_salary" required class="w-full bg-gray-900 border border-gray-700 text-white rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"></div>
                     <div class="space-y-1.5" x-show="empForm.method === 'PUT'"><label class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Status</label><select name="status" x-model="empForm.status" class="w-full bg-gray-900 border border-gray-700 text-white rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"><option value="active">Aktif</option><option value="inactive">Non-Aktif</option></select></div>
@@ -398,7 +415,7 @@ document.addEventListener('alpine:init', () => {
             detail: false,
             qrCode: false
         },
-        empForm: { action: '', method: '', title: '', btnText: '', id: '', nip: '', name: '', email: '', phone: '', position: '', department: '', join_date: '', basic_salary: '', status: 'active' },
+        empForm: { action: '', method: '', title: '', btnText: '', id: '', nip: '', name: '', email: '', phone: '', position: '', department: '', branch_id: '', join_date: '', basic_salary: '', status: 'active' },
         attForm: { employee_id: '', employee_name: '', status: 'present', clock_in: '08:00', clock_out: '17:00', note: '', image: '', image_out: '' },
         payForm: { id: '', employee_name: '', period: '', basicStr: '', allowance: 0, deduction: 0, status: 'draft' },
         detail: { title: '', content: '' },
@@ -412,7 +429,7 @@ document.addEventListener('alpine:init', () => {
         },
         
         openModalAddEmployee() {
-            this.empForm = { action: '{{ route("hrm.employees.store") }}', method: 'POST', title: '👤 Tambah Karyawan', btnText: 'Simpan', id: '', nip: '', name: '', email: '', phone: '', position: '', department: '', join_date: '', basic_salary: '', status: 'active' };
+            this.empForm = { action: '{{ route("hrm.employees.store") }}', method: 'POST', title: '👤 Tambah Karyawan', btnText: 'Simpan', id: '', nip: '', name: '', email: '', phone: '', position: '', department: '', branch_id: '', join_date: '', basic_salary: '', status: 'active' };
             this.modals.employee = true;
         },
         
@@ -420,6 +437,7 @@ document.addEventListener('alpine:init', () => {
             this.empForm = { 
                 action: '/hrm/employees/' + emp.id, method: 'PUT', title: '✏️ Edit Karyawan', btnText: 'Update Karyawan',
                 id: emp.id, nip: emp.nip, name: emp.name, email: emp.email, phone: emp.phone, position: emp.position, department: emp.department, 
+                branch_id: emp.branch_id || '',
                 join_date: emp.join_date ? emp.join_date.split('T')[0] : '', basic_salary: emp.basic_salary, status: emp.status 
             };
             this.modals.employee = true;
@@ -483,8 +501,9 @@ document.addEventListener('alpine:init', () => {
                         <div class="text-gray-300 text-sm">${emp.department}</div>
                     </div>
                     <div class="bg-gray-900/50 border border-gray-700/50 p-3 rounded-xl">
-                        <div class="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Tgl Bergabung</div>
+                        <div class="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Tgl Bergabung / Lokasi</div>
                         <div class="text-gray-300 text-sm">${joinDate}</div>
+                        <div class="text-indigo-400 text-xs mt-1 font-bold">${emp.branch ? emp.branch.name : 'Kantor Pusat'}</div>
                     </div>
                     <div class="bg-gray-900/50 border border-gray-700/50 p-4 rounded-xl sm:col-span-2">
                         <div class="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Gaji Pokok</div>

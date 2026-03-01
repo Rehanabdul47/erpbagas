@@ -66,6 +66,7 @@ class PosController extends Controller
                 // 1. Create Sale
                 $sale = Sale::create([
                     'customer_id' => $validated['customer_id'],
+                    'branch_id' => Auth::user()->branch_id ?? null,
                     'invoice_no' => $invoiceNo,
                     'sale_date' => Carbon::now(),
                     'total_amount' => 0, // Update later

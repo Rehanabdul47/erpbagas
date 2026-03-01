@@ -15,7 +15,8 @@ class HrmController extends Controller
     {
         $activeTab = $request->input('tab', 'employees');
         
-        $employees = Employee::withCount('attendances')->latest()->get();
+        $employees = Employee::with(['branch', 'attendances'])->latest()->get();
+        $branches = \App\Models\Branch::where('is_active', true)->get();
         
         // Attendance logic
         $attendanceDate = $request->input('date', date('Y-m-d'));
@@ -32,16 +33,17 @@ class HrmController extends Controller
             ->where('period_month', $periodMonth)
             ->where('period_year', $periodYear)
             ->get();
-
+ 
         $stats = [
             'totalEmployees' => $employees->count(),
             'activeEmployees' => $employees->where('status', 'active')->count(),
             'presentToday' => Attendance::whereDate('date', date('Y-m-d'))->where('status', 'present')->count(),
             'payrollTotal' => $payrolls->sum('net_salary'),
         ];
-
+ 
         return view('pages.hrm.index', compact(
             'employees', 
+            'branches',
             'attendances', 
             'payrolls', 
             'stats', 
@@ -50,7 +52,7 @@ class HrmController extends Controller
             'payrollMonth'
         ))->with('activePage', 'hrm');
     }
-
+ 
     public function storeEmployee(Request $request)
     {
         $validated = $request->validate([
@@ -60,15 +62,16 @@ class HrmController extends Controller
             'phone' => 'required|string',
             'position' => 'required|string',
             'department' => 'required|string',
+            'branch_id' => 'nullable|exists:branches,id',
             'join_date' => 'required|date',
             'basic_salary' => 'required|numeric|min:0',
         ]);
-
+ 
         Employee::create($validated);
-
+ 
         return redirect()->route('hrm.index', ['tab' => 'employees'])->with('success', 'Karyawan berhasil ditambahkan');
     }
-
+ 
     public function updateEmployee(Request $request, Employee $employee)
     {
         $validated = $request->validate([
@@ -78,13 +81,14 @@ class HrmController extends Controller
             'phone' => 'required|string',
             'position' => 'required|string',
             'department' => 'required|string',
+            'branch_id' => 'nullable|exists:branches,id',
             'join_date' => 'required|date',
             'basic_salary' => 'required|numeric|min:0',
             'status' => 'required|in:active,inactive',
         ]);
-
+ 
         $employee->update($validated);
-
+ 
         return redirect()->route('hrm.index', ['tab' => 'employees'])->with('success', 'Data karyawan berhasil diperbarui');
     }
 

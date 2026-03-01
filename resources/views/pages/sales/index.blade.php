@@ -13,6 +13,24 @@
     </div>
     @endif
 
+    {{-- Header & Filter --}}
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+        <h2 class="text-xl font-bold text-white flex items-center gap-2">
+            <i data-lucide="trending-up" class="w-6 h-6 text-indigo-400"></i> Sales & CRM
+        </h2>
+        <form id="branch-filter-form" class="flex flex-wrap items-center gap-3 w-full md:w-auto">
+            <select name="branch_id" onchange="document.getElementById('branch-filter-form').submit()"
+                    class="bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all shadow-sm">
+                <option value="all">Semua Cabang / Global</option>
+                @foreach($branches as $branch)
+                <option value="{{ $branch->id }}" {{ $branchId == $branch->id ? 'selected' : '' }}>
+                    {{ $branch->name }} {{ $branch->type === 'main' ? '(Pusat)' : '' }}
+                </option>
+                @endforeach
+            </select>
+        </form>
+    </div>
+
     {{-- Stats --}}
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mb-6">
         <div class="bg-gray-800 border-b-4 border-indigo-500 border-x border-t border-gray-700/50 rounded-xl p-5 shadow-sm">
@@ -93,13 +111,14 @@
             <div class="overflow-x-auto w-full border border-gray-700/50 rounded-lg">
                 <table class="w-full text-left text-sm whitespace-nowrap">
                     <thead class="bg-gray-900/50 text-gray-400 text-xs uppercase tracking-wider border-b border-gray-700/50">
-                        <tr><th class="px-4 py-3 font-medium">Invoice</th><th class="px-4 py-3 font-medium">Customer</th><th class="px-4 py-3 font-medium">Tanggal</th><th class="px-4 py-3 font-medium">Total Amount</th><th class="px-4 py-3 font-medium">Status</th></tr>
+                        <tr><th class="px-4 py-3 font-medium">Invoice</th><th class="px-4 py-3 font-medium">Customer</th><th class="px-4 py-3 font-medium">Cabang</th><th class="px-4 py-3 font-medium">Tanggal</th><th class="px-4 py-3 font-medium">Total Amount</th><th class="px-4 py-3 font-medium">Status</th></tr>
                     </thead>
                     <tbody class="divide-y divide-gray-700/50">
                         @forelse($sales as $s)
-                        <tr @click="viewSaleDetail({{ json_encode($s->load('customer')) }})" class="hover:bg-indigo-500/10 transition-colors cursor-pointer group">
+                        <tr @click="viewSaleDetail({{ json_encode($s->load('customer', 'branch')) }})" class="hover:bg-indigo-500/10 transition-colors cursor-pointer group">
                             <td class="px-4 py-3 font-bold text-indigo-400 font-mono text-xs">#{{ $s->invoice_no }}</td>
                             <td class="px-4 py-3 font-bold text-white">{{ $s->customer->name }}</td>
+                            <td class="px-4 py-3 text-gray-400 text-xs">{{ $s->branch ? $s->branch->name : 'Pusat' }}</td>
                             <td class="px-4 py-3 text-gray-300">{{ \Carbon\Carbon::parse($s->sale_date)->format('d M Y') }}</td>
                             <td class="px-4 py-3 font-bold text-white">Rp {{ number_format($s->total_amount, 0, ',', '.') }}</td>
                             <td class="px-4 py-3">
@@ -109,7 +128,7 @@
                             </td>
                         </tr>
                         @empty
-                        <tr><td colspan="5" class="text-center py-10 text-gray-500">Belum ada riwayat penjualan</td></tr>
+                        <tr><td colspan="6" class="text-center py-10 text-gray-500">Belum ada riwayat penjualan</td></tr>
                         @endforelse
                     </tbody>
                 </table>
@@ -221,6 +240,7 @@ document.addEventListener('alpine:init', () => {
             this.detail.title = '📜 Detail Transaksi';
             const amount = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(s.total_amount);
             const date = new Date(s.sale_date).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+            const branch = s.branch ? s.branch.name : 'Pusat';
 
             this.detail.content = `
                 <div class="flex justify-between items-start mb-5 pb-5 border-b border-dashed border-gray-700/80">
@@ -234,10 +254,14 @@ document.addEventListener('alpine:init', () => {
                     </div>
                 </div>
                 
-                <div class="grid grid-cols-2 gap-3 mb-5">
+                <div class="grid grid-cols-3 gap-3 mb-5">
                     <div class="bg-gray-900/50 border border-gray-700/50 p-3 rounded-xl">
                         <div class="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Customer</div>
                         <div class="text-gray-300 text-sm font-bold">${s.customer.name}</div>
+                    </div>
+                    <div class="bg-gray-900/50 border border-gray-700/50 p-3 rounded-xl">
+                        <div class="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Cabang</div>
+                        <div class="text-gray-300 text-sm font-bold">${branch}</div>
                     </div>
                     <div class="bg-gray-900/50 border border-gray-700/50 p-3 rounded-xl">
                         <div class="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Status</div>

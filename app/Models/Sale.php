@@ -10,6 +10,7 @@ class Sale extends Model
 {
     protected $fillable = [
         'customer_id',
+        'branch_id',
         'invoice_no',
         'sale_date',
         'total_amount',
@@ -22,6 +23,11 @@ class Sale extends Model
     public function customer(): BelongsTo
     {
         return $this->belongsTo(Customer::class);
+    }
+
+    public function branch(): BelongsTo
+    {
+        return $this->belongsTo(Branch::class);
     }
 
     public function redeemCode(): BelongsTo

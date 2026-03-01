@@ -40,4 +40,14 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+
+    public function isManager(): bool
+    {
+        return $this->hasRole(['Manager', 'SuperAdmin', 'Executive']);
+    }
+
+    public function branch()
+    {
+        return $this->belongsTo(Branch::class);
+    }
 }

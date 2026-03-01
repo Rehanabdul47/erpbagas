@@ -17,6 +17,7 @@ class Employee extends Model
         'phone',
         'position',
         'department',
+        'branch_id',
         'join_date',
         'basic_salary',
         'status',
@@ -26,6 +27,11 @@ class Employee extends Model
         'join_date' => 'date',
         'basic_salary' => 'decimal:2',
     ];
+
+    public function branch()
+    {
+        return $this->belongsTo(Branch::class);
+    }
 
     public function attendances(): HasMany
     {

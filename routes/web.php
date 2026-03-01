@@ -147,6 +147,9 @@ Route::middleware('auth')->group(function () {
         Route::get('/dashboard', [MarketingDashboardController::class, 'index'])->name('dashboard');
     });
 
+    // Branches
+    Route::resource('branches', \App\Http\Controllers\BranchController::class)->except(['show']);
+
     // Sales & CRM
     Route::prefix('sales')->name('sales.')->group(function () {
         Route::get('/', [SalesController::class, 'index'])->name('index');

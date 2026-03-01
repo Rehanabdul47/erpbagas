@@ -30,6 +30,7 @@
             ['id' => 'kiosk', 'icon' => 'scan-line', 'label' => 'Presensi', 'route' => 'hrm.kiosk', 'target' => '_blank'],
         ]],
         ['section' => 'SISTEM', 'items' => [
+            ['id' => 'branches', 'icon' => 'store', 'label' => 'Cabang / Toko', 'route' => 'branches.index'],
             ['id' => 'users', 'icon' => 'user-cog', 'label' => 'Manage Users', 'route' => 'users.index'],
             ['id' => 'settings', 'icon' => 'settings', 'label' => 'Settings', 'route' => 'settings'],
         ]],

@@ -10,19 +10,33 @@ use Carbon\Carbon;
 
 class SalesController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
+        $branchId = $request->input('branch_id', 'all');
+        $branches = \App\Models\Branch::latest()->get();
+
         $customers = Customer::withCount('sales')->get();
-        $sales = Sale::with('customer')->latest()->limit(10)->get();
+        
+        $salesQuery = Sale::with('customer', 'branch')->latest();
+        if ($branchId !== 'all') {
+            $salesQuery->where('branch_id', $branchId);
+            $totalRevenueQuery = Sale::whereMonth('sale_date', Carbon::now()->month)->where('branch_id', $branchId);
+            $totalSalesQuery = Sale::where('branch_id', $branchId);
+        } else {
+            $totalRevenueQuery = Sale::whereMonth('sale_date', Carbon::now()->month);
+            $totalSalesQuery = Sale::query();
+        }
+
+        $sales = $salesQuery->limit(20)->get();
         
         $stats = [
-            'totalRevenue' => Sale::whereMonth('sale_date', Carbon::now()->month)->sum('total_amount'),
+            'totalRevenue' => $totalRevenueQuery->sum('total_amount'),
             'totalCustomers' => $customers->count(),
-            'totalSales' => Sale::count(),
+            'totalSales' => $totalSalesQuery->count(),
             'revenueStatus' => 'up', // Mocking trend for UI
         ];
 
-        return view('pages.sales.index', compact('customers', 'sales', 'stats'))
+        return view('pages.sales.index', compact('customers', 'sales', 'stats', 'branches', 'branchId'))
             ->with('activePage', 'sales');
     }
 
