@@ -101,6 +101,7 @@ class PosController extends Controller
                     // 4. Log Stock Movement
                     StockMovement::create([
                         'product_id' => $product->id,
+                        'user_id' => Auth::id(),
                         'type' => 'out',
                         'quantity' => $item['quantity'],
                         'reference' => "POS Invoice: {$invoiceNo}",

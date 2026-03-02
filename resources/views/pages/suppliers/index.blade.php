@@ -68,7 +68,15 @@
                                 <button @click="openEditModal({{ json_encode($s) }})" class="p-1.5 rounded-lg text-gray-400 hover:text-indigo-400 hover:bg-indigo-500/10 transition-colors" title="Edit">
                                     <i data-lucide="edit-2" class="w-4 h-4"></i>
                                 </button>
-                                <form method="POST" action="{{ route('suppliers.destroy', $s) }}" onsubmit="return confirm('Hapus supplier {{ $s->name }}?')" class="m-0">
+                                <form method="POST" action="{{ route('suppliers.destroy', $s) }}" 
+                                    @submit.prevent="$dispatch('global-confirm', { 
+                                        title: 'HAPUS SUPPLIER', 
+                                        message: 'Yakin ingin menghapus supplier {{ addslashes($s->name) }}? Hubungan supply barang mungkin terganggu.',
+                                        actionUrl: '{{ route('suppliers.destroy', $s) }}',
+                                        actionMethod: 'DELETE',
+                                        confirmText: 'HAPUS'
+                                    })" 
+                                    class="m-0">
                                     @csrf @method('DELETE')
                                     <button type="submit" class="p-1.5 rounded-lg text-gray-400 hover:text-red-400 hover:bg-red-500/10 transition-colors" title="Hapus">
                                         <i data-lucide="trash-2" class="w-4 h-4"></i>

@@ -161,7 +161,15 @@
                                 <button @click="openEditModal({{ json_encode($trx) }})" class="p-1.5 rounded-lg text-gray-400 hover:text-indigo-400 hover:bg-indigo-500/10 transition-colors" title="Edit">
                                     <i data-lucide="edit-2" class="w-4 h-4"></i>
                                 </button>
-                                <form method="POST" action="{{ route('finance.destroy', $trx) }}" onsubmit="return confirm('Hapus pencatatan kas ini?')" class="m-0">
+                                <form method="POST" action="{{ route('finance.destroy', $trx) }}" 
+                                    @submit.prevent="$dispatch('global-confirm', { 
+                                        title: 'HAPUS TRANSAKSI', 
+                                        message: 'Yakin ingin menghapus catatan kas ini? Saldo buku kas akan ikut diperbarui secara otomatis.',
+                                        actionUrl: '{{ route('finance.destroy', $trx) }}',
+                                        actionMethod: 'DELETE',
+                                        confirmText: 'HAPUS'
+                                    })" 
+                                    class="m-0">
                                     @csrf @method('DELETE')
                                     <button type="submit" class="p-1.5 rounded-lg text-gray-400 hover:text-red-400 hover:bg-red-500/10 transition-colors" title="Hapus">
                                         <i data-lucide="trash-2" class="w-4 h-4"></i>

@@ -13,6 +13,9 @@
     showStockIn: false,
     showStockOut: false,
     showOpnameModal: false,
+    showDeleteModal: false,
+    deleteUrl: '',
+    deleteItemName: '',
     opnameProduct: { id: '', name: '', sysStock: 0, physStock: 0 }
 }">
 
@@ -159,10 +162,7 @@
                                 <div class="flex items-center justify-end gap-2">
                                     <a href="{{ route('inventory.barcode', $p) }}" class="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-gray-700 transition-colors" title="Barcode"><i data-lucide="barcode" class="w-4 h-4"></i></a>
                                     <a href="{{ route('inventory.edit', $p) }}" class="p-1.5 rounded-lg text-gray-400 hover:text-indigo-400 hover:bg-indigo-500/10 transition-colors" title="Edit"><i data-lucide="edit" class="w-4 h-4"></i></a>
-                                    <form action="{{ route('inventory.destroy', $p) }}" method="POST" onsubmit="return confirm('Hapus produk ini?')" class="m-0">
-                                        @csrf @method('DELETE')
-                                        <button type="submit" class="p-1.5 rounded-lg text-gray-400 hover:text-red-400 hover:bg-red-500/10 transition-colors" title="Hapus"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
-                                    </form>
+                                    <button type="button" @click="showDeleteModal = true; deleteUrl = '{{ route('inventory.destroy', $p) }}'; deleteItemName = '{{ addslashes($p->name) }}'" class="p-1.5 rounded-lg text-gray-400 hover:text-red-400 hover:bg-red-500/10 transition-colors" title="Hapus"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
                                 </div>
                             </td>
                         </tr>
@@ -179,7 +179,7 @@
             <div class="overflow-x-auto w-full">
                 <table class="w-full text-left text-sm whitespace-nowrap">
                     <thead class="bg-gray-900/50 text-gray-400 text-xs uppercase tracking-wider border-b border-gray-700/50">
-                        <tr><th class="px-4 py-3 font-medium">Tanggal</th><th class="px-4 py-3 font-medium">SKU</th><th class="px-4 py-3 font-medium">Produk</th><th class="px-4 py-3 font-medium">Tipe</th><th class="px-4 py-3 font-medium">Qty</th><th class="px-4 py-3 font-medium">Referensi</th><th class="px-4 py-3 font-medium">Metode</th></tr>
+                        <tr><th class="px-4 py-3 font-medium">Tanggal</th><th class="px-4 py-3 font-medium">SKU</th><th class="px-4 py-3 font-medium">Produk</th><th class="px-4 py-3 font-medium">Tipe</th><th class="px-4 py-3 font-medium">Qty</th><th class="px-4 py-3 font-medium">Referensi</th><th class="px-4 py-3 font-medium">Metode</th><th class="px-4 py-3 font-medium">PIC</th></tr>
                     </thead>
                     <tbody class="divide-y divide-gray-700/50">
                         @forelse($movements as $m)
@@ -188,13 +188,16 @@
                             <td class="px-4 py-3 font-bold text-white">{{ $m->product->sku }}</td>
                             <td class="px-4 py-3 text-gray-300">{{ $m->product->name }}</td>
                             <td class="px-4 py-3">
-                                <span class="px-2 py-1 rounded-full text-[10px] font-bold border {{ $m->type === 'in' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-red-500/10 text-red-500 border-red-500/20' }}">
-                                    {{ $m->type === 'in' ? '📥 Masuk' : '📤 Keluar' }}
-                                </span>
+                                <span class="px-2 py-1 rounded-full text-[10px] font-bold border 
+                                    {{ $m->type === 'in' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 
+                                       ($m->type === 'out' ? 'bg-red-500/10 text-red-500 border-red-500/20' : 'bg-amber-500/10 text-amber-500 border-amber-500/20') }}">
+                                     @if($m->type === 'in') 📥 Masuk @elseif($m->type === 'out') 📤 Keluar @else ⚙️ Proses @endif
+                                 </span>
                             </td>
                             <td class="px-4 py-3 font-bold text-white">{{ $m->quantity }}</td>
-                            <td class="px-4 py-3 text-gray-400">{{ $m->reference }}</td>
+                            <td class="px-4 py-3 text-gray-400 font-mono text-xs">{{ $m->reference }}</td>
                             <td class="px-4 py-3"><span class="px-2 py-1 rounded-full text-[10px] font-bold bg-blue-500/10 text-blue-400 border border-blue-500/20">{{ $m->method }}</span></td>
+                            <td class="px-4 py-3 text-gray-400"><span class="px-2 py-1 border border-gray-700 bg-gray-800/50 rounded-lg text-xs">{{ $m->user->name ?? 'System' }}</span></td>
                         </tr>
                         @empty
                         <tr><td colspan="7" class="text-center py-10 text-gray-500">Belum ada riwayat pergerakan</td></tr>
@@ -383,6 +386,31 @@
                     <button type="submit" class="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-lg text-sm font-medium transition-colors shadow-sm">Proses Stok Keluar</button>
                 </div>
             </form>
+        </div>
+    </div>
+    {{-- Modal: Hapus Produk --}}
+    <div x-show="showDeleteModal" x-cloak style="display: none;" class="fixed inset-0 bg-gray-900/80 backdrop-blur-sm z-[150] flex items-center justify-center p-4 transition-opacity">
+        <div @click.away="showDeleteModal = false" class="bg-gray-800 border border-gray-700 rounded-xl shadow-2xl w-full max-w-sm overflow-hidden flex flex-col">
+            <div class="px-5 py-4 border-b border-gray-700/50 flex items-center justify-between">
+                <h3 class="font-bold text-white flex items-center gap-2"><i data-lucide="alert-triangle" class="w-5 h-5 text-red-500"></i> Konfirmasi Hapus</h3>
+                <button type="button" @click="showDeleteModal = false" class="text-gray-400 hover:text-white transition-colors"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <div class="p-5 flex flex-col gap-4 text-center items-center justify-center">
+                <div class="w-16 h-16 rounded-full bg-red-500/10 text-red-500 flex items-center justify-center mb-2 shadow-inner">
+                    <i data-lucide="trash-2" class="w-8 h-8"></i>
+                </div>
+                <div>
+                    <h4 class="text-lg font-bold text-white mb-1">Hapus Produk?</h4>
+                    <p class="text-sm text-gray-400">Anda yakin ingin menghapus <span class="font-bold text-white" x-text="deleteItemName"></span>? Tindakan ini tidak dapat dibatalkan.</p>
+                </div>
+            </div>
+            <div class="px-5 py-4 border-t border-gray-700/50 bg-gray-800/50 flex justify-end gap-3">
+                <button type="button" @click="showDeleteModal = false" class="px-4 py-2 hover:bg-gray-700 text-gray-300 rounded-lg text-sm font-medium transition-colors">Batal</button>
+                <form :action="deleteUrl" method="POST" class="m-0">
+                    @csrf @method('DELETE')
+                    <button type="submit" class="px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded-lg text-sm font-medium transition-colors border border-red-500 shadow-sm">Ya, Hapus</button>
+                </form>
+            </div>
         </div>
     </div>
 </div>

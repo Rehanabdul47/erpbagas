@@ -90,32 +90,26 @@
                             @if($prod->status === 'processing')
                                 <div class="flex items-center gap-2 opacity-100 sm:opacity-50 sm:group-hover:opacity-100 transition-opacity">
                                     @if($prod->is_last_stage)
-                                        <form action="{{ route('production.update-status', $prod) }}" method="POST" onsubmit="return confirm('Produksi sudah di tahap akhir. Tandai selesai dan masukkan ke stok?')" class="m-0">
-                                            @csrf @method('PUT')
-                                            <input type="hidden" name="status" value="completed">
-                                            <button type="submit" class="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-900/20">
-                                                <i data-lucide="check-check" class="w-3.5 h-3.5"></i> Selesai
-                                            </button>
-                                        </form>
+                                        <button type="button" 
+                                            @click="openConfirmModal('finish', 'Selesaikan Produksi?', 'Produksi sudah di tahap akhir. Tandai selesai dan masukkan ke stok?', '{{ route('production.update-status', $prod) }}', 'PUT', 'completed')"
+                                            class="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-900/20">
+                                            <i data-lucide="check-check" class="w-3.5 h-3.5"></i> Selesai
+                                        </button>
                                     @else
-                                        <form action="{{ route('production.advance-stage', $prod) }}" method="POST" class="m-0" 
-                                              onsubmit="return confirm('Lanjutkan ke tahap \'{{ addslashes($prod->getNextStage() ?? '') }}\'?')">
-                                            @csrf @method('PUT')
-                                            <button type="submit" class="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors bg-indigo-600 hover:bg-indigo-500 text-white shadow-indigo-900/20">
-                                                Tahap Selanjutnya <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
-                                            </button>
-                                        </form>
+                                        <button type="button" 
+                                            @click="openConfirmModal('advance', 'Ke Tahap Selanjutnya?', 'Lanjutkan ke tahap \'{{ addslashes($prod->getNextStage() ?? '') }}\'?', '{{ route('production.advance-stage', $prod) }}', 'PUT')"
+                                            class="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors bg-indigo-600 hover:bg-indigo-500 text-white shadow-indigo-900/20">
+                                            Tahap Selanjutnya <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+                                        </button>
                                     @endif
                                     <button type="button" @click="openTailorModal({{ $prod->id }}, {{ $prod->tailor_id ?? 'null' }})" class="p-1.5 rounded-lg bg-gray-700 text-gray-300 hover:text-white hover:bg-gray-600 transition-colors" title="Kelola Penjahit">
                                         <i data-lucide="scissors" class="w-4 h-4"></i>
                                     </button>
-                                    <form action="{{ route('production.update-status', $prod) }}" method="POST" onsubmit="return confirm('Batalkan produksi dan kembalikan bahan baku?')" class="m-0 ml-1">
-                                        @csrf @method('PUT')
-                                        <input type="hidden" name="status" value="cancelled">
-                                        <button type="submit" class="p-1.5 rounded-lg bg-red-500/10 text-red-500 hover:text-white hover:bg-red-500 transition-colors" title="Batal Produksi">
-                                            <i data-lucide="x" class="w-4 h-4"></i>
-                                        </button>
-                                    </form>
+                                    <button type="button" 
+                                        @click="openConfirmModal('cancel', 'Batalkan Produksi?', 'Batalkan produksi dan kembalikan bahan baku? Tindakan ini tidak dapat dibatalkan.', '{{ route('production.update-status', $prod) }}', 'PUT', 'cancelled')"
+                                        class="p-1.5 rounded-lg bg-red-500/10 text-red-500 hover:text-white hover:bg-red-500 transition-colors" title="Batal Produksi">
+                                        <i data-lucide="x" class="w-4 h-4"></i>
+                                    </button>
                                 </div>
                             @else
                                 <span class="text-gray-500 text-sm">-</span>
@@ -139,7 +133,7 @@
 
     {{-- Tailor Modal --}}
     <div x-show="tailorModal" x-cloak style="display: none;" class="fixed inset-0 bg-gray-900/80 backdrop-blur-sm z-[150] flex items-center justify-center p-4">
-        <div @click.away="tailorModal = false" class="bg-gray-800 border border-gray-700 rounded-xl max-w-sm w-full outline-none">
+        <div @click.away="tailorModal = false" class="bg-gray-800 border border-gray-700 rounded-xl max-w-sm w-full outline-none overflow-hidden">
             <div class="px-5 py-4 border-b border-gray-700/50 flex items-center justify-between">
                 <h3 class="font-bold text-white flex items-center gap-2"><i data-lucide="scissors" class="w-5 h-5 text-indigo-400"></i> Pilih Penjahit Vendor</h3>
                 <button type="button" @click="tailorModal = false" class="text-gray-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
@@ -162,6 +156,50 @@
             </form>
         </div>
     </div>
+
+    {{-- Universal Confirmation Modal --}}
+    <div x-show="confirmModal" x-cloak style="display: none;" class="fixed inset-0 bg-gray-900/80 backdrop-blur-sm z-[200] flex items-center justify-center p-4 transition-opacity">
+        <div @click.away="confirmModal = false" class="bg-gray-800 border border-gray-700 rounded-xl shadow-2xl w-full max-w-sm overflow-hidden flex flex-col">
+            <div class="px-5 py-4 border-b border-gray-700/50 flex items-center justify-between">
+                <h3 class="font-bold text-white flex items-center gap-2">
+                    <i data-lucide="alert-circle" x-show="confirmType === 'advance'" class="w-5 h-5 text-indigo-400"></i>
+                    <i data-lucide="check-check" x-show="confirmType === 'finish'" class="w-5 h-5 text-emerald-400"></i>
+                    <i data-lucide="alert-triangle" x-show="confirmType === 'cancel'" class="w-5 h-5 text-red-500"></i>
+                    <span x-text="confirmTitle"> Konfirmasi</span>
+                </h3>
+                <button type="button" @click="confirmModal = false" class="text-gray-400 hover:text-white transition-colors">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <div class="p-5 flex flex-col gap-4 text-center items-center justify-center">
+                <div class="w-16 h-16 rounded-full flex items-center justify-center mb-2 shadow-inner"
+                     :class="confirmType === 'advance' ? 'bg-indigo-500/10 text-indigo-500' : (confirmType === 'finish' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-red-500/10 text-red-500')">
+                    <i data-lucide="arrow-right" x-show="confirmType === 'advance'" class="w-8 h-8"></i>
+                    <i data-lucide="check-check" x-show="confirmType === 'finish'" class="w-8 h-8"></i>
+                    <i data-lucide="x" x-show="confirmType === 'cancel'" class="w-8 h-8"></i>
+                </div>
+                <div>
+                    <h4 class="text-lg font-bold text-white mb-1" x-text="confirmTitle"></h4>
+                    <p class="text-sm text-gray-400" x-text="confirmDesc"></p>
+                </div>
+            </div>
+            <div class="px-5 py-4 border-t border-gray-700/50 bg-gray-800/50 flex justify-end gap-3">
+                <button type="button" @click="confirmModal = false" class="px-4 py-2 hover:bg-gray-700 text-gray-300 rounded-lg text-sm font-medium transition-colors">Batal</button>
+                <form :action="confirmAction" method="POST" class="m-0">
+                    @csrf 
+                    <template x-if="confirmMethod !== 'POST'">
+                        <input type="hidden" name="_method" :value="confirmMethod">
+                    </template>
+                    <input type="hidden" name="status" :value="confirmStatusValue">
+                    <button type="submit" 
+                        class="px-4 py-2 text-white rounded-lg text-sm font-medium transition-colors shadow-sm"
+                        :class="confirmType === 'advance' ? 'bg-indigo-600 hover:bg-indigo-500 border-indigo-500' : (confirmType === 'finish' ? 'bg-emerald-600 hover:bg-emerald-500 border-emerald-500' : 'bg-red-600 hover:bg-red-500 border-red-500')">
+                        Konfirmasi
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
 </div>
 
 @push('scripts')
@@ -172,10 +210,29 @@ document.addEventListener('alpine:init', () => {
         selectedProdId: null,
         selectedTailorId: '',
 
+        confirmModal: false,
+        confirmType: '',
+        confirmTitle: '',
+        confirmDesc: '',
+        confirmAction: '',
+        confirmMethod: 'POST',
+        confirmStatusValue: '',
+
         openTailorModal(prodId, tailorId) {
             this.selectedProdId = prodId;
             this.selectedTailorId = tailorId || '';
             this.tailorModal = true;
+        },
+
+        openConfirmModal(type, title, desc, action, method = 'POST', status = '') {
+            this.confirmType = type;
+            this.confirmTitle = title;
+            this.confirmDesc = desc;
+            this.confirmAction = action;
+            this.confirmMethod = method;
+            this.confirmStatusValue = status;
+            this.confirmModal = true;
+            this.$nextTick(() => lucide.createIcons());
         }
     }));
 });

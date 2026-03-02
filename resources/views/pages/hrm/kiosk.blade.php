@@ -80,7 +80,7 @@
         </div>
 
         <!-- Input Form: Premium Dark Field -->
-        <form @submit.prevent="handleManualSubmit" class="w-full max-w-[420px] mb-8">
+        <form @submit.prevent="handleManualSubmit" class="w-full max-w-[420px] mb-8 space-y-4">
             <div class="relative w-full group">
                 <div class="absolute inset-0 bg-indigo-500/20 rounded-2xl blur-xl opacity-0 group-focus-within:opacity-100 transition-opacity duration-500"></div>
                 <div class="relative">
@@ -88,6 +88,22 @@
                     <input type="text" x-model="nip" x-ref="nipInput" 
                         class="w-full bg-slate-950/50 border-2 border-white/5 focus:border-indigo-500/50 focus:bg-slate-950 focus:ring-8 focus:ring-indigo-500/5 rounded-2xl py-5 pl-[4.5rem] pr-6 text-3xl font-black text-center text-white placeholder-slate-700 outline-none transition-all block" 
                         placeholder="TAP QR / KETIK NIP" autocomplete="off" autofocus>
+                </div>
+            </div>
+
+            <!-- Attendance Status Dropdown -->
+            <div class="relative w-full group">
+                <div class="absolute inset-0 bg-fuchsia-500/20 rounded-2xl blur-xl opacity-0 group-focus-within:opacity-100 transition-opacity duration-500"></div>
+                <div class="relative">
+                    <i data-lucide="calendar-check" class="absolute left-6 top-1/2 -translate-y-1/2 w-6 h-6 text-slate-500 group-focus-within:text-fuchsia-400 transition-colors"></i>
+                    <select x-model="status" 
+                        class="w-full bg-slate-950/50 border-2 border-white/5 focus:border-fuchsia-500/50 focus:bg-slate-950 focus:ring-8 focus:ring-fuchsia-500/5 rounded-2xl py-4 pl-[4.5rem] pr-6 text-xl font-bold text-center text-white appearance-none outline-none transition-all block cursor-pointer">
+                        <option value="present" class="bg-slate-900 text-white">🟢 HADIR (PRESENSI)</option>
+                        <option value="leave" class="bg-slate-900 text-white">📅 CUTI</option>
+                        <option value="permit" class="bg-slate-900 text-white">📝 IZIN</option>
+                        <option value="sick" class="bg-slate-900 text-white">🏥 SAKIT</option>
+                    </select>
+                    <i data-lucide="chevron-down" class="absolute right-6 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500 pointer-events-none"></i>
                 </div>
             </div>
         </form>
@@ -101,7 +117,10 @@
                 <template x-for="(log, index) in recentLogs" :key="index">
                     <div class="flex items-center gap-3 bg-white/5 border border-white/10 py-2 px-4 rounded-2xl animate-[fadeIn_0.5s_ease-out]">
                         <div class="w-6 h-6 bg-gradient-to-tr from-indigo-500 to-indigo-700 text-white rounded-full flex items-center justify-center text-[10px] font-black shadow-lg" x-text="log.initials"></div>
-                        <div class="text-xs font-bold text-slate-300" x-text="log.name"></div>
+                        <div class="flex flex-col">
+                            <div class="text-xs font-bold text-slate-300 pointer-events-none" x-text="log.name"></div>
+                            <div class="text-[9px] text-indigo-400/80 font-bold uppercase tracking-tighter" x-text="log.branch"></div>
+                        </div>
                         <div class="text-[10px] text-slate-500 font-mono bg-black/20 px-1.5 py-0.5 rounded" x-text="log.time"></div>
                     </div>
                 </template>
@@ -135,7 +154,8 @@
             :class="message.type === 'success' ? 'text-emerald-400' : 'text-red-400'" 
             x-text="message.title"></h2>
         
-        <p class="text-xl md:text-3xl text-white/70 font-medium mb-8 text-center px-10" x-text="message.desc"></p>
+        <p class="text-xl md:text-3xl text-white/70 font-medium mb-1 text-center px-10" x-text="message.desc"></p>
+        <p class="text-indigo-400 font-bold text-sm uppercase mb-8" x-text="message.branch ? '📍 ' + message.branch : ''"></p>
         
         <div class="px-8 py-4 bg-white/10 rounded-3xl border border-white/10 backdrop-blur-md" x-show="message.time">
             <div class="text-[10px] font-black text-white/40 uppercase tracking-[0.4em] mb-1 text-center">Waktu Tercatat</div>
@@ -183,6 +203,7 @@
                 isProcessing: false,
                 isCountdown: false,
                 countdown: 5,
+                status: 'present',
                 message: { show: false, type: 'success', title: '', desc: '', time: '' },
                 recentLogs: [],
 
@@ -197,9 +218,12 @@
                         lucide.createIcons();
                     });
 
-                    // Auto focus input on click anywhere except links
+                    // Auto focus input on click anywhere except links and the status dropdown
                     document.addEventListener('click', (e) => {
-                        if(e.target.tagName !== 'A' && !this.message.show) {
+                        const isLink = e.target.tagName === 'A' || e.target.closest('a');
+                        const isStatusSelect = e.target.closest('[x-model="status"]') || e.target.tagName === 'SELECT';
+                        
+                        if(!isLink && !isStatusSelect && !this.message.show) {
                             this.$refs.nipInput.focus();
                         }
                     });
@@ -281,13 +305,13 @@
                                 'X-CSRF-TOKEN': '{{ csrf_token() }}',
                                 'Accept': 'application/json'
                             },
-                            body: JSON.stringify({ nip: this.nip, image: imageData })
+                            body: JSON.stringify({ nip: this.nip, image: imageData, status: this.status })
                         });
 
                         const data = await response.json();
 
                         if (response.ok && data.success) {
-                            this.showMessage('success', data.type === 'in' ? 'Absen Masuk Berhasil' : 'Absen Keluar Berhasil', data.message, data.time || this.timeString);
+                            this.showMessage('success', data.type === 'in' ? 'Absen Masuk Berhasil' : 'Absen Keluar Berhasil', data.message, data.time || this.timeString, data.branch);
                         } else {
                             this.showMessage('error', 'Gagal', data.message || 'Terjadi kesalahan sistem', '');
                         }
@@ -302,8 +326,8 @@
                     }
                 },
 
-                showMessage(type, title, desc, time) {
-                    this.message = { show: true, type, title, desc: desc, time };
+                showMessage(type, title, desc, time, branch = '') {
+                    this.message = { show: true, type, title, desc: desc, time, branch };
                     this.$nextTick(() => lucide.createIcons());
                     
                     setTimeout(() => {
@@ -329,6 +353,7 @@
                             this.recentLogs.unshift({
                                 name: empName.split(' ')[0],
                                 initials: empName.substring(0, 2).toUpperCase(),
+                                branch: att.employee && att.employee.branch ? att.employee.branch.name : 'Pusat',
                                 time: att.clock_in ? att.clock_in.substring(0, 5) : att.clock_out.substring(0, 5)
                             });
                             

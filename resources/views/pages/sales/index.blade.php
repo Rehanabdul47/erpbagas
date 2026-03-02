@@ -91,7 +91,15 @@
                             <td class="px-4 py-3 text-right">
                                 <div class="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                     <button @click.stop="openEditCustomerModal({{ json_encode($c) }})" class="p-1.5 rounded-lg text-gray-400 hover:text-indigo-400 hover:bg-indigo-500/10 transition-colors" title="Edit"><i data-lucide="edit-2" class="w-4 h-4"></i></button>
-                                    <form method="POST" action="{{ route('sales.customers.destroy', $c) }}" @submit.stop="return confirm('Hapus customer ini?')" @click.stop class="m-0">
+                                    <form method="POST" action="{{ route('sales.customers.destroy', $c) }}" 
+                                        @submit.prevent="$dispatch('global-confirm', { 
+                                            title: 'HAPUS CUSTOMER', 
+                                            message: 'Apakah Anda yakin ingin menghapus customer {{ addslashes($c->name) }}? Semua riwayat transaksi akan sulit dilacak.',
+                                            actionUrl: '{{ route('sales.customers.destroy', $c) }}',
+                                            actionMethod: 'DELETE',
+                                            confirmText: 'HAPUS'
+                                        })" 
+                                        @click.stop class="m-0">
                                         @csrf @method('DELETE')
                                         <button type="submit" class="p-1.5 rounded-lg text-gray-400 hover:text-red-400 hover:bg-red-500/10 transition-colors" title="Hapus"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
                                     </form>

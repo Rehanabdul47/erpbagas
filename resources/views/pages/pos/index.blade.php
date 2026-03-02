@@ -613,12 +613,22 @@ document.addEventListener('alpine:init', () => {
                     this.successSaleId = res.sale_id;
                     this.modals.success = true;
                 } else {
-                    alert(res.message);
+                    this.$dispatch('global-alert', {
+                        type: 'error',
+                        title: 'TRANSAKSI GAGAL',
+                        message: res.message || 'Gagal memproses transaksi. Silakan cek stok atau input Anda.',
+                        confirmText: 'MENGERTI'
+                    });
                 }
             })
             .catch(err => {
                 this.processing = false;
-                alert('Terjadi kesalahan menghubungkan ke server.');
+                    this.$dispatch('global-alert', {
+                        type: 'error',
+                        title: 'KONEKSI TERPUTUS',
+                        message: 'Terjadi kesalahan saat menghubungkan ke server. Silakan coba beberapa saat lagi.',
+                        confirmText: 'TUTUP'
+                    });
             });
         },
 
@@ -656,7 +666,12 @@ document.addEventListener('alpine:init', () => {
                     this.modals.customer = false;
                     this.custForm = { name: '', email: '', phone: '' };
                 } else {
-                    alert('Gagal menyimpan customer');
+                    this.$dispatch('global-alert', {
+                        type: 'error',
+                        title: 'GAGAL SIMPAN',
+                        message: 'Gagal menyimpan data customer baru. Silakan periksa kelengkapan data.',
+                        confirmText: 'KEMBALI'
+                    });
                 }
             })
             .catch(err => {

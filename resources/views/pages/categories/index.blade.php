@@ -99,7 +99,15 @@
                                     <i data-lucide="edit-2" class="w-4 h-4"></i>
                                 </button>
                                 @if($cat->products_count === 0)
-                                <form method="POST" action="{{ route('categories.destroy', $cat) }}" @submit="return confirm('Hapus kategori {{ addslashes($cat->name) }}?')" class="m-0">
+                                <form method="POST" action="{{ route('categories.destroy', $cat) }}" 
+                                    @submit.prevent="$dispatch('global-confirm', { 
+                                        title: 'HAPUS KATEGORI', 
+                                        message: 'Apakah Anda yakin ingin menghapus kategori {{ addslashes($cat->name) }}? Data ini tidak dapat dikembalikan.',
+                                        actionUrl: '{{ route('categories.destroy', $cat) }}',
+                                        actionMethod: 'DELETE',
+                                        confirmText: 'HAPUS'
+                                    })" 
+                                    class="m-0">
                                     @csrf @method('DELETE')
                                     <button type="submit" class="p-1.5 rounded-lg text-gray-400 hover:text-red-400 hover:bg-red-500/10 transition-colors" title="Hapus">
                                         <i data-lucide="trash-2" class="w-4 h-4"></i>

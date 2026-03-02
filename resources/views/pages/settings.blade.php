@@ -11,8 +11,12 @@
     emailAlerts: true,
     autoBackup: false,
     saveSettings() {
-        // Mock save logic
-        alert('Settings saved successfully!');
+        this.$dispatch('global-alert', {
+            type: 'success',
+            title: 'SUCCESS',
+            message: 'System configuration saved successfully! All updates have been synchronized.',
+            confirmText: 'PROCEED'
+        });
     }
 }">
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-2">
@@ -76,7 +80,7 @@
                 </div>
                 <p class="text-[10px] text-indigo-400/80 leading-relaxed font-bold">
                     Need assistance with configuration? 
-                    <a href="#" class="text-indigo-400 underline hover:text-indigo-300">Read documentation</a> or contact support.
+                    <a href="https://docs.gupala.com" target="_blank" class="text-indigo-400 underline hover:text-indigo-300 italic tracking-tight">Read documentation</a> or <a href="mailto:support@gupala.com" class="text-indigo-400 underline hover:text-indigo-300 italic tracking-tight">contact support</a>.
                 </p>
             </div>
         </div>

@@ -69,20 +69,27 @@
                     <table class="w-full text-left text-sm whitespace-nowrap">
                         <thead class="bg-gray-900/50 text-gray-400 text-xs uppercase tracking-wider sticky top-0 z-10 border-b border-gray-700/50 backdrop-blur-md">
                             <tr>
-                                <th class="px-5 py-3 font-medium">Karyawan</th>
-                                <th class="px-5 py-3 font-medium">Status</th>
-                                <th class="px-5 py-3 font-medium">Jam Masuk</th>
-                                <th class="px-5 py-3 font-medium">Jam Keluar</th>
+                                <th class="px-5 py-3 font-medium text-left">Karyawan</th>
+                                <th class="px-5 py-3 font-medium text-left">Lokasi</th>
+                                <th class="px-5 py-3 font-medium text-left">Status</th>
+                                <th class="px-5 py-3 font-medium text-left">Jam Masuk</th>
+                                <th class="px-5 py-3 font-medium text-left">Jam Keluar</th>
                             </tr>
                         </thead>
                         <tbody id="live-attendance-table" class="divide-y divide-gray-700/50">
                             @forelse($recentAttendances as $att)
                             <tr class="hover:bg-gray-700/20 transition-colors" id="att-row-{{ $att->employee_id }}">
-                                <td class="px-5 py-3">
+                                <td class="px-5 py-3 text-left">
                                     <div class="font-bold text-white">{{ $att->employee->name }}</div>
                                     <div class="text-[11px] text-gray-500 font-mono mt-0.5">{{ $att->employee->nip }}</div>
                                 </td>
-                                <td class="px-5 py-3">
+                                <td class="px-5 py-3 text-left">
+                                    <div class="flex items-center gap-1.5 text-indigo-400">
+                                        <i data-lucide="map-pin" class="w-3.5 h-3.5 text-indigo-500/40"></i>
+                                        <span class="text-xs font-bold uppercase tracking-tight">{{ $att->employee->branch ? $att->employee->branch->name : 'Pusat' }}</span>
+                                    </div>
+                                </td>
+                                <td class="px-5 py-3 text-left">
                                     <span class="px-2 py-1 flex w-fit rounded-full text-[10px] font-bold border {{ $att->status === 'present' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : ($att->status === 'absent' ? 'bg-red-500/10 text-red-500 border-red-500/20' : 'bg-amber-500/10 text-amber-500 border-amber-500/20') }}">
                                         {{ ucfirst($att->status) }}
                                     </span>
@@ -187,14 +194,27 @@
                 const inTime = att.clock_in ? att.clock_in.substring(0, 5) : '-';
                 const outTime = att.clock_out ? att.clock_out.substring(0, 5) : '-';
 
+                const empBranch = att.employee && att.employee.branch ? att.employee.branch.name : 'Pusat';
+                
+                const locationHtml = `
+                    <div class="flex items-center gap-1.5 text-indigo-400">
+                        <i data-lucide="map-pin" class="w-3.5 h-3.5 text-indigo-500/40"></i>
+                        <span class="text-xs font-bold uppercase tracking-tight">${empBranch}</span>
+                    </div>
+                `;
+
                 if (existingRow) {
                     // Update existing
-                    existingRow.querySelector('td:nth-child(2)').innerHTML = statusHtml;
+                    existingRow.querySelector('td:nth-child(2)').innerHTML = locationHtml;
+                    existingRow.querySelector('td:nth-child(3)').innerHTML = statusHtml;
                     existingRow.querySelector('.att-in').textContent = inTime;
                     existingRow.querySelector('.att-out').textContent = outTime;
                     
                     existingRow.classList.add('bg-indigo-500/20');
-                    setTimeout(() => existingRow.classList.remove('bg-indigo-500/20'), 3000);
+                    setTimeout(() => {
+                        existingRow.classList.remove('bg-indigo-500/20');
+                        if (window.lucide) lucide.createIcons();
+                    }, 3000);
                 } else {
                     // Remove empty state if exists
                     const emptyState = document.getElementById('empty-state');
@@ -205,17 +225,21 @@
                     tr.id = 'att-row-' + att.employee_id;
                     tr.className = 'hover:bg-gray-700/20 transition-colors bg-emerald-500/10';
                     tr.innerHTML = `
-                        <td class="px-5 py-3">
+                        <td class="px-5 py-3 text-left">
                             <div class="font-bold text-white">${empName}</div>
                             <div class="text-[11px] text-gray-500 font-mono mt-0.5">${empNip}</div>
                         </td>
-                        <td class="px-5 py-3">${statusHtml}</td>
+                        <td class="px-5 py-3 text-left">${locationHtml}</td>
+                        <td class="px-5 py-3 text-left">${statusHtml}</td>
                         <td class="px-5 py-3 text-gray-300 font-mono att-in">${inTime}</td>
                         <td class="px-5 py-3 text-gray-300 font-mono att-out">${outTime}</td>
                     `;
                     tbody.insertBefore(tr, tbody.firstChild);
                     
-                    setTimeout(() => tr.classList.remove('bg-emerald-500/10'), 3000);
+                    setTimeout(() => {
+                        tr.classList.remove('bg-emerald-500/10');
+                        if (window.lucide) lucide.createIcons();
+                    }, 3000);
                 }
             }
         });

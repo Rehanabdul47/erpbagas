@@ -15,7 +15,7 @@ class InventoryController extends Controller
     {
         $products = Product::with('category')->get();
         $categories = Category::all();
-        $movements = StockMovement::with('product')->latest()->limit(20)->get();
+        $movements = StockMovement::with(['product', 'user'])->latest()->limit(20)->get();
         $opnameHistory = StockOpname::with(['product', 'user'])->latest()->limit(10)->get();
 
         $stats = [
@@ -79,6 +79,7 @@ class InventoryController extends Controller
         if ($product->stock > 0) {
             StockMovement::create([
                 'product_id' => $product->id,
+                'user_id' => Auth::id(),
                 'type' => 'in',
                 'quantity' => $product->stock,
                 'reference' => 'Initial Stock',
@@ -145,8 +146,15 @@ class InventoryController extends Controller
 
     public function destroy(Product $product)
     {
-        $product->delete();
-        return redirect()->route('inventory.index')->with('success', 'Produk berhasil dihapus');
+        try {
+            $product->delete();
+            return redirect()->route('inventory.index')->with('success', 'Produk berhasil dihapus');
+        } catch (\Illuminate\Database\QueryException $e) {
+            if ($e->getCode() == '23000') {
+                return redirect()->route('inventory.index')->with('error', 'Produk gagal dihapus karena masih terkait dengan data transaksi atau riwayat inventaris.');
+            }
+            return redirect()->route('inventory.index')->with('error', 'Terjadi kesalahan saat menghapus produk: ' . $e->getMessage());
+        }
     }
 
     public function barcode(Product $product)
@@ -168,6 +176,7 @@ class InventoryController extends Controller
 
         StockMovement::create([
             'product_id' => $product->id,
+            'user_id' => Auth::id(),
             'type' => 'in',
             'quantity' => $validated['quantity'],
             'reference' => $validated['reference'] ?? 'Manual',
@@ -191,10 +200,9 @@ class InventoryController extends Controller
             return back()->with('error', 'Jumlah melebihi stok tersedia');
         }
 
-        $product->decrement('stock', $validated['quantity']);
-
         StockMovement::create([
             'product_id' => $product->id,
+            'user_id' => Auth::id(),
             'type' => 'out',
             'quantity' => $validated['quantity'],
             'reference' => $validated['reference'] ?? 'Manual',
@@ -235,6 +243,7 @@ class InventoryController extends Controller
         if ($difference != 0) {
             StockMovement::create([
                 'product_id' => $product->id,
+                'user_id' => Auth::id(),
                 'type' => $difference > 0 ? 'in' : 'out',
                 'quantity' => abs($difference),
                 'reference' => 'Stock Opname Adjustment',

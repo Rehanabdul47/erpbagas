@@ -110,7 +110,15 @@
                                     <div class="flex items-center justify-end gap-1.5 opacity-0 group-hover:opacity-100 transition-all">
                                         <button @click.stop="viewQRCode({{ json_encode($emp) }})" class="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-700 transition-colors" title="Lihat QR Code"><i data-lucide="qr-code" class="w-4 h-4"></i></button>
                                         <button @click.stop="editEmployee({{ json_encode($emp) }})" class="p-2 rounded-lg text-gray-400 hover:text-indigo-400 hover:bg-indigo-500/10 transition-colors" title="Edit"><i data-lucide="edit-2" class="w-4 h-4"></i></button>
-                                        <form method="POST" action="{{ route('hrm.employees.destroy', $emp) }}" @submit.stop="return confirm('Hapus karyawan ini?')" @click.stop class="m-0">
+                                        <form method="POST" action="{{ route('hrm.employees.destroy', $emp) }}" 
+                                            @submit.prevent="$dispatch('global-confirm', { 
+                                                title: 'PEMBERHENTIAN KARYAWAN', 
+                                                message: 'Yakin ingin menghapus data karyawan {{ addslashes($emp->name) }}? Akses login dan riwayat payroll tetap tersimpan di database.',
+                                                actionUrl: '{{ route('hrm.employees.destroy', $emp) }}',
+                                                actionMethod: 'DELETE',
+                                                confirmText: 'HAPUS'
+                                            })" 
+                                            @click.stop class="m-0">
                                             @csrf @method('DELETE')
                                             <button type="submit" class="p-2 rounded-lg text-gray-400 hover:text-red-400 hover:bg-red-500/10 transition-colors" title="Hapus"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
                                         </form>
@@ -142,7 +150,7 @@
                 <div class="overflow-x-auto w-full border border-gray-700/50 rounded-lg">
                     <table class="w-full text-left text-sm whitespace-nowrap">
                         <thead class="bg-gray-900/50 text-gray-400 text-xs uppercase tracking-wider border-b border-gray-700/50">
-                            <tr><th class="px-4 py-3 font-medium">Karyawan</th><th class="px-4 py-3 font-medium">Foto</th><th class="px-4 py-3 font-medium">Status</th><th class="px-4 py-3 font-medium">Jam Masuk</th><th class="px-4 py-3 font-medium">Jam Keluar</th><th class="px-4 py-3 font-medium">Catatan</th><th class="px-4 py-3 font-medium text-right">Action</th></tr>
+                            <tr><th class="px-4 py-3 font-medium">Karyawan</th><th class="px-4 py-3 font-medium">Lokasi Kerja</th><th class="px-4 py-3 font-medium">Foto</th><th class="px-4 py-3 font-medium">Status</th><th class="px-4 py-3 font-medium">Jam Masuk</th><th class="px-4 py-3 font-medium">Jam Keluar</th><th class="px-4 py-3 font-medium">Catatan</th><th class="px-4 py-3 font-medium text-right">Action</th></tr>
                         </thead>
                         <tbody id="attendance-table-body" class="divide-y divide-gray-700/50">
                             @foreach($employees as $emp)
@@ -151,6 +159,12 @@
                                 <td class="px-4 py-3">
                                     <div class="font-bold text-white">{{ $emp->name }}</div>
                                     <div class="text-[11px] text-gray-500 font-mono mt-0.5">NIP: {{ $emp->nip }}</div>
+                                </td>
+                                <td class="px-4 py-3">
+                                    <div class="flex items-center gap-1.5 text-indigo-400">
+                                        <i data-lucide="map-pin" class="w-3.5 h-3.5 text-indigo-500/50"></i>
+                                        <span class="text-xs font-medium">{{ $emp->branch ? $emp->branch->name : 'Kantor Pusat' }}</span>
+                                    </div>
                                 </td>
                                 <td class="px-4 py-3">
                                     <div class="att-photos flex gap-1">
@@ -200,13 +214,19 @@
                 <div class="overflow-x-auto w-full border border-gray-700/50 rounded-lg">
                     <table class="w-full text-left text-sm whitespace-nowrap">
                         <thead class="bg-gray-900/50 text-gray-400 text-xs uppercase tracking-wider border-b border-gray-700/50">
-                            <tr><th class="px-4 py-3 font-medium">Tanggal</th><th class="px-4 py-3 font-medium">Karyawan</th><th class="px-4 py-3 font-medium">Status</th><th class="px-4 py-3 font-medium">Keterangan</th></tr>
+                            <tr><th class="px-4 py-3 font-medium">Tanggal</th><th class="px-4 py-3 font-medium">Karyawan</th><th class="px-4 py-3 font-medium">Lokasi</th><th class="px-4 py-3 font-medium">Status</th><th class="px-4 py-3 font-medium">Keterangan</th></tr>
                         </thead>
                         <tbody class="divide-y divide-gray-700/50">
                             @forelse($leaves as $lv)
                             <tr class="hover:bg-indigo-500/10 transition-colors group">
                                 <td class="px-4 py-3 font-mono text-gray-300">{{ Carbon\Carbon::parse($lv->date)->format('d M Y') }}</td>
                                 <td class="px-4 py-3 font-bold text-white">{{ $lv->employee->name }}</td>
+                                <td class="px-4 py-3 text-gray-400">
+                                    <div class="flex items-center gap-1 text-[11px] text-indigo-400 font-medium">
+                                        <i data-lucide="map-pin" class="w-3 h-3"></i>
+                                        {{ $lv->employee->branch ? $lv->employee->branch->name : 'Pusat' }}
+                                    </div>
+                                </td>
                                 <td class="px-4 py-3">
                                     <span class="px-2 py-1 flex w-fit rounded-full text-[10px] font-bold border {{ $lv->status === 'leave' ? 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20' : 'bg-red-500/10 text-red-500 border-red-500/20' }}">
                                         {{ $lv->status === 'leave' ? 'Cuti/Izin' : 'Sakit' }}
@@ -240,12 +260,15 @@
                 <div class="overflow-x-auto w-full border border-gray-700/50 rounded-lg">
                     <table class="w-full text-left text-sm whitespace-nowrap">
                         <thead class="bg-gray-900/50 text-gray-400 text-xs uppercase tracking-wider border-b border-gray-700/50">
-                            <tr><th class="px-4 py-3 font-medium">Karyawan</th><th class="px-4 py-3 font-medium">Gaji Pokok</th><th class="px-4 py-3 font-medium">Tunjangan</th><th class="px-4 py-3 font-medium">Potongan</th><th class="px-4 py-3 font-medium">Total Bersih</th><th class="px-4 py-3 font-medium">Status</th><th class="px-4 py-3 font-medium text-right">Aksi</th></tr>
+                            <tr><th class="px-4 py-3 font-medium">Karyawan</th><th class="px-4 py-3 font-medium">Cabang</th><th class="px-4 py-3 font-medium">Gaji Pokok</th><th class="px-4 py-3 font-medium">Tunjangan</th><th class="px-4 py-3 font-medium">Potongan</th><th class="px-4 py-3 font-medium">Total Bersih</th><th class="px-4 py-3 font-medium">Status</th><th class="px-4 py-3 font-medium text-right">Aksi</th></tr>
                         </thead>
                         <tbody class="divide-y divide-gray-700/50">
                             @forelse($payrolls as $pay)
                             <tr @click="viewPayrollDetail({{ json_encode($pay->load('employee')) }})" class="hover:bg-indigo-500/10 transition-colors cursor-pointer group">
                                 <td class="px-4 py-3 font-bold text-white">{{ $pay->employee->name }}</td>
+                                <td class="px-4 py-3">
+                                    <div class="text-[11px] text-gray-500 uppercase font-bold">{{ $pay->employee->branch ? $pay->employee->branch->name : 'Pusat' }}</div>
+                                </td>
                                 <td class="px-4 py-3 text-gray-300">Rp {{ number_format($pay->basic_salary, 0, ',', '.') }}</td>
                                 <td class="px-4 py-3 text-emerald-400">+ Rp {{ number_format($pay->allowance, 0, ',', '.') }}</td>
                                 <td class="px-4 py-3 text-red-500">- Rp {{ number_format($pay->deduction, 0, ',', '.') }}</td>

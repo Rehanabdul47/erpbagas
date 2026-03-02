@@ -154,10 +154,17 @@
 
         <div class="flex gap-4">
             @if($purchaseOrder->status !== 'received' && $purchaseOrder->status !== 'cancelled')
-                <form action="{{ route('purchase-orders.update-status', $purchaseOrder) }}" method="POST">
+                <form id="cancel-po-form" action="{{ route('purchase-orders.update-status', $purchaseOrder) }}" method="POST">
                     @csrf @method('PUT')
                     <input type="hidden" name="status" value="cancelled">
-                    <button type="submit" class="px-6 py-3 bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all border border-red-500/20 active:scale-95 shadow-lg shadow-red-900/10" onclick="return confirm('Apakah Anda yakin ingin membatalkan PO ini?')">
+                    <button type="button" 
+                        @click="$dispatch('global-confirm', { 
+                            title: 'BATALKAN PESANAN', 
+                            message: 'Apakah Anda yakin ingin membatalkan Purchase Order ini? Status akan berubah menjadi Cancelled.',
+                            onConfirm: () => { document.getElementById('cancel-po-form').submit(); },
+                            confirmText: 'BATALKAN PO'
+                        })"
+                        class="px-6 py-3 bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all border border-red-500/20 active:scale-95 shadow-lg shadow-red-900/10">
                         Batalkan PO
                     </button>
                 </form>
@@ -173,10 +180,17 @@
                 @endif
 
                 @if($purchaseOrder->status === 'ordered')
-                <form action="{{ route('purchase-orders.update-status', $purchaseOrder) }}" method="POST">
+                <form id="receive-po-form" action="{{ route('purchase-orders.update-status', $purchaseOrder) }}" method="POST">
                     @csrf @method('PUT')
                     <input type="hidden" name="status" value="received">
-                    <button type="submit" class="px-6 py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-xl shadow-emerald-900/20 active:scale-95 flex items-center gap-2" onclick="return confirm('Apakah barang sudah diterima? Stok inventaris akan bertambah otomatis.')">
+                    <button type="button" 
+                        @click="$dispatch('global-confirm', { 
+                            title: 'TERIMA BARANG', 
+                            message: 'Apakah barang sudah diterima? Stok inventaris akan bertambah otomatis secara sistem.',
+                            onConfirm: () => { document.getElementById('receive-po-form').submit(); },
+                            confirmText: 'TERIMA'
+                        })"
+                        class="px-6 py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-xl shadow-emerald-900/20 active:scale-95 flex items-center gap-2">
                         <i data-lucide="package-check" class="w-4 h-4"></i> Terima & Input Stok
                     </button>
                 </form>

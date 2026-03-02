@@ -217,12 +217,14 @@
                         <td class="px-5 py-4 text-white font-medium">{{ $order['customer'] }}</td>
                         <td class="px-5 py-4 font-bold text-emerald-400">Rp {{ number_format($order['total'], 0, ',', '.') }}</td>
                         <td class="px-5 py-4">
-                            @if($order['status'] == 'pending')
+                            @if(in_array($order['status'], ['pending', 'new']))
                                 <span class="px-2 py-1 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-500 border border-amber-500/20 uppercase">Pending</span>
-                            @elseif(in_array($order['status'], ['ready_to_ship', 'shipped']))
+                            @elseif(in_array($order['status'], ['ready_to_ship', 'shipped', 'processing']))
                                 <span class="px-2 py-1 rounded-full text-xs font-semibold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 uppercase">Proses Kirim</span>
-                            @else
+                            @elseif(in_array($order['status'], ['completed', 'delivered']))
                                 <span class="px-2 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 uppercase">Selesai</span>
+                            @else
+                                <span class="px-2 py-1 rounded-full text-xs font-semibold bg-red-500/10 text-red-400 border border-red-500/20 uppercase">{{ $order['status'] }}</span>
                             @endif
                         </td>
                     </tr>

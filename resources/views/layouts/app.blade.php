@@ -20,5 +20,12 @@
     </main>
 
     @include('partials.footer')
+    @include('partials.global-modal')
+    <script>
+        {{-- Initialize Lucide Icons globally --}}
+        document.addEventListener('alpine:init', () => {
+             {{-- Observe global modal to re-init lucide --}}
+        });
+    </script>
 </body>
 </html>

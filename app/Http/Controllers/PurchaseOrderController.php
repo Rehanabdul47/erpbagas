@@ -101,11 +101,11 @@ class PurchaseOrderController extends Controller
                     // Record stock movement
                     \App\Models\StockMovement::create([
                         'product_id' => $product->id,
+                        'user_id' => Auth::id(),
                         'type' => 'in',
                         'quantity' => $item->quantity,
-                        'description' => 'Purchase Order ' . $purchaseOrder->po_number,
-                        'reference_id' => $purchaseOrder->id,
-                        'user_id' => Auth::id(),
+                        'reference' => 'Purchase Order ' . $purchaseOrder->po_number,
+                        'method' => 'Purchase Order',
                     ]);
                 }
                 $purchaseOrder->update(['status' => 'received']);

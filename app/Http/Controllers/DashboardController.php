@@ -79,29 +79,41 @@ class DashboardController extends Controller
             'total_balance' => $balance
         ];
 
-        // 7. Top Selling Products (Simple mock/aggregation for now - just selecting top 5 by stock sold if tracked, or random for display if complex DB joins needed quickly. Let's do a reliable query if we have SaleItem)
-        // Since we don't have SaleItem model directly imported, let's fetch products sorted by some metric, or just get best products.
-        // For accurate Top Products, we would join sale_items and ecommerce_order_items. 
-        // For speed, let's assume we can query products based on a 'sold_count' column if it exists, or just use DB query on sale_items
-        $topProducts = DB::table('products')
-            ->select('products.id', 'products.name', 'categories.name as category_name', 'products.price', 'products.stock')
-            ->leftJoin('categories', 'products.category_id', '=', 'categories.id')
-            ->orderBy('products.stock', 'asc') // Fallback logic: lowest stock might be best seller if not tracked explicitly in DB without massive joins right now.
-            ->take(5)
-            ->get();
-            
-        // We will try an exact join if the tables exist: `sale_items` usually references `product_id`. `ecommerce_order_items` references `product_id`.
+        // 7. Top Selling Products (Merging POS and E-Commerce)
+        // Ensure accurate numbers by querying `sale_items` and `ecommerce_order_items` combined.
         try {
-            $topProducts = DB::table('sale_items')
-                ->select('products.name', 'categories.name as category', DB::raw('SUM(sale_items.quantity) as total_sold'), 'products.price')
-                ->join('products', 'sale_items.product_id', '=', 'products.id')
+            // Get aggregated quantites from POS
+            $posSales = DB::table('sale_items')
+                ->select('product_id', DB::raw('SUM(quantity) as total_sold'))
+                ->groupBy('product_id');
+
+            // Get aggregated quantities from E-commerce
+            $ecomSales = DB::table('ecommerce_order_items')
+                ->select('product_id', DB::raw('SUM(quantity) as total_sold'))
+                ->groupBy('product_id');
+
+            // Union both sales into a subquery
+            $combinedSalesSubquery = $posSales->unionAll($ecomSales);
+
+            // Group the unioned views and sum the totals, joining with products to get details
+            $topProducts = DB::table(DB::raw("({$combinedSalesSubquery->toSql()}) as combined_sales"))
+                ->mergeBindings($combinedSalesSubquery)
+                ->select('products.name', 'categories.name as category_name', 'products.price', DB::raw('SUM(combined_sales.total_sold) as total_sold'))
+                ->join('products', 'combined_sales.product_id', '=', 'products.id')
                 ->leftJoin('categories', 'products.category_id', '=', 'categories.id')
                 ->groupBy('products.id', 'products.name', 'categories.name', 'products.price')
                 ->orderByDesc('total_sold')
                 ->take(5)
                 ->get();
+
         } catch (\Exception $e) {
-            // Table might not exist or be named differently, fallback kept above.
+            // Fallback if union logic fails or tables are missing
+            $topProducts = DB::table('products')
+                ->select('products.id', 'products.name', 'categories.name as category_name', 'products.price', 'products.stock')
+                ->leftJoin('categories', 'products.category_id', '=', 'categories.id')
+                ->orderBy('products.stock', 'asc')
+                ->take(5)
+                ->get();
         }
 
         // --- RECENT ORDERS ---

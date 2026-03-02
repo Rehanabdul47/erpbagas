@@ -126,7 +126,15 @@
                                     <i data-lucide="edit-2" class="w-4 h-4"></i>
                                 </a>
                                 @if($u->id !== auth()->id())
-                                <form method="POST" action="{{ route('users.destroy', $u) }}" @submit="return confirm('Hapus user {{ $u->name }}?')" @click.stop class="m-0">
+                                <form method="POST" action="{{ route('users.destroy', $u) }}" 
+                                    @submit.prevent="$dispatch('global-confirm', { 
+                                        title: 'HAPUS PENGGUNA', 
+                                        message: 'Yakin ingin menghapus {{ $u->name }}? Operasi ini akan menghilangakan akses pengguna.',
+                                        actionUrl: '{{ route('users.destroy', $u) }}',
+                                        actionMethod: 'DELETE',
+                                        confirmText: 'HAPUS'
+                                    })" 
+                                    @click.stop class="m-0">
                                     @csrf 
                                     @method('DELETE')
                                     <button type="submit" class="p-1.5 rounded-lg text-gray-400 hover:text-red-400 hover:bg-red-500/10 transition-colors" title="Hapus">

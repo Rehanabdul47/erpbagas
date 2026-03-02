@@ -82,7 +82,15 @@
                                 <button @click="openEditModal({{ $tailor->id }}, '{{ addslashes($tailor->name) }}', '{{ addslashes($tailor->phone) }}', '{{ addslashes($tailor->address) }}')" class="p-1.5 rounded-lg text-gray-400 hover:text-indigo-400 hover:bg-indigo-500/10 transition-colors" title="Edit">
                                     <i data-lucide="edit-2" class="w-4 h-4"></i>
                                 </button>
-                                <form method="POST" action="{{ route('tailors.destroy', $tailor) }}" @submit="return confirm('Hapus penjahit {{ addslashes($tailor->name) }}?')" class="m-0">
+                                <form method="POST" action="{{ route('tailors.destroy', $tailor) }}" 
+                                    @submit.prevent="$dispatch('global-confirm', { 
+                                        title: 'HAPUS VENDOR', 
+                                        message: 'Apakah Anda yakin ingin menghapus data penjahit {{ addslashes($tailor->name) }}? Informasi produksi vendor ini akan ikut terhapus.',
+                                        actionUrl: '{{ route('tailors.destroy', $tailor) }}',
+                                        actionMethod: 'DELETE',
+                                        confirmText: 'HAPUS'
+                                    })" 
+                                    class="m-0">
                                     @csrf @method('DELETE')
                                     <button type="submit" class="p-1.5 rounded-lg text-gray-400 hover:text-red-400 hover:bg-red-500/10 transition-colors" title="Hapus">
                                         <i data-lucide="trash-2" class="w-4 h-4"></i>

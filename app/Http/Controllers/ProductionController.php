@@ -56,7 +56,8 @@ class ProductionController extends Controller
                 
                 StockMovement::create([
                     'product_id' => $bom->raw_material_id,
-                    'type' => 'out',
+                    'user_id' => Auth::id(),
+                    'type' => 'proses',
                     'quantity' => $requiredQuantity,
                     'reference' => 'Produksi ' . $finalProduct->name,
                     'method' => 'Production Use',
@@ -72,6 +73,16 @@ class ProductionController extends Controller
                 'user_id' => Auth::id(),
                 'status' => 'processing',
                 'notes' => $validated['notes'],
+            ]);
+
+            // Add 'proses' movement for final product to record what's being made
+            StockMovement::create([
+                'product_id' => $finalProduct->id,
+                'user_id' => Auth::id(),
+                'type' => 'proses',
+                'quantity' => $validated['quantity'],
+                'reference' => 'Dalam Produksi #' . $production->id,
+                'method' => 'Work In Progress',
             ]);
 
             // Set the first stage dynamically
@@ -107,6 +118,7 @@ class ProductionController extends Controller
                 
                 StockMovement::create([
                     'product_id' => $production->product_id,
+                    'user_id' => Auth::id(),
                     'type' => 'in',
                     'quantity' => $production->quantity,
                     'reference' => 'Hasil Produksi #' . $production->id,
@@ -120,6 +132,7 @@ class ProductionController extends Controller
                     
                     StockMovement::create([
                         'product_id' => $bom->raw_material_id,
+                        'user_id' => Auth::id(),
                         'type' => 'in',
                         'quantity' => $requiredQuantity,
                         'reference' => 'Pembatalan Produksi #' . $production->id,
@@ -159,6 +172,7 @@ class ProductionController extends Controller
                 
                 StockMovement::create([
                     'product_id' => $production->product_id,
+                    'user_id' => Auth::id(),
                     'type' => 'in',
                     'quantity' => $production->quantity,
                     'reference' => 'Hasil Produksi #' . $production->id . ' (Selesai)',
