@@ -13,6 +13,7 @@ use App\Http\Controllers\ProductionController;
 use App\Http\Controllers\BomController;
 use App\Http\Controllers\ProductionDashboardController;
 use App\Http\Controllers\MarketingDashboardController;
+use App\Http\Controllers\DigitalMarketingDashboardController;
 use App\Http\Controllers\FinanceDashboardController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\HrmDashboardController;
@@ -157,6 +158,11 @@ Route::middleware('auth')->group(function () {
     // Marketing
     Route::prefix('marketing')->name('marketing.')->group(function () {
         Route::get('/dashboard', [MarketingDashboardController::class, 'index'])->name('dashboard');
+    });
+
+    // Digital Marketing
+    Route::prefix('digital-marketing')->name('digital-marketing.')->group(function () {
+        Route::get('/dashboard', [DigitalMarketingDashboardController::class, 'index'])->name('dashboard');
     });
 
     // Branches

@@ -216,10 +216,21 @@
 
     {{-- Tab: History View --}}
     <div x-show="activeTab === 'history'" x-cloak style="display: none;" class="flex-1 bg-gray-800 border border-gray-700/50 rounded-xl shadow-sm flex flex-col min-h-[600px] lg:min-h-0 overflow-hidden">
-        <div class="p-5 border-b border-gray-700/50 flex justify-between items-center bg-gray-800 shrink-0">
+        <div class="p-5 border-b border-gray-700/50 flex flex-col sm:flex-row justify-between sm:items-center gap-4 bg-gray-800 shrink-0">
             <h3 class="m-0 text-xl font-bold text-white flex items-center gap-2">
                 <i data-lucide="receipt" class="w-5 h-5 text-indigo-400"></i> Riwayat Transaksi Kasir
             </h3>
+            <form method="GET" action="{{ route('pos.index') }}" class="flex items-center gap-2">
+                <div class="relative w-full sm:w-48 shrink-0">
+                    <select name="branch_id" onchange="this.form.submit()" class="w-full bg-gray-900 border border-gray-700 text-white rounded-lg pl-3 pr-10 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all appearance-none cursor-pointer shadow-inner">
+                        <option value="all" {{ $branchId === 'all' ? 'selected' : '' }}>Semua Cabang</option>
+                        @foreach($branches as $b)
+                            <option value="{{ $b->id }}" {{ $branchId == $b->id ? 'selected' : '' }}>{{ $b->name }}</option>
+                        @endforeach
+                    </select>
+                    <i data-lucide="chevron-down" class="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none"></i>
+                </div>
+            </form>
         </div>
         
         <div class="flex-1 overflow-y-auto p-5 scrollbar-thin scrollbar-thumb-indigo-500/20 hover:scrollbar-thumb-indigo-500/50 scrollbar-track-transparent bg-gray-900/10">
@@ -231,6 +242,7 @@
                                 <th class="px-5 py-3 font-medium">Invoice</th>
                                 <th class="px-5 py-3 font-medium">Waktu</th>
                                 <th class="px-5 py-3 font-medium">Customer</th>
+                                <th class="px-5 py-3 font-medium">Cabang</th>
                                 <th class="px-5 py-3 font-medium">Item Terjual</th>
                                 <th class="px-5 py-3 font-medium">Total Amount</th>
                                 <th class="px-5 py-3 font-medium">Metode</th>
@@ -243,6 +255,10 @@
                                 <td class="px-5 py-3 font-bold text-indigo-400 font-mono text-sm tracking-tight">#{{ $sale->invoice_no }}</td>
                                 <td class="px-5 py-3 text-gray-400 text-xs">{{ $sale->created_at->format('d M Y, H:i') }}</td>
                                 <td class="px-5 py-3 font-bold text-white">{{ $sale->customer->name }}</td>
+                                <td class="px-5 py-3 text-gray-400 text-xs flex items-center gap-1">
+                                    <i data-lucide="map-pin" class="w-3 h-3 text-indigo-500/50"></i>
+                                    {{ $sale->branch ? $sale->branch->name : 'Pusat' }}
+                                </td>
                                 <td class="px-5 py-3 text-gray-300"><span class="bg-gray-700 px-2 py-0.5 rounded text-xs">{{ $sale->items->count() }} Item</span></td>
                                 <td class="px-5 py-3 font-bold text-white">Rp {{ number_format($sale->total_amount, 0, ',', '.') }}</td>
                                 <td class="px-5 py-3">
@@ -258,7 +274,7 @@
                             </tr>
                             @empty
                             <tr>
-                                <td colspan="7" class="text-center py-16 text-gray-500">
+                                <td colspan="8" class="text-center py-16 text-gray-500">
                                     <div class="flex flex-col items-center gap-3">
                                         <i data-lucide="inbox" class="w-12 h-12 opacity-30 text-gray-400"></i>
                                         <span class="text-base font-medium">Belum ada riwayat transaksi POS</span>
@@ -408,8 +424,11 @@
 @push('scripts')
 <script>
 document.addEventListener('alpine:init', () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const initialTab = urlParams.has('branch_id') ? 'history' : 'kasir';
+
     Alpine.data('posSystem', () => ({
-        activeTab: 'kasir',
+        activeTab: initialTab,
         searchQuery: '',
         selectedCategory: '',
         cart: [],

@@ -29,7 +29,7 @@ class UserController extends Controller
     {
         $requestedRoles = ['Executive', 'Manager', 'Supervisor', 'Staff', 'Operator Produksi', 'Sales/Marketing', 'Admin', 'Security', 'Driver'];
         $roles = Role::whereIn('name', $requestedRoles)->get();
-        $departments = ['All', 'Produksi', 'Marketing', 'Keuangan', 'HRD & GA', 'Warehouse/Logistik', 'IT Support'];
+        $departments = ['All', 'Produksi', 'Marketing', 'Digital Marketing', 'Keuangan', 'HRD & GA', 'Warehouse/Logistik', 'IT Support'];
 
         return view('pages.users.create', compact('roles', 'departments'))
             ->with('activePage', 'users');
@@ -74,7 +74,7 @@ class UserController extends Controller
     {
         $requestedRoles = ['Executive', 'Manager', 'Supervisor', 'Staff', 'Operator Produksi', 'Sales/Marketing', 'Admin', 'Security', 'Driver'];
         $roles = Role::whereIn('name', $requestedRoles)->get();
-        $departments = ['All', 'Produksi', 'Marketing', 'Keuangan', 'HRD & GA', 'Warehouse/Logistik', 'IT Support'];
+        $departments = ['All', 'Produksi', 'Marketing', 'Digital Marketing', 'Keuangan', 'HRD & GA', 'Warehouse/Logistik', 'IT Support'];
 
         return view('pages.users.edit', compact('user', 'roles', 'departments'))
             ->with('activePage', 'users');

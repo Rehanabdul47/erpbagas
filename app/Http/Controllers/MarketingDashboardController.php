@@ -6,39 +6,39 @@ use Illuminate\Http\Request;
 use App\Models\Sale;
 use App\Models\Customer;
 use App\Models\RedeemCode;
+use App\Models\Branch;
 use Carbon\Carbon;
 
 class MarketingDashboardController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $currentMonth = Carbon::now()->month;
         $currentYear = Carbon::now()->year;
+        
+        $branchId = $request->input('branch_id', 'all');
+        $startDate = $request->input('start_date', Carbon::now()->subDays(29)->format('Y-m-d'));
+        $endDate = $request->input('end_date', Carbon::now()->format('Y-m-d'));
+        
+        $branches = Branch::latest()->get();
 
-        // Metrics
-        $totalSalesPos = Sale::whereMonth('sale_date', $currentMonth)
-            ->whereYear('sale_date', $currentYear)
-            ->where('status', 'completed')
-            ->count();
+        // Metrics within date range
+        $posQuery = Sale::whereDate('sale_date', '>=', $startDate)
+            ->whereDate('sale_date', '<=', $endDate)
+            ->whereIn('status', ['paid', 'completed']);
             
-        $totalSalesEcommerce = \App\Models\EcommerceOrder::whereMonth('order_date', $currentMonth)
-            ->whereYear('order_date', $currentYear)
-            ->where('status', '!=', 'cancelled') // Count non-cancelled orders
-            ->count();
-            
-        $totalSalesMonth = $totalSalesPos + $totalSalesEcommerce;
+        if ($branchId !== 'all') {
+            if ($branchId == 1) { // Assuming Branch 1 is Main Store (Pusat)
+                $posQuery->where(function($q) use ($branchId) {
+                    $q->where('branch_id', $branchId)->orWhereNull('branch_id');
+                });
+            } else {
+                $posQuery->where('branch_id', $branchId);
+            }
+        }
 
-        $totalRevenuePos = Sale::whereMonth('sale_date', $currentMonth)
-            ->whereYear('sale_date', $currentYear)
-            ->where('status', 'completed')
-            ->sum('total_amount');
-            
-        $totalRevenueEcommerce = \App\Models\EcommerceOrder::whereMonth('order_date', $currentMonth)
-            ->whereYear('order_date', $currentYear)
-            ->where('status', '!=', 'cancelled')
-            ->sum('total_amount');
-            
-        $totalRevenueMonth = $totalRevenuePos + $totalRevenueEcommerce;
+        $totalSalesMonth = (clone $posQuery)->count();
+        $totalRevenueMonth = (clone $posQuery)->sum('total_amount');
 
         $activeCustomers = Customer::count();
 
@@ -48,10 +48,23 @@ class MarketingDashboardController extends Controller
                       ->orWhere('valid_until', '>=', now());
             })->count();
 
-        // Lists for widgets
-        $recentPos = Sale::with(['customer', 'redeemCode'])
-            ->latest('sale_date')
-            ->take(5)
+        // Lists for widgets within date range
+        $recentPosQuery = Sale::with(['customer', 'redeemCode', 'branch'])
+            ->whereDate('sale_date', '>=', $startDate)
+            ->whereDate('sale_date', '<=', $endDate)
+            ->latest('sale_date');
+            
+        if ($branchId !== 'all') {
+            if ($branchId == 1) {
+                $recentPosQuery->where(function($q) use ($branchId) {
+                    $q->where('branch_id', $branchId)->orWhereNull('branch_id');
+                });
+            } else {
+                $recentPosQuery->where('branch_id', $branchId);
+            }
+        }
+            
+        $recentPos = $recentPosQuery->take(5)
             ->get()
             ->map(function ($item) {
                 // Normalize structure for view
@@ -61,35 +74,15 @@ class MarketingDashboardController extends Controller
                     'customer_name' => $item->customer->name ?? 'Walk-in Customer',
                     'date' => $item->sale_date,
                     'amount' => $item->total_amount,
-                    'platform' => 'Offline (POS)',
-                    'status' => 'completed',
+                    'platform' => 'Offline' . ($item->branch ? ' - ' . $item->branch->name : ' (Pusat)'),
+                    'status' => in_array($item->status, ['paid', 'completed']) ? 'completed' : $item->status,
                     'route' => route('pos.invoice', $item->id),
                     'is_redeem' => $item->redeem_code_id !== null,
                 ];
             });
 
-        $recentEcommerce = \App\Models\EcommerceOrder::latest('order_date')
-            ->take(5)
-            ->get()
-            ->map(function ($item) {
-                return (object)[
-                    'id' => 'EC-'.$item->id,
-                    'reference' => $item->order_number,
-                    'customer_name' => $item->customer_name,
-                    'date' => $item->order_date,
-                    'amount' => $item->total_amount,
-                    'platform' => $item->platform,
-                    'status' => $item->status,
-                    'route' => route('orders.show', $item->id),
-                    'is_redeem' => false, // E-commerce handle their own coupons usually on platform
-                ];
-            });
-
-        // Combine and sort recent transactions
-        $recentTransactions = $recentPos->concat($recentEcommerce)
-            ->sortByDesc('date')
-            ->take(5)
-            ->values();
+        // Recent transactions focusing only on POS
+        $recentTransactions = $recentPos;
 
         $newCustomers = Customer::latest()->take(5)->get();
 
@@ -102,52 +95,33 @@ class MarketingDashboardController extends Controller
         // Combined Top Products
         $topPosProducts = \App\Models\SaleItem::with('product')
             ->select('product_id', \Illuminate\Support\Facades\DB::raw('SUM(quantity) as total_sold'))
-            ->whereHas('sale', function($q) use ($currentMonth, $currentYear) {
-                $q->whereMonth('sale_date', $currentMonth)
-                  ->whereYear('sale_date', $currentYear)
-                  ->where('status', 'completed');
+            ->whereHas('sale', function($q) use ($startDate, $endDate, $branchId) {
+                $q->whereDate('sale_date', '>=', $startDate)
+                  ->whereDate('sale_date', '<=', $endDate)
+                  ->whereIn('status', ['paid', 'completed']);
+                
+                if ($branchId !== 'all') {
+                    if ($branchId == 1) {
+                        $q->where(function($sub) use ($branchId) {
+                            $sub->where('branch_id', $branchId)->orWhereNull('branch_id');
+                        });
+                    } else {
+                        $q->where('branch_id', $branchId);
+                    }
+                }
             })
             ->groupBy('product_id')
             ->get();
             
-        $topEcommerceProducts = \App\Models\EcommerceOrderItem::with('product')
-            ->select('product_id', \Illuminate\Support\Facades\DB::raw('SUM(quantity) as total_sold'))
-            ->whereHas('order', function($q) use ($currentMonth, $currentYear) {
-                $q->whereMonth('order_date', $currentMonth)
-                  ->whereYear('order_date', $currentYear)
-                  ->where('status', '!=', 'cancelled');
-            })
-            ->groupBy('product_id')
-            ->get();
-
-        $topProductsMap = [];
-        
-        foreach ($topPosProducts as $item) {
-            $topProductsMap[$item->product_id] = [
+        $topProducts = $topPosProducts->map(function($item) {
+            return (object)[
                 'product' => $item->product,
                 'total_sold' => (int)$item->total_sold
             ];
-        }
-        
-        foreach ($topEcommerceProducts as $item) {
-            if (isset($topProductsMap[$item->product_id])) {
-                $topProductsMap[$item->product_id]['total_sold'] += (int)$item->total_sold;
-            } else {
-                $topProductsMap[$item->product_id] = [
-                    'product' => $item->product,
-                    'total_sold' => (int)$item->total_sold
-                ];
-            }
-        }
-        
-        // Sort mapped array desc and take 5
-        usort($topProductsMap, function($a, $b) {
-            return $b['total_sold'] <=> $a['total_sold'];
-        });
-        
-        $topProducts = collect(array_slice($topProductsMap, 0, 5))->map(function($item) {
-            return (object)$item;
-        });
+        })->take(5);
+
+        // Chart Data
+        $chartData = $this->getChartData($branchId, $startDate, $endDate);
             
         $activePage = 'marketing-dashboard';
 
@@ -160,7 +134,120 @@ class MarketingDashboardController extends Controller
             'newCustomers',
             'activeCoupons',
             'topProducts',
-            'activePage'
+            'activePage',
+            'branches',
+            'branchId',
+            'startDate',
+            'endDate',
+            'chartData'
         ));
+    }
+
+    private function getChartData($branchId, $startDate, $endDate)
+    {
+        $days = [];
+        $datasets = [];
+        $isComparison = ($branchId === 'all');
+        $branches = \App\Models\Branch::all();
+
+        $start = Carbon::parse($startDate);
+        $end = Carbon::parse($endDate);
+        $diffInDays = $start->diffInDays($end);
+
+        // Limit range to prevent performance issues (e.g., max 60 days)
+        if ($diffInDays > 60) {
+            $start = $end->copy()->subDays(60);
+            $diffInDays = 60;
+        }
+
+        // Get only unique dates that have sales within the range
+        $days = Sale::whereDate('sale_date', '>=', $startDate)
+            ->whereDate('sale_date', '<=', $endDate)
+            ->whereIn('status', ['paid', 'completed'])
+            ->select(\DB::raw('DATE(sale_date) as date'))
+            ->distinct()
+            ->orderBy('date', 'asc')
+            ->pluck('date')
+            ->map(fn($d) => Carbon::parse($d)->format('d M'))
+            ->toArray();
+
+        // If no data, show at least start and end date to prevent empty chart error
+        if (empty($days)) {
+            $days = [Carbon::parse($startDate)->format('d M'), Carbon::parse($endDate)->format('d M')];
+        }
+
+        if ($isComparison) {
+            // Dataset for Total
+            $totalData = [];
+            foreach ($days as $dayLabel) {
+                $date = Carbon::createFromFormat('d M', $dayLabel)->year(Carbon::now()->year);
+                $totalData[] = Sale::whereDate('sale_date', $date->toDateString())
+                    ->whereIn('status', ['paid', 'completed'])
+                    ->sum('total_amount');
+            }
+            $datasets[] = [
+                'label' => 'Total Penjualan POS',
+                'data' => $totalData,
+            ];
+
+            // Datasets for each Branch
+            foreach ($branches as $branch) {
+                $branchData = [];
+                foreach ($days as $dayLabel) {
+                    $date = Carbon::createFromFormat('d M', $dayLabel)->year(Carbon::now()->year);
+                    $query = Sale::whereDate('sale_date', $date->toDateString())
+                        ->whereIn('status', ['paid', 'completed']);
+                    
+                    if ($branch->id == 1) {
+                        $query->where(function($q) use ($branch) {
+                            $q->where('branch_id', $branch->id)->orWhereNull('branch_id');
+                        });
+                    } else {
+                        $query->where('branch_id', $branch->id);
+                    }
+                    
+                    $branchData[] = $query->sum('total_amount');
+                }
+                $datasets[] = [
+                    'label' => 'POS ' . $branch->name,
+                    'data' => $branchData,
+                ];
+            }
+        } else {
+            // Specific Branch: Revenue & Orders Count
+            $revenueData = [];
+            $ordersData = [];
+            foreach ($days as $dayLabel) {
+                $date = Carbon::createFromFormat('d M', $dayLabel)->year(Carbon::now()->year);
+                $query = Sale::whereDate('sale_date', $date->toDateString())
+                    ->whereIn('status', ['paid', 'completed']);
+                
+                if ($branchId == 1) {
+                    $query->where(function($q) use ($branchId) {
+                        $q->where('branch_id', $branchId)->orWhereNull('branch_id');
+                    });
+                } else {
+                    $query->where('branch_id', $branchId);
+                }
+                
+                $revenueData[] = (clone $query)->sum('total_amount');
+                $ordersData[] = (clone $query)->count();
+            }
+
+            $datasets[] = [
+                'label' => 'Pendapatan POS',
+                'data' => $revenueData,
+            ];
+            $datasets[] = [
+                'label' => 'Jumlah Transaksi POS',
+                'data' => $ordersData,
+            ];
+        }
+
+        return [
+            'labels' => $days,
+            'datasets' => $datasets,
+            'isComparison' => $isComparison
+        ];
     }
 }

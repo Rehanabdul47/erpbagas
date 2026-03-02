@@ -20,9 +20,12 @@
         ['section' => 'DIVISI MARKETING', 'visible' => $isMgmt || $dept === 'Marketing' || ($user && $user->hasRole('Sales/Marketing')), 'items' => [
             ['id' => 'marketing-dashboard', 'icon' => 'line-chart', 'label' => 'Overview Marketing', 'route' => 'marketing.dashboard', 'visible' => true],
             ['id' => 'sales', 'icon' => 'trending-up', 'label' => 'Sales & CRM', 'route' => 'sales.index', 'visible' => true],
-            ['id' => 'orders', 'icon' => 'shopping-cart', 'label' => 'Orders', 'route' => 'orders', 'badge' => 3, 'visible' => true],
-            ['id' => 'redeem-codes', 'icon' => 'ticket', 'label' => 'Redeem Codes', 'route' => 'redeem-codes.index', 'visible' => true],
+            ['id' => 'redeem-codes', 'icon' => 'ticket', 'label' => 'Promo & Redeem Codes', 'route' => 'redeem-codes.index', 'visible' => true],
             ['id' => 'pos', 'icon' => 'monitor', 'label' => 'Point of Sale', 'route' => 'pos.index', 'visible' => true],
+        ]],
+        ['section' => 'DIVISI DIGITAL MARKETING', 'visible' => $isMgmt || $dept === 'Digital Marketing', 'items' => [
+            ['id' => 'digital-marketing-dashboard', 'icon' => 'line-chart', 'label' => 'Overview Digital Marketing', 'route' => 'digital-marketing.dashboard', 'visible' => true],
+            ['id' => 'orders', 'icon' => 'shopping-cart', 'label' => 'E-Commerce Orders', 'route' => 'orders', 'badge' => 3, 'visible' => true],
         ]],
         ['section' => 'DIVISI KEUANGAN', 'visible' => $isMgmt || $dept === 'Keuangan', 'items' => [
             ['id' => 'finance-dashboard', 'icon' => 'line-chart', 'label' => 'Overview Keuangan', 'route' => 'finance.dashboard', 'visible' => true],

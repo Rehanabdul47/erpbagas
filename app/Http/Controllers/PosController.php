@@ -8,6 +8,7 @@ use App\Models\SaleItem;
 use App\Models\StockMovement;
 use App\Models\CashTransaction;
 use App\Models\Customer;
+use App\Models\Branch;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
@@ -16,17 +17,25 @@ use App\Models\RedeemCode;
 
 class PosController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
+        $branchId = $request->query('branch_id', 'all');
+        $branches = Branch::latest()->get();
+
         $products = Product::where('stock', '>', 0)->with('category')->get();
         $customers = Customer::all();
-        $posHistory = Sale::where('invoice_no', 'like', 'POS-%')
-            ->with(['customer', 'items.product'])
-            ->latest()
-            ->limit(20)
-            ->get();
         
-        return view('pages.pos.index', compact('products', 'customers', 'posHistory'))
+        $posHistoryQuery = Sale::where('invoice_no', 'like', 'POS-%')
+            ->with(['customer', 'items.product', 'branch'])
+            ->latest();
+            
+        if ($branchId !== 'all') {
+            $posHistoryQuery->where('branch_id', $branchId);
+        }
+            
+        $posHistory = $posHistoryQuery->limit(20)->get();
+        
+        return view('pages.pos.index', compact('products', 'customers', 'posHistory', 'branches', 'branchId'))
             ->with('activePage', 'pos');
     }
 
@@ -161,7 +170,7 @@ class PosController extends Controller
 
     public function invoice(Sale $sale)
     {
-        $sale->load(['customer', 'items.product', 'redeemCode']);
+        $sale->load(['customer', 'items.product', 'redeemCode', 'branch']);
         return view('pages.pos.invoice', compact('sale'));
     }
 }

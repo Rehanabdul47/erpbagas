@@ -19,6 +19,9 @@ class EcommerceOrder extends Model
         'receipt_number',
         'shipping_cost',
         'total_amount',
+        'platform_fee',
+        'fixed_fee',
+        'service_fee',
         'status',
         'order_date'
     ];

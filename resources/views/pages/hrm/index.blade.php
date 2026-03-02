@@ -389,7 +389,8 @@
                         <select name="department" x-model="empForm.department" required class="w-full bg-gray-900 border border-gray-700 text-white rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all">
                             <option value="">-- Pilih Department --</option>
                             <option value="Produksi">Produksi</option>
-                            <option value="Marketing">Marketing</option>
+                            <option value="Marketing">Marketing (Offline)</option>
+                            <option value="Digital Marketing">Digital Marketing (Online)</option>
                             <option value="Keuangan">Keuangan</option>
                             <option value="HRD & GA">HRD & GA</option>
                             <option value="Warehouse / Logistik">Warehouse / Logistik</option>

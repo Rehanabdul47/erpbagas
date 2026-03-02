@@ -28,8 +28,9 @@
         {{-- Header --}}
         <div class="text-center mb-6 space-y-1">
             <h1 class="text-lg font-black tracking-tighter uppercase">GUPALA INDONESIA</h1>
-            <p class="text-[10px] text-gray-500 uppercase leading-none">Jl. Antigravity No. 10, Jakarta Selatan</p>
-            <p class="text-[10px] text-gray-500 leading-none">Telp: +62 812 3456 7890</p>
+            <p class="text-[10px] text-gray-800 font-bold uppercase leading-none">{{ $sale->branch ? 'Cabang ' . $sale->branch->name : 'Kantor Pusat' }}</p>
+            <p class="text-[9px] text-gray-500 uppercase leading-none pt-1">Jl. Antigravity No. 10, Jakarta Selatan</p>
+            <p class="text-[9px] text-gray-500 leading-none">Telp: +62 812 3456 7890</p>
             <div class="border-b-[1px] border-dashed border-gray-300 pt-4"></div>
         </div>
 

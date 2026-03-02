@@ -19,6 +19,7 @@
             <i data-lucide="trending-up" class="w-6 h-6 text-indigo-400"></i> Sales & CRM
         </h2>
         <form id="branch-filter-form" class="flex flex-wrap items-center gap-3 w-full md:w-auto">
+            <input type="hidden" name="tab" x-model="activeTab" />
             <select name="branch_id" onchange="document.getElementById('branch-filter-form').submit()"
                     class="bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all shadow-sm">
                 <option value="all">Semua Cabang / Global</option>
@@ -189,8 +190,11 @@
 @push('scripts')
 <script>
 document.addEventListener('alpine:init', () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const initialTab = urlParams.get('tab') || 'customers';
+
     Alpine.data('salesData', () => ({
-        activeTab: 'customers',
+        activeTab: initialTab,
         searchCustomer: '',
         modals: {
             customer: false,
