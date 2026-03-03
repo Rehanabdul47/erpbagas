@@ -145,7 +145,7 @@
                                     @endif
                                 @endforeach
                                 <tr class="hover:bg-indigo-500/5 transition-colors">
-                                    <td class="px-5 py-3 flex justify-between text-gray-200"><span>Laba Ditahan</span> <span class="text-gray-500 font-mono text-xs">300x</span></td>
+                                    <td class="px-5 py-3 flex justify-between text-gray-200"><span>Laba Ditahan</span> <span class="text-gray-500 font-mono text-xs">3-103</span></td>
                                     <td class="px-5 py-3 text-right text-gray-200">Rp {{ number_format($retainedEarnings, 0, ',', '.') }}</td>
                                 </tr>
                             </tbody>

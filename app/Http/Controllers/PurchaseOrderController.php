@@ -8,6 +8,10 @@ use App\Models\PurchaseOrder;
 use App\Models\PurchaseOrderItem;
 use App\Models\Supplier;
 use App\Models\Product;
+use App\Models\CashTransaction;
+use App\Models\JournalEntry;
+use App\Models\Account;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 
@@ -109,6 +113,44 @@ class PurchaseOrderController extends Controller
                     ]);
                 }
                 $purchaseOrder->update(['status' => 'received']);
+
+                // Record Finance Automation
+                // 1. Cash Out
+                CashTransaction::create([
+                    'date' => Carbon::now(),
+                    'type' => 'out',
+                    'category' => 'Purchase',
+                    'amount' => $purchaseOrder->total_amount,
+                    'description' => "Pembelian PO #{$purchaseOrder->po_number}",
+                    'reference' => $purchaseOrder->po_number,
+                    'user_id' => Auth::id(),
+                ]);
+
+                // 2. Journal Entry
+                $persediaanAccount = Account::where('code', '1201')->first();
+                $kasAccount = Account::where('code', '1001')->first();
+
+                if ($persediaanAccount && $kasAccount) {
+                    $journalEntry = JournalEntry::create([
+                        'date' => Carbon::now(),
+                        'reference' => $purchaseOrder->po_number,
+                        'description' => "Pembelian PO #{$purchaseOrder->po_number}",
+                    ]);
+
+                    // Debit: Persediaan (1201), Credit: Kas (1001)
+                    $journalEntry->items()->createMany([
+                        [
+                            'account_id' => $persediaanAccount->id,
+                            'debit' => $purchaseOrder->total_amount,
+                            'credit' => 0,
+                        ],
+                        [
+                            'account_id' => $kasAccount->id,
+                            'debit' => 0,
+                            'credit' => $purchaseOrder->total_amount,
+                        ]
+                    ]);
+                }
             });
         } else {
             $purchaseOrder->update(['status' => $request->status]);

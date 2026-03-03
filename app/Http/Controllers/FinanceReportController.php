@@ -39,7 +39,7 @@ class FinanceReportController extends Controller
         $totalEquity = $totalEquityBase + $retainedEarnings;
 
         // 3. Arus Kas (Cash Flow) - simplified
-        $cashAccount = Account::where('code', '1001')->first();
+        $cashAccount = Account::where('code', '1-101')->first();
         $cashInitial = 0;
         $cashInflow = 0;
         $cashOutflow = 0;
@@ -47,10 +47,10 @@ class FinanceReportController extends Controller
 
         if ($cashAccount) {
             $prevEndDate = $startDate->copy()->subDay();
-            $cashInitialArr = $this->getAccountBalances('asset', null, $prevEndDate)->where('code', '1001')->first();
+            $cashInitialArr = $this->getAccountBalances('asset', null, $prevEndDate)->where('code', '1-101')->first();
             $cashInitial = $cashInitialArr ? $cashInitialArr->period_balance : 0;
 
-            $cashCurrentArr = $this->getAccountBalances('asset', $startDate, $endDate)->where('code', '1001')->first();
+            $cashCurrentArr = $this->getAccountBalances('asset', $startDate, $endDate)->where('code', '1-101')->first();
             if ($cashCurrentArr) {
                 $cashInflow = $cashCurrentArr->total_debit; // Kas bertambah di debit
                 $cashOutflow = $cashCurrentArr->total_credit; // Kas berkurang di kredit
@@ -67,8 +67,8 @@ class FinanceReportController extends Controller
         
         $beginningEquity = $prevEquities->sum('period_balance') + ($prevRevenues->sum('period_balance') - $prevExpenses->sum('period_balance'));
         
-        // Prive/Dividends (Equity account 3002) during period
-        $priveAccount = $equities->where('code', '3002')->first();
+        // Prive/Dividends (Equity account 3-102) during period
+        $priveAccount = $equities->where('code', '3-102')->first();
         $prive = $priveAccount ? abs($priveAccount->period_balance) : 0; // usually debit balance (- balance in our calc)
         
         $endingEquity = $beginningEquity + $netIncome - $prive; // Net income already calculated

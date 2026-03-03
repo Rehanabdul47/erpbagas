@@ -7,6 +7,9 @@ use App\Models\Sale;
 use App\Models\SaleItem;
 use App\Models\StockMovement;
 use App\Models\CashTransaction;
+use App\Models\JournalEntry;
+use App\Models\JournalItem;
+use App\Models\Account;
 use App\Models\Customer;
 use App\Models\Branch;
 use Illuminate\Http\Request;
@@ -54,6 +57,7 @@ class PosController extends Controller
         try {
             return DB::transaction(function () use ($validated) {
                 $totalAmount = 0;
+                $totalCogs = 0;
                 $invoiceNo = 'POS-' . strtoupper(uniqid());
                 
                 $redeemCode = null;
@@ -94,6 +98,7 @@ class PosController extends Controller
 
                     $subtotal = $product->price * $item['quantity'];
                     $totalAmount += $subtotal;
+                    $totalCogs += ($product->cogs * $item['quantity']);
 
                     // 2. Create Sale Item
                     SaleItem::create([
@@ -151,6 +156,45 @@ class PosController extends Controller
                     'reference' => $invoiceNo,
                     'user_id' => Auth::id(),
                 ]);
+
+                // 6. Record Journal Entry
+                $kasAccount = Account::where('code', '1001')->first();
+                $pendapatanAccount = Account::where('code', '4001')->first();
+                $hppAccount = Account::where('code', '5001')->first();
+                $persediaanAccount = Account::where('code', '1201')->first();
+
+                if ($kasAccount && $pendapatanAccount && $hppAccount && $persediaanAccount) {
+                    $journalEntry = JournalEntry::create([
+                        'date' => Carbon::now(),
+                        'reference' => $invoiceNo,
+                        'description' => "Penjualan POS #{$invoiceNo}",
+                    ]);
+
+                    // Debit: Kas (1001), Credit: Pendapatan Penjualan (4001)
+                    $journalEntry->items()->createMany([
+                        [
+                            'account_id' => $kasAccount->id,
+                            'debit' => $totalAmount,
+                            'credit' => 0,
+                        ],
+                        [
+                            'account_id' => $pendapatanAccount->id,
+                            'debit' => 0,
+                            'credit' => $totalAmount,
+                        ],
+                        // Debit: HPP (5001), Credit: Persediaan (1201)
+                        [
+                            'account_id' => $hppAccount->id,
+                            'debit' => $totalCogs,
+                            'credit' => 0,
+                        ],
+                        [
+                            'account_id' => $persediaanAccount->id,
+                            'debit' => 0,
+                            'credit' => $totalCogs,
+                        ]
+                    ]);
+                }
 
                 return response()->json([
                     'success' => true,

@@ -6,6 +6,9 @@ use Illuminate\Http\Request;
 use App\Models\EcommerceOrder;
 use App\Models\EcommerceOrderItem;
 use App\Models\Product;
+use App\Models\CashTransaction;
+use App\Models\JournalEntry;
+use App\Models\Account;
 use Carbon\Carbon;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
@@ -65,7 +68,10 @@ class OrderController extends Controller
 
         // Optional: If status becomes shipped/delivered, reduce stock
         if ($order->status == 'shipped' && $order->wasChanged('status')) {
-            $this->deductStock($order);
+            DB::transaction(function () use ($order) {
+                $this->deductStock($order);
+                $this->recordSaleFinancials($order);
+            });
         }
 
         return redirect()->back()->with('success', "Status pesanan {$order->order_number} berhasil diperbarui.");
@@ -82,6 +88,66 @@ class OrderController extends Controller
                 }
             }
         });
+    }
+
+    private function recordSaleFinancials(EcommerceOrder $order)
+    {
+        $totalAmount = $order->total_amount;
+        $totalCogs = 0;
+
+        foreach ($order->items as $item) {
+            if ($item->product) {
+                $totalCogs += ($item->product->cogs * $item->quantity);
+            }
+        }
+
+        // Record Cash Transaction
+        CashTransaction::create([
+            'date' => Carbon::now(),
+            'type' => 'in',
+            'category' => 'Sales (Ecommerce)',
+            'amount' => $totalAmount,
+            'description' => "Penjualan Ecommerce #{$order->order_number}",
+            'reference' => $order->order_number,
+            'user_id' => auth()->id() ?? 1, // Fallback to 1 if from API/System
+        ]);
+
+        // Record Journal Entry
+        $kasAccount = Account::where('code', '1001')->first();
+        $pendapatanAccount = Account::where('code', '4001')->first();
+        $hppAccount = Account::where('code', '5001')->first();
+        $persediaanAccount = Account::where('code', '1201')->first();
+
+        if ($kasAccount && $pendapatanAccount && $hppAccount && $persediaanAccount) {
+            $journalEntry = JournalEntry::create([
+                'date' => Carbon::now(),
+                'reference' => $order->order_number,
+                'description' => "Penjualan Ecommerce #{$order->order_number}",
+            ]);
+
+            $journalEntry->items()->createMany([
+                [
+                    'account_id' => $kasAccount->id,
+                    'debit' => $totalAmount,
+                    'credit' => 0,
+                ],
+                [
+                    'account_id' => $pendapatanAccount->id,
+                    'debit' => 0,
+                    'credit' => $totalAmount,
+                ],
+                [
+                    'account_id' => $hppAccount->id,
+                    'debit' => $totalCogs,
+                    'credit' => 0,
+                ],
+                [
+                    'account_id' => $persediaanAccount->id,
+                    'debit' => 0,
+                    'credit' => $totalCogs,
+                ]
+            ]);
+        }
     }
 
     // Real / Mock API Sync Endpoint

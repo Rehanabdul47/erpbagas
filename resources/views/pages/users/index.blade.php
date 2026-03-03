@@ -74,6 +74,7 @@
                         <th class="px-5 py-3 font-medium">Pengguna</th>
                         <th class="px-5 py-3 font-medium">Role</th>
                         <th class="px-5 py-3 font-medium">Departemen</th>
+                        <th class="px-5 py-3 font-medium">Penempatan</th>
                         <th class="px-5 py-3 font-medium">Bergabung</th>
                         <th class="px-5 py-3 font-medium text-right">Aksi</th>
                     </tr>
@@ -116,6 +117,16 @@
                         </td>
                         <td class="px-5 py-3">
                             <span class="text-gray-300 capitalize text-sm font-medium">{{ $u->department ?: '-' }}</span>
+                        </td>
+                        <td class="px-5 py-3">
+                            @if($u->branch)
+                                <div class="flex items-center gap-1.5 text-gray-300 text-sm font-medium">
+                                    <i data-lucide="map-pin" class="w-3.5 h-3.5 text-indigo-400"></i>
+                                    {{ $u->branch->name }}
+                                </div>
+                            @else
+                                <span class="text-gray-500 text-sm font-medium italic">Pusat</span>
+                            @endif
                         </td>
                         <td class="px-5 py-3 text-gray-400 text-xs font-mono">
                             {{ $u->created_at->format('d M Y') }}
@@ -183,7 +194,11 @@
                 {{-- Avatar --}}
                 <div class="w-20 h-20 rounded-full bg-indigo-500 border-4 border-gray-800 flex items-center justify-center text-white font-black text-3xl shadow-lg mb-3" x-text="activeUserInitials"></div>
                 <h4 class="text-xl font-bold text-white mb-0" x-text="activeUser?.name"></h4>
-                <div class="text-sm text-indigo-300 font-medium mb-4" x-text="activeUser?.email"></div>
+                <div class="text-sm text-indigo-300 font-medium mb-1" x-text="activeUser?.email"></div>
+                <div class="text-xs text-gray-400 flex items-center justify-center gap-1 mb-4">
+                    <i data-lucide="map-pin" class="w-3 h-3"></i>
+                    <span x-text="activeUser?.branch?.name || 'Pusat'"></span>
+                </div>
                 
                 <span class="px-3 py-1 rounded-full text-xs font-bold border bg-gray-900/80 border-gray-700 text-gray-300 shadow-inner" x-text="activeUserRoles() || 'No Role'"></span>
             </div>
@@ -240,6 +255,13 @@ document.addEventListener('alpine:init', () => {
         openModal(user) {
             this.activeUser = user;
             this.modals.view = true;
+            
+            // Re-initialize lucide icons for the newly updated modal content
+            setTimeout(() => {
+                if(window.lucide) {
+                    window.lucide.createIcons();
+                }
+            }, 50);
         },
 
         get activeUserInitials() {

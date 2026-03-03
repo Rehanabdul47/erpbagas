@@ -218,17 +218,28 @@
                     <div class="space-y-1.5">
                         <label class="text-[10px] font-bold text-gray-400 uppercase tracking-widest pl-1">Kategori Pemasukan</label>
                         <div class="flex flex-wrap gap-2 mb-2">
-                            @foreach(['Penjualan', 'Piutang', 'Investasi', 'Hibah', 'Lainnya'] as $cat)
-                            <button type="button" @click="$el.closest('.space-y-1.5').querySelector('input').value = '{{ $cat }}'" 
+                            @foreach(['Pendapatan Usaha/Penjualan (4-101)', 'Pendapatan Jasa (4-102)', 'Piutang Usaha (1-103)', 'Modal Pemilik (3-101)'] as $cat)
+                            <button type="button" @click="$el.closest('.space-y-1.5').querySelector('select').value = '{{ $cat }}'" 
                                     class="text-[10px] px-2 py-1 bg-gray-700 hover:bg-emerald-500/20 hover:text-emerald-400 text-gray-400 rounded transition-colors border border-transparent hover:border-emerald-500/30">
                                 {{ $cat }}
                             </button>
                             @endforeach
                         </div>
-                        <input type="text" name="category" list="cat-in" class="w-full bg-gray-900 border border-gray-700 text-white rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all" placeholder="Pilih atau ketik kategori baru..." required>
-                        <datalist id="cat-in">
-                            <option value="Penjualan Produk"><option value="Jasa / Layanan"><option value="Pelunasan Piutang"><option value="Suntikan Modal"><option value="Pendapatan Bunga"><option value="Pengembalian Pajak">
-                        </datalist>
+                        <select name="category" class="w-full bg-gray-900 border border-gray-700 text-white rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all" required>
+                            <option value="">-- Pilih Akun / Kategori --</option>
+                            <optgroup label="Pendapatan">
+                                <option value="Pendapatan Usaha/Penjualan (4-101)">Pendapatan Usaha/Penjualan (4-101)</option>
+                                <option value="Pendapatan Jasa (4-102)">Pendapatan Jasa (4-102)</option>
+                            </optgroup>
+                            <optgroup label="Aset & Liabilitas">
+                                <option value="Piutang Usaha (1-103)">Piutang Usaha (Pelunasan) (1-103)</option>
+                                <option value="Utang Bank (2-201)">Utang Bank (Pencairan) (2-201)</option>
+                                <option value="Pendapatan Diterima Dimuka (2-104)">Pendapatan Diterima Dimuka (2-104)</option>
+                            </optgroup>
+                            <optgroup label="Ekuitas">
+                                <option value="Modal Pemilik (3-101)">Modal Pemilik (3-101)</option>
+                            </optgroup>
+                        </select>
                     </div>
 
                     <div class="space-y-1.5">
@@ -301,17 +312,38 @@
                     <div class="space-y-1.5">
                         <label class="text-[10px] font-bold text-gray-400 uppercase tracking-widest pl-1">Kategori Pengeluaran</label>
                         <div class="flex flex-wrap gap-2 mb-2">
-                            @foreach(['Gaji', 'Listrik/Air', 'Sewa', 'Stok', 'Marketing', 'Lainnya'] as $cat)
-                            <button type="button" @click="$el.closest('.space-y-1.5').querySelector('input').value = '{{ $cat }}'" 
+                            @foreach(['Beban Gaji (5-102)', 'Beban Listrik, Air & Telepon (5-106)', 'Beban Sewa (5-103)', 'Harga Pokok Penjualan (HPP) (5-101)', 'Persediaan Barang Dagang (1-104)'] as $cat)
+                            <button type="button" @click="$el.closest('.space-y-1.5').querySelector('select').value = '{{ $cat }}'" 
                                     class="text-[10px] px-2 py-1 bg-gray-700 hover:bg-red-500/20 hover:text-red-400 text-gray-400 rounded transition-colors border border-transparent hover:border-red-500/30">
                                 {{ $cat }}
                             </button>
                             @endforeach
                         </div>
-                        <input type="text" name="category" list="cat-out" class="w-full bg-gray-900 border border-gray-700 text-white rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-red-500 outline-none transition-all" placeholder="Pilih atau ketik kategori pengeluaran..." required>
-                        <datalist id="cat-out">
-                            <option value="Gaji Karyawan"><option value="Operasional Kantor"><option value="Listrik, Air & WiFi"><option value="Sewa Tempat"><option value="Beli Stok / Barang"><option value="Biaya Marketing"><option value="Perbaikan & Pemeliharaan"><option value="Biaya Pajak">
-                        </datalist>
+                        <select name="category" class="w-full bg-gray-900 border border-gray-700 text-white rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-red-500 outline-none transition-all" required>
+                            <option value="">-- Pilih Akun / Kategori --</option>
+                            <optgroup label="Beban Operasional">
+                                <option value="Harga Pokok Penjualan (HPP) (5-101)">Harga Pokok Penjualan (HPP) (5-101)</option>
+                                <option value="Beban Gaji (5-102)">Beban Gaji (5-102)</option>
+                                <option value="Beban Sewa (5-103)">Beban Sewa (5-103)</option>
+                                <option value="Beban Perlengkapan/Peralatan (5-104)">Beban Perlengkapan/Peralatan (5-104)</option>
+                                <option value="Beban Penyusutan (5-105)">Beban Penyusutan (5-105)</option>
+                                <option value="Beban Listrik, Air & Telepon (5-106)">Beban Listrik, Air & Telepon (5-106)</option>
+                                <option value="Beban Iklan (5-107)">Beban Iklan (5-107)</option>
+                                <option value="Beban Lain-Lain (5-108)">Beban Lain-Lain (5-108)</option>
+                            </optgroup>
+                            <optgroup label="Liabilitas (Utang)">
+                                <option value="Utang Usaha/Dagang (2-101)">Penyelesaian Utang Usaha (2-101)</option>
+                                <option value="Utang Gaji (2-102)">Penyelesaian Utang Gaji (2-102)</option>
+                                <option value="Utang Pajak (2-103)">Pembayaran Utang Pajak (2-103)</option>
+                                <option value="Utang Bank (2-201)">Angsuran Utang Bank (2-201)</option>
+                            </optgroup>
+                            <optgroup label="Aset & Ekuitas">
+                                <option value="Persediaan Barang Dagang (1-104)">Pembelian Persediaan Barang (1-104)</option>
+                                <option value="Perlengkapan (1-105)">Pembelian Perlengkapan (1-105)</option>
+                                <option value="Peralatan (1-204)">Pembelian Peralatan (1-204)</option>
+                                <option value="Prive (3-102)">Prive / Penarikan (3-102)</option>
+                            </optgroup>
+                        </select>
                     </div>
 
                     <div class="space-y-1.5">
@@ -371,7 +403,27 @@
                         </div>
                         <div class="space-y-1.5">
                             <label class="text-[10px] font-bold text-gray-400 uppercase tracking-widest pl-1">Kategori</label>
-                            <input type="text" name="category" x-model="editTrx.category" :list="editTrx.type === 'in' ? 'cat-in' : 'cat-out'" class="w-full bg-gray-900 border border-gray-700 text-white rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all" required>
+                            <select name="category" x-model="editTrx.category" class="w-full bg-gray-900 border border-gray-700 text-white rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all" required>
+                                <option value="">-- Pilih Akun / Kategori --</option>
+                                <optgroup label="Pemasukan">
+                                    <option value="Pendapatan Usaha/Penjualan (4-101)">Pendapatan Usaha/Penjualan (4-101)</option>
+                                    <option value="Pendapatan Jasa (4-102)">Pendapatan Jasa (4-102)</option>
+                                    <option value="Piutang Usaha (1-103)">Piutang Usaha (1-103)</option>
+                                    <option value="Modal Pemilik (3-101)">Modal Pemilik (3-101)</option>
+                                </optgroup>
+                                <optgroup label="Pengeluaran">
+                                    <option value="Harga Pokok Penjualan (HPP) (5-101)">Harga Pokok Penjualan (HPP) (5-101)</option>
+                                    <option value="Beban Gaji (5-102)">Beban Gaji (5-102)</option>
+                                    <option value="Beban Sewa (5-103)">Beban Sewa (5-103)</option>
+                                    <option value="Beban Perlengkapan/Peralatan (5-104)">Beban Perlengkapan/Peralatan (5-104)</option>
+                                    <option value="Beban Penyusutan (5-105)">Beban Penyusutan (5-105)</option>
+                                    <option value="Beban Listrik, Air & Telepon (5-106)">Beban Listrik, Air & Telepon (5-106)</option>
+                                    <option value="Beban Iklan (5-107)">Beban Iklan (5-107)</option>
+                                    <option value="Beban Lain-Lain (5-108)">Beban Lain-Lain (5-108)</option>
+                                    <option value="Utang Usaha/Dagang (2-101)">Utang Usaha/Dagang (2-101)</option>
+                                    <option value="Persediaan Barang Dagang (1-104)">Persediaan Barang Dagang (1-104)</option>
+                                </optgroup>
+                            </select>
                         </div>
                     </div>
                     

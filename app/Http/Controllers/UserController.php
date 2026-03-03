@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Models\Branch;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Spatie\Permission\Models\Role;
@@ -11,7 +12,7 @@ class UserController extends Controller
 {
     public function index()
     {
-        $users = User::with('roles')->get();
+        $users = User::with(['roles', 'branch'])->get();
         $requestedRoles = ['Executive', 'Manager', 'Supervisor', 'Staff', 'Operator Produksi', 'Sales/Marketing', 'Admin', 'Security', 'Driver'];
         $roles = Role::whereIn('name', $requestedRoles)->get();
 
@@ -30,8 +31,9 @@ class UserController extends Controller
         $requestedRoles = ['Executive', 'Manager', 'Supervisor', 'Staff', 'Operator Produksi', 'Sales/Marketing', 'Admin', 'Security', 'Driver'];
         $roles = Role::whereIn('name', $requestedRoles)->get();
         $departments = ['All', 'Produksi', 'Marketing', 'Digital Marketing', 'Keuangan', 'HRD & GA', 'Warehouse/Logistik', 'IT Support'];
+        $branches = Branch::where('is_active', true)->get();
 
-        return view('pages.users.create', compact('roles', 'departments'))
+        return view('pages.users.create', compact('roles', 'departments', 'branches'))
             ->with('activePage', 'users');
     }
 
@@ -43,6 +45,7 @@ class UserController extends Controller
             'password' => 'required|string|min:6|confirmed',
             'department' => 'required|string',
             'role' => 'required|exists:roles,name',
+            'branch_id' => 'nullable|exists:branches,id',
         ]);
 
         $user = \App\Models\User::create([
@@ -50,6 +53,7 @@ class UserController extends Controller
             'email' => $validated['email'],
             'password' => \Illuminate\Support\Facades\Hash::make($validated['password']),
             'department' => $validated['department'],
+            'branch_id' => $validated['branch_id'] ?? null,
         ]);
 
         $user->assignRole($validated['role']);
@@ -62,6 +66,7 @@ class UserController extends Controller
             'phone' => '-', // Default phone
             'position' => ucfirst(str_replace('_', ' ', $validated['role'])),
             'department' => ucfirst($validated['department']),
+            'branch_id' => $validated['branch_id'] ?? null,
             'join_date' => now()->toDateString(),
             'basic_salary' => 0,
             'status' => 'active',
@@ -75,8 +80,9 @@ class UserController extends Controller
         $requestedRoles = ['Executive', 'Manager', 'Supervisor', 'Staff', 'Operator Produksi', 'Sales/Marketing', 'Admin', 'Security', 'Driver'];
         $roles = Role::whereIn('name', $requestedRoles)->get();
         $departments = ['All', 'Produksi', 'Marketing', 'Digital Marketing', 'Keuangan', 'HRD & GA', 'Warehouse/Logistik', 'IT Support'];
+        $branches = Branch::where('is_active', true)->get();
 
-        return view('pages.users.edit', compact('user', 'roles', 'departments'))
+        return view('pages.users.edit', compact('user', 'roles', 'departments', 'branches'))
             ->with('activePage', 'users');
     }
 
@@ -88,12 +94,14 @@ class UserController extends Controller
             'password' => 'nullable|string|min:6|confirmed',
             'department' => 'required|string',
             'role' => 'required|exists:roles,name',
+            'branch_id' => 'nullable|exists:branches,id',
         ]);
 
         $user->update([
             'name' => $validated['name'],
             'email' => $validated['email'],
             'department' => $validated['department'],
+            'branch_id' => $validated['branch_id'] ?? null,
         ]);
 
         if (!empty($validated['password'])) {

@@ -120,6 +120,22 @@
                         <i data-lucide="chevron-down" class="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none"></i>
                     </div>
                 </div>
+
+                <div class="space-y-2">
+                    <label class="text-xs font-bold text-gray-400 uppercase tracking-wider flex justify-between">
+                        <span>Penempatan (Cabang/Lokasi)</span>
+                    </label>
+                    <div class="relative">
+                        <i data-lucide="map-pin" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500"></i>
+                        <select name="branch_id" class="w-full bg-gray-900/50 border border-gray-700 text-white rounded-lg pl-10 pr-10 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all focus:bg-gray-900 appearance-none cursor-pointer">
+                            <option value="" {{ old('branch_id') ? '' : 'selected' }}>Pusat (Tidak ada cabang)</option>
+                            @foreach($branches as $branch)
+                            <option value="{{ $branch->id }}" {{ old('branch_id') == $branch->id ? 'selected' : '' }} class="capitalize">{{ $branch->name }}</option>
+                            @endforeach
+                        </select>
+                        <i data-lucide="chevron-down" class="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none"></i>
+                    </div>
+                </div>
             </div>
 
             <div class="flex items-center gap-3 pt-6 border-t border-gray-700/50">

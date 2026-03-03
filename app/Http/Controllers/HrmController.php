@@ -6,6 +6,9 @@ use App\Models\Employee;
 use App\Models\Attendance;
 use App\Models\Payroll;
 use App\Models\HrmSetting;
+use App\Models\CashTransaction;
+use App\Models\JournalEntry;
+use App\Models\Account;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use App\Events\AttendanceRecorded;
@@ -198,11 +201,54 @@ class HrmController extends Controller
 
         $validated['net_salary'] = $payroll->basic_salary + $validated['allowance'] - $validated['deduction'];
         
-        if ($validated['status'] === 'paid' && $payroll->status !== 'paid') {
+        $statusChangedToPaid = ($validated['status'] === 'paid' && $payroll->status !== 'paid');
+
+        if ($statusChangedToPaid) {
             $validated['paid_at'] = now();
         }
 
         $payroll->update($validated);
+
+        if ($statusChangedToPaid) {
+            $payroll->load('employee');
+            
+            // 1. Record Cash Out
+            CashTransaction::create([
+                'date' => Carbon::now(),
+                'type' => 'out',
+                'category' => 'Payroll',
+                'amount' => $payroll->net_salary,
+                'description' => "Pembayaran Gaji Karyawan {$payroll->employee->name} Periode " . Carbon::createFromDate($payroll->period_year, $payroll->period_month)->format('M Y'),
+                'reference' => 'PAYROLL-' . $payroll->id,
+                'user_id' => auth()->id() ?? 1,
+            ]);
+
+            // 2. Journal Entry
+            $gajiAccount = Account::where('code', '6001')->first();
+            $kasAccount = Account::where('code', '1001')->first();
+
+            if ($gajiAccount && $kasAccount) {
+                $journalEntry = JournalEntry::create([
+                    'date' => Carbon::now(),
+                    'reference' => 'PAYROLL-' . $payroll->id,
+                    'description' => "Pembayaran Gaji Karyawan {$payroll->employee->name}",
+                ]);
+
+                // Debit: Biaya Gaji (6001), Credit: Kas (1001)
+                $journalEntry->items()->createMany([
+                    [
+                        'account_id' => $gajiAccount->id,
+                        'debit' => $payroll->net_salary,
+                        'credit' => 0,
+                    ],
+                    [
+                        'account_id' => $kasAccount->id,
+                        'debit' => 0,
+                        'credit' => $payroll->net_salary,
+                    ]
+                ]);
+            }
+        }
 
         return back()->with('success', 'Payroll berhasil diperbarui');
     }
