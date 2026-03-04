@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
-@section('title', 'Data Penjahit')
-@section('breadcrumb', 'Data Penjahit')
+@section('title', 'Data Proses Produksi')
+@section('breadcrumb', 'Data Proses Produksi')
 
 @section('content')
 <div class="space-y-6" x-data="tailorsPage()">
@@ -50,7 +50,7 @@
                 <input type="text" x-model="searchQuery" class="w-full bg-gray-900 border border-gray-700 text-white rounded-lg pl-10 pr-4 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all placeholder-gray-500" placeholder="Cari penjahit...">
             </div>
             <button @click="openAddModal" class="flex items-center justify-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm font-medium transition-colors shadow-sm shadow-indigo-600/20 w-full sm:w-auto">
-                <i data-lucide="plus" class="w-4 h-4"></i> Tambah Penjahit
+                <i data-lucide="plus" class="w-4 h-4"></i> Tambah Proses Produksi
             </button>
         </div>
 
@@ -113,7 +113,7 @@
             <div class="px-5 py-4 border-b border-gray-700/50 flex items-center justify-between">
                 <h3 class="font-bold text-white flex items-center gap-2">
                     <i data-lucide="scissors" class="w-5 h-5 text-indigo-400"></i>
-                    <span x-text="modals.mode === 'add' ? 'Tambah Penjahit' : 'Edit Penjahit'"></span>
+                    <span x-text="modals.mode === 'add' ? 'Tambah Proses Produksi' : 'Edit Proses Produksi'"></span>
                 </h3>
                 <button @click="modals.show = false" class="text-gray-400 hover:text-white transition-colors"><i data-lucide="x" class="w-5 h-5"></i></button>
             </div>

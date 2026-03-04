@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
-@section('title', 'Monitor Vendor Penjahit')
-@section('breadcrumb', 'Monitor Penjahit')
+@section('title', 'Monitor Proses Produksi')
+@section('breadcrumb', 'Monitor Proses Produksi')
 
 @section('content')
 <div class="space-y-6">
