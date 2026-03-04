@@ -65,14 +65,9 @@ class PosController extends Controller
 
                 // Validate Redeem Code if provided
                 if (!empty($validated['redeem_code'])) {
-                    $customer = Customer::findOrFail($validated['customer_id']);
-                    if (!$customer->hasCompletedPurchase()) {
-                        throw new \Exception('This redeem code is only available for returning customers with previous purchases.');
-                    }
-
                     $redeemCode = RedeemCode::where('code', $validated['redeem_code'])->lockForUpdate()->first();
                     if (!$redeemCode || !$redeemCode->isValid($validated['customer_id'])) {
-                        throw new \Exception('Invalid, expired, or fully used redeem code.');
+                        throw new \Exception('Kode redeem tidak valid atau tidak memenuhi syarat.');
                     }
                 }
 
@@ -158,10 +153,10 @@ class PosController extends Controller
                 ]);
 
                 // 6. Record Journal Entry
-                $kasAccount = Account::where('code', '1001')->first();
-                $pendapatanAccount = Account::where('code', '4001')->first();
-                $hppAccount = Account::where('code', '5001')->first();
-                $persediaanAccount = Account::where('code', '1201')->first();
+                $kasAccount = Account::where('code', '1-101')->first();
+                $pendapatanAccount = Account::where('code', '4-101')->first();
+                $hppAccount = Account::where('code', '5-101')->first();
+                $persediaanAccount = Account::where('code', '1-104')->first();
 
                 if ($kasAccount && $pendapatanAccount && $hppAccount && $persediaanAccount) {
                     $journalEntry = JournalEntry::create([

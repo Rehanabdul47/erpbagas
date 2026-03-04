@@ -539,6 +539,12 @@ document.addEventListener('alpine:init', () => {
         applyRedeemCode() {
             if (!this.redeemCodeInput.trim()) return;
             
+            if (!this.customerId) {
+                this.redeemStatus = 'error';
+                this.redeemMsg = 'Pilih pelanggan terlebih dahulu.';
+                return;
+            }
+
             this.redeemStatus = 'loading';
             this.redeemMsg = 'Memvalidasi kode...';
 
@@ -546,6 +552,7 @@ document.addEventListener('alpine:init', () => {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    'Accept': 'application/json',
                     'X-CSRF-TOKEN': "{{ csrf_token() }}"
                 },
                 body: JSON.stringify({ 
@@ -567,9 +574,10 @@ document.addEventListener('alpine:init', () => {
                 this.$nextTick(() => { if (window.lucide) lucide.createIcons(); });
             })
             .catch(err => {
+                console.error('POS Redeem Error:', err);
                 this.appliedRedeemCode = null;
                 this.redeemStatus = 'error';
-                this.redeemMsg = 'Koneksi server terputus.';
+                this.redeemMsg = 'Gagal memvalidasi kode. Cek koneksi atau pastikan customer sudah dipilih.';
             });
         },
 
@@ -620,7 +628,10 @@ document.addEventListener('alpine:init', () => {
 
             fetch("{{ route('pos.checkout') }}", {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
                 body: JSON.stringify(data)
             })
             .then(res => res.json())
@@ -664,7 +675,10 @@ document.addEventListener('alpine:init', () => {
 
             fetch("{{ route('pos.customer.store') }}", {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
                 body: JSON.stringify({
                     name: this.custForm.name,
                     email: this.custForm.email,

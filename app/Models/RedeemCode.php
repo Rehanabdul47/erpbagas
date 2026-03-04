@@ -12,6 +12,8 @@ class RedeemCode extends Model
         'value',
         'max_uses',
         'max_uses_per_customer',
+        'only_new_customer',
+        'only_returning_customer',
         'used_count',
         'valid_from',
         'valid_until',
@@ -23,6 +25,8 @@ class RedeemCode extends Model
         'valid_from' => 'date',
         'valid_until' => 'date',
         'is_active' => 'boolean',
+        'only_new_customer' => 'boolean',
+        'only_returning_customer' => 'boolean',
     ];
 
     public function sales()
@@ -56,8 +60,24 @@ class RedeemCode extends Model
             return false;
         }
 
-        if ($this->valid_until && $now->gt($this->valid_until)) {
+        if ($this->valid_until && $now->gt($this->valid_until->endOfDay())) {
             return false;
+        }
+
+        // New vs Returning logic
+        if ($customerId) {
+            $customer = Customer::find($customerId);
+            if ($customer) {
+                $hasPurchased = $customer->hasCompletedPurchase();
+                
+                if ($this->only_new_customer && $hasPurchased) {
+                    return false; // Customer is NOT a new customer
+                }
+                
+                if ($this->only_returning_customer && !$hasPurchased) {
+                    return false; // Customer is NOT a returning customer
+                }
+            }
         }
 
         return true;

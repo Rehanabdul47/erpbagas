@@ -70,7 +70,47 @@ class CashController extends Controller
 
         $validated['user_id'] = auth()->id();
 
-        CashTransaction::create($validated);
+        $transaction = CashTransaction::create($validated);
+
+        // Record Journal Entry
+        $kasAccount = \App\Models\Account::where('code', '1-101')->first();
+        
+        // Try to extract account code from category string like "Beban Gaji (5-102)"
+        $otherAccount = null;
+        if (preg_match('/\((.*?)\)/', $validated['category'], $matches)) {
+            $otherAccount = \App\Models\Account::where('code', $matches[1])->first();
+        }
+
+        // Fallback to default if not found or couldn't parse
+        if (!$otherAccount) {
+            $otherAccountCode = $validated['type'] === 'in' ? '4-102' : '5-108';
+            $otherAccount = \App\Models\Account::where('code', $otherAccountCode)->first();
+        }
+
+        if ($kasAccount && $otherAccount) {
+            $journalEntry = \App\Models\JournalEntry::create([
+                'date' => $validated['date'],
+                'reference' => $validated['reference'] ?? 'CASH-' . $transaction->id,
+                'description' => "Transaksi Kas: " . $validated['description'],
+            ]);
+
+            if ($validated['type'] === 'in') {
+                // In: Debit Kas, Credit Other
+                $journalEntry->items()->createMany([
+                    ['account_id' => $kasAccount->id, 'debit' => $validated['amount'], 'credit' => 0],
+                    ['account_id' => $otherAccount->id, 'debit' => 0, 'credit' => $validated['amount']],
+                ]);
+            } else {
+                // Out: Debit Other, Credit Kas
+                $journalEntry->items()->createMany([
+                    ['account_id' => $otherAccount->id, 'debit' => $validated['amount'], 'credit' => 0],
+                    ['account_id' => $kasAccount->id, 'debit' => 0, 'credit' => $validated['amount']],
+                ]);
+            }
+            
+            // Link them
+            $transaction->update(['reference' => $journalEntry->id]); // Using reference to store ID for simple tracking
+        }
 
         $typeLabel = $validated['type'] === 'in' ? 'Kas Masuk' : 'Kas Keluar';
         return redirect()->route('finance.index')->with('success', "Transaksi {$typeLabel} berhasil dicatat");

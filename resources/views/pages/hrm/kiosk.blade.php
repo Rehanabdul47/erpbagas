@@ -72,8 +72,21 @@
             <div class="absolute -inset-1 bg-gradient-to-r from-indigo-500 to-fuchsia-500 rounded-[2.2rem] blur opacity-25 group-hover:opacity-40 transition duration-700"></div>
             <div class="relative bg-black rounded-[2rem] border-2 border-white/10 shadow-2xl overflow-hidden">
                 <div id="reader" class="w-full aspect-[4/3] bg-black"></div>
+                
+                <!-- Camera Missing/Permission Overlay -->
+                <div x-show="!cameraActive" class="absolute inset-0 bg-slate-950/90 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center z-[60]">
+                    <div class="w-16 h-16 bg-indigo-500/10 text-indigo-400 rounded-full flex items-center justify-center mb-4">
+                        <i data-lucide="camera-off" class="w-8 h-8"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-white mb-2">Kamera Tidak Aktif</h3>
+                    <p class="text-xs text-slate-400 mb-6 leading-relaxed">System memerlukan akses kamera untuk pemindaian QR dan verifikasi foto wajah.</p>
+                    <button @click="initScanner()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-lg shadow-indigo-500/20 active:scale-95 flex items-center gap-2">
+                        <i data-lucide="video" class="w-4 h-4"></i> Izinkan Akses Kamera
+                    </button>
+                </div>
+
                 <div class="absolute bottom-3 left-1/2 -translate-x-1/2 bg-black/60 text-white px-5 py-2 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-2 backdrop-blur-md border border-white/10 z-50">
-                    <span class="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-ping"></span>
+                    <span class="w-1.5 h-1.5 rounded-full animate-ping" :class="cameraActive ? 'bg-indigo-500' : 'bg-red-500'"></span>
                     <span x-text="cameraStatus">Initializing...</span>
                 </div>
             </div>
@@ -199,6 +212,7 @@
                 timeString: '00:00:00',
                 dateString: 'Memuat...',
                 cameraStatus: 'Menginisialisasi...',
+                cameraActive: false,
                 nip: '',
                 isProcessing: false,
                 isCountdown: false,
@@ -236,6 +250,7 @@
                 },
 
                 async initScanner() {
+                    this.cameraStatus = "Meminta Akses...";
                     try {
                         const html5QrCode = new Html5Qrcode("reader");
                         const config = { fps: 10, qrbox: { width: 250, height: 250 } };
@@ -250,9 +265,19 @@
                             }
                         );
                         this.cameraStatus = "QR Scanner Aktif";
+                        this.cameraActive = true;
                     } catch (err) {
                         console.error("Error starting scanner:", err);
-                        this.cameraStatus = "Kamera Tidak Terdeteksi";
+                        this.cameraActive = false;
+                        if (err.name === 'NotAllowedError' || err === 'NotAllowedError') {
+                            this.cameraStatus = "Akses Kamera Ditolak";
+                        } else if (err.name === 'NotFoundError' || err === 'NotFoundError') {
+                            this.cameraStatus = "Kamera Tidak Ditemukan";
+                        } else {
+                            this.cameraStatus = "Error Kamera";
+                        }
+                    } finally {
+                        this.$nextTick(() => lucide.createIcons());
                     }
                 },
 

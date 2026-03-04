@@ -25,6 +25,8 @@ class RedeemCodeController extends Controller
             'valid_from' => 'nullable|date',
             'valid_until' => 'nullable|date|after_or_equal:valid_from',
             'description' => 'nullable|string',
+            'only_new_customer' => 'boolean',
+            'only_returning_customer' => 'boolean',
         ]);
 
         RedeemCode::create($validated);
@@ -42,7 +44,9 @@ class RedeemCodeController extends Controller
             'valid_from' => 'nullable|date',
             'valid_until' => 'nullable|date|after_or_equal:valid_from',
             'description' => 'nullable|string',
-            'is_active' => 'boolean'
+            'is_active' => 'boolean',
+            'only_new_customer' => 'boolean',
+            'only_returning_customer' => 'boolean',
         ]);
 
         $redeemCode->update($validated);
@@ -64,19 +68,41 @@ class RedeemCodeController extends Controller
 
         $customer = Customer::find($request->customer_id);
         
-        if (!$customer->hasCompletedPurchase()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'This redeem code is only available for returning customers with previous purchases.'
-            ], 403);
-        }
-
         $code = RedeemCode::where('code', $request->code)->first();
 
         if (!$code || !$code->isValid($request->customer_id)) {
+            $msg = 'Kode redeem tidak valid, kedaluwarsa, atau sudah habis.';
+            
+            // Provide more specific feedback if possible
+            if ($code) {
+                // Check usage limit per customer first if customer exists
+                $userUsage = 0;
+                if ($customer) {
+                    $userUsage = Sale::where('customer_id', $customer->id)
+                        ->where('redeem_code_id', $code->id)
+                        ->count();
+                }
+
+                if (!$code->is_active) {
+                    $msg = 'Kode redeem ini sudah tidak aktif.';
+                } elseif ($code->max_uses > 0 && $code->used_count >= $code->max_uses) {
+                    $msg = 'Kuota penggunaan kode redeem ini sudah habis.';
+                } elseif ($code->max_uses_per_customer > 0 && $userUsage >= $code->max_uses_per_customer) {
+                    $msg = 'Anda sudah pernah menggunakan kode redeem ini.';
+                } elseif ($code->only_new_customer && $customer->hasCompletedPurchase()) {
+                    $msg = 'Kode ini hanya berlaku untuk pelanggan baru.';
+                } elseif ($code->only_returning_customer && !$customer->hasCompletedPurchase()) {
+                    $msg = 'Kode ini hanya berlaku untuk pelanggan setia (pernah belanja).';
+                } elseif ($code->valid_until && now()->gt($code->valid_until->endOfDay())) {
+                    $msg = 'Kode redeem ini sudah kedaluwarsa.';
+                } elseif ($code->valid_from && now()->lt($code->valid_from)) {
+                    $msg = 'Kode redeem ini belum dapat digunakan.';
+                }
+            }
+
             return response()->json([
                 'success' => false,
-                'message' => 'Invalid, expired, or fully used redeem code.'
+                'message' => $msg
             ], 404);
         }
 

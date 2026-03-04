@@ -224,8 +224,8 @@ class HrmController extends Controller
             ]);
 
             // 2. Journal Entry
-            $gajiAccount = Account::where('code', '6001')->first();
-            $kasAccount = Account::where('code', '1001')->first();
+            $gajiAccount = Account::where('code', '5-102')->first();
+            $kasAccount = Account::where('code', '1-101')->first();
 
             if ($gajiAccount && $kasAccount) {
                 $journalEntry = JournalEntry::create([

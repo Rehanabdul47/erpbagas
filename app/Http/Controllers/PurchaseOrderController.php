@@ -127,8 +127,8 @@ class PurchaseOrderController extends Controller
                 ]);
 
                 // 2. Journal Entry
-                $persediaanAccount = Account::where('code', '1201')->first();
-                $kasAccount = Account::where('code', '1001')->first();
+                $persediaanAccount = Account::where('code', '1-104')->first();
+                $kasAccount = Account::where('code', '1-101')->first();
 
                 if ($persediaanAccount && $kasAccount) {
                     $journalEntry = JournalEntry::create([

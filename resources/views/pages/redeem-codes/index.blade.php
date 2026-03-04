@@ -65,6 +65,7 @@
                                 <div><span class="text-gray-500 mr-1">Hingga:</span> {{ $code->valid_until ? $code->valid_until->format('d M Y') : 'Selamanya' }}</div>
                             </div>
                         </td>
+
                         <td class="px-5 py-3">
                             @if($code->isValid())
                                 <span class="px-2.5 py-1 flex w-fit rounded-full text-[10px] font-bold border bg-emerald-500/10 text-emerald-400 border-emerald-500/20">Aktif</span>
@@ -168,6 +169,8 @@
                         </div>
                     </div>
                     
+
+
                     <div class="space-y-1.5">
                         <label class="text-xs font-semibold text-gray-400 uppercase tracking-wider block">Deskripsi</label>
                         <textarea name="description" x-model="form.description" class="w-full bg-gray-900 border border-gray-700 text-white rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all" rows="2" placeholder="Keterangan singkat kode promo"></textarea>
