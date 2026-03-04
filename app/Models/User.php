@@ -43,7 +43,7 @@ class User extends Authenticatable
 
     public function isManager(): bool
     {
-        return $this->hasRole(['Manager', 'SuperAdmin', 'Executive']);
+        return $this->hasRole(['Manager', 'Executive']);
     }
 
     public function branch()

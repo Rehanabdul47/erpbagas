@@ -31,12 +31,14 @@ class FinanceReportController extends Controller
         $totalLiabilities = $liabilities->sum('period_balance');
         $totalEquityBase = $equities->sum('period_balance');
 
-        // Retained Earnings (Laba Ditahan) = All time Revenue - All time Expense up to end date
-        $allRevenues = $this->getAccountBalances('revenue', null, $endDate);
-        $allExpenses = $this->getAccountBalances('expense', null, $endDate);
-        $retainedEarnings = $allRevenues->sum('period_balance') - $allExpenses->sum('period_balance');
+        // Laba Ditahan (Retained Earnings) percentage from settings, default 40%
+        $rePercentage = \App\Models\Setting::where('key', 'finance_retained_earnings_percentage')->value('value') ?? 40;
+        $rePercentage = (float) $rePercentage / 100;
         
-        $totalEquity = $totalEquityBase + $retainedEarnings;
+        $retainedEarnings = $netIncome * $rePercentage;
+        $currentEarnings = $netIncome * (1 - $rePercentage);
+        
+        $totalEquity = $totalEquityBase + $retainedEarnings + $currentEarnings;
 
         // 3. Arus Kas (Cash Flow) - simplified
         $cashAccount = Account::where('code', '1-101')->first();
@@ -76,9 +78,9 @@ class FinanceReportController extends Controller
         return view('pages.finance.reports.index', compact(
             'month', 'startDate', 'endDate',
             'revenues', 'expenses', 'totalRevenue', 'totalExpense', 'netIncome',
-            'assets', 'liabilities', 'equities', 'totalAssets', 'totalLiabilities', 'totalEquityBase', 'retainedEarnings', 'totalEquity',
+            'assets', 'liabilities', 'equities', 'totalAssets', 'totalLiabilities', 'totalEquityBase', 'retainedEarnings', 'currentEarnings', 'totalEquity',
             'cashInitial', 'cashInflow', 'cashOutflow', 'cashEnding',
-            'beginningEquity', 'prive', 'endingEquity'
+            'beginningEquity', 'prive', 'endingEquity', 'rePercentage'
         ))->with('activePage', 'reports');
     }
 

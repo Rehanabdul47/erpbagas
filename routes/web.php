@@ -177,4 +177,5 @@ Route::middleware('auth')->group(function () {
     });
 
     Route::get('/settings', fn() => view('pages.settings', ['activePage' => 'settings']))->name('settings');
+    Route::post('/settings', [\App\Http\Controllers\SettingController::class, 'update'])->name('settings.update');
 });

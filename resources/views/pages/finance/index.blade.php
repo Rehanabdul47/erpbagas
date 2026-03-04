@@ -8,6 +8,8 @@
     showModalIn: false,
     showModalOut: false,
     showModalEdit: false,
+    showModalSettings: false,
+    rePercentage: {{ $rePercentage }},
     editTrx: { id: '', date: '', category: '', amount: '', description: '', reference: '', type: '' },
     method: 'Tunai',
     openEditModal(trx) {
@@ -95,6 +97,9 @@
                 <a href="{{ route('finance.reports', ['month' => $month]) }}" class="flex items-center justify-center gap-2 px-4 py-2 bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500 hover:text-white rounded-lg text-sm font-medium transition-colors border border-indigo-500/20">
                     <i data-lucide="bar-chart-3" class="w-4 h-4"></i> Laporan Lengkap
                 </a>
+                <button @click="showModalSettings = true" class="flex items-center justify-center gap-2 px-3 py-2 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded-lg text-sm font-medium transition-colors border border-gray-600" title="Pengaturan Persentase Laba">
+                    <i data-lucide="settings" class="w-4 h-4"></i>
+                </button>
                 <button @click="showModalIn = true" class="flex items-center justify-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-sm font-medium transition-colors shadow-sm shadow-emerald-600/20">
                     <i data-lucide="plus" class="w-4 h-4"></i> Kas Masuk
                 </button>
@@ -456,6 +461,52 @@
                     <button type="button" @click="showModalEdit = false" class="px-4 py-2 hover:bg-gray-700 text-gray-300 rounded-lg text-sm font-medium transition-colors">Batal</button>
                     <button type="submit" class="px-6 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-sm font-bold transition-all shadow-lg shadow-indigo-900/20 active:scale-95 flex items-center gap-2" :class="editTrx.type === 'out' ? 'bg-amber-600 hover:bg-amber-500' : ''">
                         <i data-lucide="refresh-cw" class="w-4 h-4"></i> Update Data
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    {{-- Modal Pengaturan Laba Ditahan --}}
+    <div x-show="showModalSettings" x-cloak style="display: none;" class="fixed inset-0 bg-gray-900/80 backdrop-blur-sm z-[150] flex items-center justify-center p-4 transition-opacity">
+        <div @click.away="showModalSettings = false" class="bg-gray-800 border border-gray-700 rounded-xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col">
+            <div class="px-5 py-4 border-b border-gray-700/50 flex items-center justify-between">
+                <h3 class="font-bold text-white flex items-center gap-2 px-2 py-1 bg-indigo-500/10 text-indigo-400 rounded-lg">
+                    <i data-lucide="settings" class="w-4 h-4"></i> Pengaturan Keuangan
+                </h3>
+                <button type="button" @click="showModalSettings = false" class="text-gray-400 hover:text-white transition-colors"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <form method="POST" action="{{ route('settings.update') }}">
+                @csrf
+                <input type="hidden" name="group" value="finance">
+                <div class="p-6 flex flex-col gap-6">
+                    <div class="space-y-3">
+                        <label class="text-sm font-bold text-gray-300">Persentase Laba Ditahan</label>
+                        <p class="text-xs text-gray-500 italic">Tentukan berapa persen dari Laba Bersih yang akan dialokasikan sebagai Laba Ditahan di Neraca.</p>
+                        <div class="relative group">
+                            <input type="number" name="finance_retained_earnings_percentage" 
+                                   x-model="rePercentage" 
+                                   class="w-full bg-gray-900 border border-gray-700 text-indigo-400 font-bold text-2xl rounded-xl pl-6 pr-12 py-4 focus:ring-2 focus:ring-indigo-500 outline-none transition-all group-hover:border-gray-600" 
+                                   min="0" max="100" step="1" required>
+                            <span class="absolute right-6 top-1/2 -translate-y-1/2 text-gray-400 font-black text-xl">%</span>
+                        </div>
+                        <div class="flex justify-between text-[10px] text-gray-500 px-2">
+                            <span>Laba Ditahan: <span class="text-indigo-400 font-bold" x-text="rePercentage + '%'"></span></span>
+                            <span>Laba Tahun Berjalan: <span class="text-emerald-400 font-bold" x-text="(100 - rePercentage) + '%'"></span></span>
+                        </div>
+                    </div>
+
+                    <div class="bg-indigo-500/5 border border-indigo-500/20 rounded-xl p-4 flex gap-4">
+                        <i data-lucide="info" class="w-5 h-5 text-indigo-400 shrink-0"></i>
+                        <p class="text-[11px] text-gray-400 leading-relaxed">
+                            Pengaturan ini akan langsung mempengaruhi tampilan pada <strong>Laporan Neraca</strong>. Sisa persentase (100% - Laba Ditahan) akan otomatis dianggap sebagai Laba Tahun Berjalan.
+                        </p>
+                    </div>
+                </div>
+                <div class="px-5 py-4 border-t border-gray-700/50 bg-gray-900/20 flex justify-end gap-3">
+                    <button type="button" @click="showModalSettings = false" class="px-4 py-2 hover:bg-gray-700 text-gray-300 rounded-lg text-sm font-medium transition-colors">Batal</button>
+                    <button type="submit" class="px-6 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-sm font-bold transition-all shadow-lg shadow-indigo-900/20 active:scale-95 flex items-center gap-2">
+                        <i data-lucide="check" class="w-4 h-4"></i> Terapkan Perubahan
                     </button>
                 </div>
             </form>

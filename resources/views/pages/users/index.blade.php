@@ -50,11 +50,32 @@
                     <input type="text" x-model="searchQuery" class="w-full bg-gray-900 border border-gray-700 text-white rounded-lg pl-10 pr-4 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all placeholder-gray-500" placeholder="Cari nama atau email...">
                 </div>
                 {{-- Role Filter --}}
-                <div class="relative w-full sm:w-48 shrink-0">
+                <div class="relative w-full sm:w-40 shrink-0">
                     <select x-model="selectedRole" class="w-full bg-gray-900 border border-gray-700 text-white rounded-lg pl-3 pr-10 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all appearance-none cursor-pointer">
                         <option value="">Semua Role</option>
                         @foreach($roles as $role)
                         <option value="{{ $role->name }}">{{ $role->name }}</option>
+                        @endforeach
+                    </select>
+                    <i data-lucide="chevron-down" class="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none"></i>
+                </div>
+                {{-- Department Filter --}}
+                <div class="relative w-full sm:w-40 shrink-0">
+                    <select x-model="selectedDepartment" class="w-full bg-gray-900 border border-gray-700 text-white rounded-lg pl-3 pr-10 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all appearance-none cursor-pointer">
+                        <option value="">Semua Dept</option>
+                        @foreach($availableDepartments as $dept)
+                        <option value="{{ $dept }}">{{ $dept }}</option>
+                        @endforeach
+                    </select>
+                    <i data-lucide="chevron-down" class="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none"></i>
+                </div>
+                {{-- Branch Filter --}}
+                <div class="relative w-full sm:w-40 shrink-0">
+                    <select x-model="selectedBranch" class="w-full bg-gray-900 border border-gray-700 text-white rounded-lg pl-3 pr-10 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all appearance-none cursor-pointer">
+                        <option value="">Semua Cabang</option>
+                        <option value="pusat">Pusat</option>
+                        @foreach($availableBranches as $branch)
+                        <option value="{{ $branch->id }}">{{ $branch->name }}</option>
                         @endforeach
                     </select>
                     <i data-lucide="chevron-down" class="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none"></i>
@@ -81,7 +102,7 @@
                 </thead>
                 <tbody class="divide-y divide-gray-700/50">
                     @forelse($users as $u)
-                    <tr x-show="matchUser('{{ strtolower($u->name) }}', '{{ strtolower($u->email) }}', '{{ $u->roles->first()?->name ?? '' }}')" 
+                    <tr x-show="matchUser('{{ strtolower($u->name) }}', '{{ strtolower($u->email) }}', '{{ $u->roles->first()?->name ?? '' }}', '{{ $u->department ?? '' }}', '{{ $u->branch_id ?? 'pusat' }}')" 
                         @click="openModal({{ json_encode($u->load('roles')) }})"
                         class="hover:bg-indigo-500/5 transition-colors group cursor-pointer active:bg-indigo-500/10">
                         <td class="px-5 py-3">
@@ -230,16 +251,21 @@ document.addEventListener('alpine:init', () => {
     Alpine.data('usersPage', () => ({
         searchQuery: '',
         selectedRole: '',
+        selectedDepartment: '',
+        selectedBranch: '',
         modals: {
             view: false
         },
         activeUser: null,
         
-        matchUser(name, email, role) {
+        matchUser(name, email, role, department, branchId) {
             const query = this.searchQuery.toLowerCase();
             const matchSearch = query === '' || name.includes(query) || email.includes(query);
             const matchRole = this.selectedRole === '' || role === this.selectedRole;
-            return matchSearch && matchRole;
+            const matchDept = this.selectedDepartment === '' || department === this.selectedDepartment;
+            const matchBranch = this.selectedBranch === '' || branchId === this.selectedBranch;
+            
+            return matchSearch && matchRole && matchDept && matchBranch;
         },
 
         hasMatchingUsers() {

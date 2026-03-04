@@ -51,8 +51,9 @@ class CashController extends Controller
             'monthlyOut' => $monthlyOut,
             'currentMonth' => $startDate->format('F Y'),
         ];
+        $rePercentage = \App\Models\Setting::where('key', 'finance_retained_earnings_percentage')->value('value') ?? 40;
 
-        return view('pages.finance.index', compact('transactions', 'stats', 'month'))
+        return view('pages.finance.index', compact('transactions', 'stats', 'month', 'rePercentage'))
             ->with('activePage', 'finance');
     }
 

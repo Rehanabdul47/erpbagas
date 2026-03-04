@@ -1,11 +1,12 @@
 @php
     $user = auth()->user();
-    $isMgmt = $user && $user->hasAnyRole(['Manager', 'Executive', 'SuperAdmin']);
+    $isMgmt = $user && $user->hasAnyRole(['Manager', 'Executive']);
     $dept = $user ? $user->department : null;
 
     $menuConfig = [
         ['section' => 'OVERVIEW', 'visible' => true, 'items' => [
-            ['id' => 'dashboard', 'icon' => 'layout-dashboard', 'label' => 'Dashboard', 'route' => 'dashboard', 'visible' => true],
+            ['id' => 'dashboard', 'icon' => 'layout-dashboard', 'label' => 'Dashboard', 'route' => 'dashboard', 'visible' => $isMgmt],
+            ['id' => 'kiosk', 'icon' => 'scan-line', 'label' => 'Presensi / Kiosk', 'route' => 'hrm.kiosk', 'target' => '_blank', 'visible' => true],
         ]],
         ['section' => 'DIVISI PRODUKSI', 'visible' => $isMgmt || in_array($dept, ['Produksi', 'Warehouse/Logistik']) || ($user && $user->hasRole('Operator Produksi')), 'items' => [
             ['id' => 'production-dashboard', 'icon' => 'layout-dashboard', 'label' => 'Overview Produksi', 'route' => 'production.dashboard', 'visible' => true],
@@ -35,7 +36,6 @@
         ['section' => 'DIVISI SUMBER DAYA MANUSIA', 'visible' => $isMgmt || $dept === 'HRD & GA', 'items' => [
             ['id' => 'hrm-dashboard', 'icon' => 'layout-dashboard', 'label' => 'Overview HRM', 'route' => 'hrm.dashboard', 'visible' => true],
             ['id' => 'hrm', 'icon' => 'users', 'label' => 'HRM & Payroll', 'route' => 'hrm.index', 'visible' => true],
-            ['id' => 'kiosk', 'icon' => 'scan-line', 'label' => 'Presensi', 'route' => 'hrm.kiosk', 'target' => '_blank', 'visible' => true],
         ]],
         ['section' => 'SISTEM', 'visible' => $isMgmt || ($user && $user->hasRole('Admin')), 'items' => [
             ['id' => 'branches', 'icon' => 'store', 'label' => 'Cabang / Toko', 'route' => 'branches.index', 'visible' => true],

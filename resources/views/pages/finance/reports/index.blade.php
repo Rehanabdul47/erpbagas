@@ -144,9 +144,13 @@
                                     </tr>
                                     @endif
                                 @endforeach
-                                <tr class="hover:bg-indigo-500/5 transition-colors">
-                                    <td class="px-5 py-3 flex justify-between text-gray-200"><span>Laba Ditahan</span> <span class="text-gray-500 font-mono text-xs">3-103</span></td>
-                                    <td class="px-5 py-3 text-right text-gray-200">Rp {{ number_format($retainedEarnings, 0, ',', '.') }}</td>
+                                <tr class="hover:bg-indigo-500/5 transition-colors border-t border-indigo-500/10">
+                                    <td class="px-5 py-3 flex justify-between text-gray-200 font-bold"><span>Laba Ditahan ({{ $rePercentage * 100 }}%)</span> <span class="text-gray-500 font-mono text-xs">3-103</span></td>
+                                    <td class="px-5 py-3 text-right text-gray-200 font-bold">Rp {{ number_format($retainedEarnings, 0, ',', '.') }}</td>
+                                </tr>
+                                <tr class="hover:bg-indigo-500/5 transition-colors border-t border-gray-700/30 italic">
+                                    <td class="px-5 py-3 flex justify-between text-gray-400"><span>Laba Tahun Berjalan ({{ (1 - $rePercentage) * 100 }}%)</span> <span class="text-gray-500 font-mono text-xs">-</span></td>
+                                    <td class="px-5 py-3 text-right text-gray-400">Rp {{ number_format($currentEarnings, 0, ',', '.') }}</td>
                                 </tr>
                             </tbody>
                         </table>

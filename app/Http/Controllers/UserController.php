@@ -12,9 +12,23 @@ class UserController extends Controller
 {
     public function index()
     {
-        $users = User::with(['roles', 'branch'])->get();
+        $currentUser = auth()->user();
+        $isManagement = $currentUser->hasAnyRole(['Executive', 'Manager']);
+
+        $query = User::with(['roles', 'branch']);
+        
+        // Apply branch scoping for non-management users
+        if (!$isManagement) {
+            $query->where('branch_id', $currentUser->branch_id);
+        }
+
+        $users = $query->get();
         $requestedRoles = ['Executive', 'Manager', 'Supervisor', 'Staff', 'Operator Produksi', 'Sales/Marketing', 'Admin', 'Security', 'Driver'];
         $roles = Role::whereIn('name', $requestedRoles)->get();
+
+        // Extract unique departments and branches for frontend filters based on the scoped users
+        $availableDepartments = $users->pluck('department')->filter()->unique()->values();
+        $availableBranches = $users->pluck('branch')->filter()->unique('id')->values();
 
         $stats = [
             'total' => $users->count(),
@@ -22,7 +36,7 @@ class UserController extends Controller
             'roles' => $roles->count(),
         ];
 
-        return view('pages.users.index', compact('users', 'roles', 'stats'))
+        return view('pages.users.index', compact('users', 'roles', 'stats', 'availableDepartments', 'availableBranches'))
             ->with('activePage', 'users');
     }
 
@@ -77,6 +91,11 @@ class UserController extends Controller
 
     public function edit(User $user)
     {
+        $currentUser = auth()->user();
+        if (!$currentUser->hasAnyRole(['Executive', 'Manager']) && $user->branch_id !== $currentUser->branch_id) {
+            abort(403, 'Unauthorized action. You can only edit users within your own branch.');
+        }
+
         $requestedRoles = ['Executive', 'Manager', 'Supervisor', 'Staff', 'Operator Produksi', 'Sales/Marketing', 'Admin', 'Security', 'Driver'];
         $roles = Role::whereIn('name', $requestedRoles)->get();
         $departments = ['All', 'Produksi', 'Marketing', 'Digital Marketing', 'Keuangan', 'HRD & GA', 'Warehouse/Logistik', 'IT Support'];
@@ -88,6 +107,11 @@ class UserController extends Controller
 
     public function update(Request $request, User $user)
     {
+        $currentUser = auth()->user();
+        if (!$currentUser->hasAnyRole(['Executive', 'Manager']) && $user->branch_id !== $currentUser->branch_id) {
+            abort(403, 'Unauthorized action. You can only update users within your own branch.');
+        }
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email,' . $user->id,
@@ -117,6 +141,11 @@ class UserController extends Controller
     {
         if ($user->id === auth()->id()) {
             return back()->with('error', 'Tidak bisa menghapus akun sendiri');
+        }
+
+        $currentUser = auth()->user();
+        if (!$currentUser->hasAnyRole(['Executive', 'Manager']) && $user->branch_id !== $currentUser->branch_id) {
+            abort(403, 'Unauthorized action. You can only delete users within your own branch.');
         }
 
         $name = $user->name;

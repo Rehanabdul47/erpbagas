@@ -16,6 +16,25 @@ class DashboardController extends Controller
 {
     public function index()
     {
+        $user = auth()->user();
+        
+        // Redirect non-management roles to their respective division dashboards
+        if (!$user->isManager()) {
+            switch ($user->department) {
+                case 'Produksi':
+                case 'Warehouse/Logistik':
+                    return redirect()->route('production.dashboard');
+                case 'Marketing':
+                    return redirect()->route('marketing.dashboard');
+                case 'Digital Marketing':
+                    return redirect()->route('digital-marketing.dashboard');
+                case 'Keuangan':
+                    return redirect()->route('finance.dashboard');
+                case 'HRD & GA':
+                    return redirect()->route('hrm.dashboard');
+            }
+        }
+
         $today = Carbon::today();
 
         // 1. Sales & E-commerce Revenue Today
