@@ -30,7 +30,7 @@
     @endif
 
     {{-- Stats --}}
-    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6 mb-6">
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 mb-6">
         <div class="bg-gray-800 border-b-4 border-indigo-500 border-x border-t border-gray-700/50 rounded-xl p-5 shadow-sm">
             <div class="w-10 h-10 rounded-lg bg-indigo-500/10 text-indigo-400 flex items-center justify-center mb-4"><i data-lucide="scissors" class="w-5 h-5"></i></div>
             <div class="text-3xl font-bold text-white mb-1">{{ collect($tailors)->count() }}</div>
@@ -40,6 +40,11 @@
             <div class="w-10 h-10 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center mb-4"><i data-lucide="package" class="w-5 h-5"></i></div>
             <div class="text-3xl font-bold text-white mb-1">{{ collect($tailors)->sum('productions_count') }}</div>
             <div class="text-gray-400 text-sm">Total Produksi Aktif Dikerjakan</div>
+        </div>
+        <div class="bg-gray-800 border-b-4 border-amber-500 border-x border-t border-gray-700/50 rounded-xl p-5 shadow-sm sm:col-span-2 md:col-span-1">
+            <div class="w-10 h-10 rounded-lg bg-amber-500/10 text-amber-400 flex items-center justify-center mb-4"><i data-lucide="wallet" class="w-5 h-5"></i></div>
+            <div class="text-3xl font-bold text-white mb-1">Rp {{ number_format(collect($tailors)->sum('active_cost'), 0, ',', '.') }}</div>
+            <div class="text-gray-400 text-sm">Estimasi Total Tagihan Aktif</div>
         </div>
     </div>
 
@@ -57,7 +62,7 @@
         <div class="overflow-x-auto w-full border border-gray-700/50 rounded-lg">
             <table class="w-full text-left text-sm whitespace-nowrap">
                 <thead class="bg-gray-900/50 text-gray-400 text-xs uppercase tracking-wider border-b border-gray-700/50">
-                    <tr><th class="px-5 py-3 font-medium">Nama Vendor</th><th class="px-5 py-3 font-medium">No. Telepon</th><th class="px-5 py-3 font-medium">Alamat</th><th class="px-5 py-3 font-medium">Produksi Aktif</th><th class="px-5 py-3 font-medium text-right">Aksi</th></tr>
+                    <tr><th class="px-5 py-3 font-medium">Nama Vendor</th><th class="px-5 py-3 font-medium">No. Telepon</th><th class="px-5 py-3 font-medium">Alamat</th><th class="px-5 py-3 font-medium">Produksi Aktif</th><th class="px-5 py-3 font-medium">Estimasi Tagihan</th><th class="px-5 py-3 font-medium text-right">Aksi</th></tr>
                 </thead>
                 <tbody class="divide-y divide-gray-700/50">
                     @forelse($tailors as $tailor)
@@ -76,6 +81,13 @@
                             <span class="px-2.5 py-1 flex w-fit rounded-full text-xs font-bold border {{ $tailor->productions_count > 0 ? 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20' : 'bg-gray-500/10 text-gray-400 border-gray-500/20' }}">
                                 {{ $tailor->productions_count }} Pesanan
                             </span>
+                        </td>
+                        <td class="px-5 py-3">
+                            @if($tailor->active_cost > 0)
+                                <span class="font-bold text-amber-400">Rp {{ number_format($tailor->active_cost, 0, ',', '.') }}</span>
+                            @else
+                                <span class="text-gray-500">-</span>
+                            @endif
                         </td>
                         <td class="px-5 py-3 text-right">
                             <div class="flex items-center justify-end gap-2 opacity-50 group-hover:opacity-100 transition-opacity">

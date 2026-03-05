@@ -44,9 +44,17 @@
                                 </div>
                             </div>
                         </div>
-                        <span class="px-2.5 py-1 rounded-full text-xs font-bold border {{ $tailor->productions->count() > 0 ? 'bg-amber-500/10 text-amber-500 border-amber-500/20' : 'bg-gray-500/10 text-gray-400 border-gray-500/20' }}">
-                            {{ $tailor->productions->count() }} Aktif
-                        </span>
+                        <div class="flex flex-col items-end">
+                            <span class="px-2.5 py-1 mb-2 rounded-full text-xs font-bold border {{ $tailor->productions->count() > 0 ? 'bg-amber-500/10 text-amber-500 border-amber-500/20' : 'bg-gray-500/10 text-gray-400 border-gray-500/20' }}">
+                                {{ $tailor->productions->count() }} Aktif
+                            </span>
+                            @php
+                                $totalTagihan = $tailor->productions->sum(function($p) { return $p->cost * $p->quantity; });
+                            @endphp
+                            @if($totalTagihan > 0)
+                            <div class="text-[10px] text-gray-400">Total Tagihan: <span class="text-emerald-400 font-bold">Rp {{ number_format($totalTagihan, 0, ',', '.') }}</span></div>
+                            @endif
+                        </div>
                     </div>
 
                     <!-- Active Productions List -->
@@ -58,9 +66,16 @@
                                         <div class="font-bold text-sm text-white">{{ $production->product->name }}</div>
                                         <div class="text-xs font-mono text-indigo-400 mt-0.5">#{{ $production->id }}</div>
                                     </div>
-                                    <span class="px-2 py-0.5 bg-gray-800 border border-gray-700 rounded text-xs text-gray-300 font-medium">
-                                        {{ $production->quantity }} unit
-                                    </span>
+                                    <div class="flex flex-col items-end gap-1">
+                                        <span class="px-2 py-0.5 bg-gray-800 border border-gray-700 rounded text-xs text-gray-300 font-medium">
+                                            {{ $production->quantity }} unit
+                                        </span>
+                                        @if($production->cost > 0)
+                                        <span class="text-[10px] text-gray-400">
+                                            Rp {{ number_format($production->cost, 0, ',', '.') }}/pcs
+                                        </span>
+                                        @endif
+                                    </div>
                                 </div>
                                 <div class="flex items-center gap-2 mt-3 pt-3 border-t border-gray-800">
                                     <div class="flex-1">

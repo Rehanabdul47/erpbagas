@@ -11,7 +11,16 @@ class TailorController extends Controller
     {
         $tailors = Tailor::withCount(['productions' => function ($query) {
             $query->where('status', 'processing');
+        }])->with(['productions' => function ($query) {
+            $query->where('status', 'processing')->select('id', 'tailor_id', 'cost', 'quantity');
         }])->get();
+
+        // Calculate total active cost for each tailor
+        $tailors->each(function ($tailor) {
+            $tailor->active_cost = $tailor->productions->sum(function ($prod) {
+                return $prod->cost * $prod->quantity;
+            });
+        });
 
         return view('pages.tailors.index', compact('tailors'))
             ->with('activePage', 'tailors');
