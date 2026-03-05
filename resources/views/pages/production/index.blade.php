@@ -77,7 +77,7 @@
                                             <i data-lucide="factory" class="w-3 h-3"></i> Internal
                                         @endif
                                         @if($prod->cost > 0)
-                                            <span class="ml-1 text-gray-400 font-normal">| Rp {{ number_format($prod->cost, 0, ',', '.') }}</span>
+                                            <span class="ml-1 text-gray-400 font-normal">| Rp {{ number_format($prod->cost, 0, ',', '.') }}/pcs (Tot: Rp {{ number_format($prod->cost * $prod->quantity, 0, ',', '.') }})</span>
                                         @endif
                                     </div>
                                     @endif

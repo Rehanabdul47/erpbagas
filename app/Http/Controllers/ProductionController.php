@@ -132,15 +132,16 @@ class ProductionController extends Controller
                 ]);
 
                 // Finance Synchronization: Deduct Production Cost
-                if ($production->cost > 0) {
+                $totalCost = $production->cost * $production->quantity;
+                if ($totalCost > 0) {
                     $ref = 'PROD-COST-' . $production->id . '-' . time();
                     
                     CashTransaction::create([
                         'date' => Carbon::now(),
                         'type' => 'out',
                         'category' => 'Operational',
-                        'amount' => $production->cost,
-                        'description' => "Biaya Produksi/Jahit: {$production->product->name} (Qty: {$production->quantity})",
+                        'amount' => $totalCost,
+                        'description' => "Biaya Produksi/Jahit: {$production->product->name} (Qty: {$production->quantity} x Rp " . number_format($production->cost, 0, ',', '.') . ")",
                         'reference' => $ref,
                         'user_id' => Auth::id() ?? 1,
                     ]);
@@ -158,13 +159,13 @@ class ProductionController extends Controller
                         $journalEntry->items()->createMany([
                             [
                                 'account_id' => $bebanProduksi->id,
-                                'debit' => $production->cost,
+                                'debit' => $totalCost,
                                 'credit' => 0,
                             ],
                             [
                                 'account_id' => $kasAccount->id,
                                 'debit' => 0,
-                                'credit' => $production->cost,
+                                'credit' => $totalCost,
                             ]
                         ]);
                     }
@@ -225,15 +226,16 @@ class ProductionController extends Controller
                 ]);
 
                 // Finance Synchronization: Deduct Production Cost
-                if ($production->cost > 0) {
+                $totalCost = $production->cost * $production->quantity;
+                if ($totalCost > 0) {
                     $ref = 'PROD-COST-' . $production->id . '-' . time();
                     
                     CashTransaction::create([
                         'date' => Carbon::now(),
                         'type' => 'out',
                         'category' => 'Operational',
-                        'amount' => $production->cost,
-                        'description' => "Biaya Produksi/Jahit: {$production->product->name} (Qty: {$production->quantity})",
+                        'amount' => $totalCost,
+                        'description' => "Biaya Produksi/Jahit: {$production->product->name} (Qty: {$production->quantity} x Rp " . number_format($production->cost, 0, ',', '.') . ")",
                         'reference' => $ref,
                         'user_id' => Auth::id() ?? 1,
                     ]);
@@ -251,13 +253,13 @@ class ProductionController extends Controller
                         $journalEntry->items()->createMany([
                             [
                                 'account_id' => $bebanProduksi->id,
-                                'debit' => $production->cost,
+                                'debit' => $totalCost,
                                 'credit' => 0,
                             ],
                             [
                                 'account_id' => $kasAccount->id,
                                 'debit' => 0,
-                                'credit' => $production->cost,
+                                'credit' => $totalCost,
                             ]
                         ]);
                     }

@@ -82,12 +82,12 @@
             </div>
             
             <div class="space-y-1.5 md:col-span-2">
-                <label class="text-xs font-semibold text-gray-400 uppercase tracking-wider block">Estimasi Biaya Produksi / Jahit (Opsional)</label>
+                <label class="text-xs font-semibold text-gray-400 uppercase tracking-wider block">Estimasi Biaya Produksi / Jahit per Pcs (Opsional)</label>
                 <div class="relative">
                     <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 text-sm font-medium">Rp</span>
-                    <input type="number" name="cost" class="w-full bg-gray-900 border border-gray-700 text-white rounded-lg pl-10 pr-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all" value="{{ old('cost', 0) }}" min="0" step="100" placeholder="Misal: 150000">
+                    <input type="number" name="cost" class="w-full bg-gray-900 border border-gray-700 text-white rounded-lg pl-10 pr-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all" value="{{ old('cost', 0) }}" min="0" step="100" placeholder="Misal: 50000">
                 </div>
-                <p class="text-[10px] text-gray-500 mt-1">Biaya ini akan ditarik dari Kas ketika status produksi menjadi Selesai.</p>
+                <p class="text-[10px] text-gray-500 mt-1">Biaya ini akan ditarik dari Kas sejumlah <b>(Biaya per Pcs &times; Jumlah Produksi)</b> ketika status produksi menjadi Selesai.</p>
             </div>
             
             <!-- BoM Auto Calculator -->
