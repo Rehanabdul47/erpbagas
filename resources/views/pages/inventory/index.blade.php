@@ -338,6 +338,15 @@
                         </div>
                     </div>
                     <div class="space-y-1.5 flex flex-col">
+                        <label class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Metode / Sumber</label>
+                        <select name="method" required class="w-full bg-gray-900 border border-gray-700 text-white rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all">
+                            <option value="Pembelian / Tambah Stok">Pembelian / Tambah Stok</option>
+                            <option value="Retur dari Customer">Retur dari Customer (Barang Jadi)</option>
+                            <option value="Retur dari Penjahit">Retur dari Penjahit (Bahan Baku)</option>
+                            <option value="Lainnya">Lainnya</option>
+                        </select>
+                    </div>
+                    <div class="space-y-1.5 flex flex-col">
                         <label class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Referensi</label>
                         <input type="text" name="reference" placeholder="PO ID / catatan" class="w-full bg-gray-900 border border-gray-700 text-white rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all placeholder-gray-600">
                     </div>
@@ -375,6 +384,15 @@
                             <i data-lucide="package-minus" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-amber-500"></i>
                             <input type="number" name="quantity" min="1" required class="w-full bg-gray-900 border border-gray-700 text-white pl-10 pr-4 py-3 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none transition-all">
                         </div>
+                    </div>
+                    <div class="space-y-1.5 flex flex-col">
+                        <label class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Metode / Alasan</label>
+                        <select name="method" required class="w-full bg-gray-900 border border-gray-700 text-white rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-amber-500 outline-none transition-all">
+                            <option value="Penjualan / Pemakaian">Penjualan / Pemakaian</option>
+                            <option value="Retur ke Supplier">Retur ke Supplier / Produsen</option>
+                            <option value="Barang Cacat / Rusak">Barang Cacat / Rusak / Hilang</option>
+                            <option value="Lainnya">Lainnya</option>
+                        </select>
                     </div>
                     <div class="space-y-1.5 flex flex-col">
                         <label class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Referensi</label>

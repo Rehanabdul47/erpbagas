@@ -6,8 +6,12 @@ use App\Models\Category;
 use App\Models\Product;
 use App\Models\StockMovement;
 use App\Models\StockOpname;
+use App\Models\CashTransaction;
+use App\Models\JournalEntry;
+use App\Models\Account;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Carbon\Carbon;
 
 class InventoryController extends Controller
 {
@@ -168,6 +172,7 @@ class InventoryController extends Controller
         $validated = $request->validate([
             'product_id' => 'required|exists:products,id',
             'quantity' => 'required|integer|min:1',
+            'method' => 'required|string',
             'reference' => 'nullable|string',
         ]);
 
@@ -179,9 +184,72 @@ class InventoryController extends Controller
             'user_id' => Auth::id(),
             'type' => 'in',
             'quantity' => $validated['quantity'],
-            'reference' => $validated['reference'] ?? 'Manual',
-            'method' => 'Manual',
+            'reference' => $validated['reference'] ?? 'Sistem',
+            'method' => $validated['method'],
         ]);
+
+        // Finance Synchronization for Customer Returns
+        if ($validated['method'] === 'Retur dari Customer') {
+            $amount = $product->price * $validated['quantity'];
+            $totalCogs = $product->cogs * $validated['quantity'];
+            $ref = 'RETUR-' . $product->id . '-' . time();
+            
+            // 1. Record Cash Out (Refund)
+            CashTransaction::create([
+                'date' => Carbon::now(),
+                'type' => 'out',
+                'category' => 'Returning Goods',
+                'amount' => $amount,
+                'description' => "Retur Penjualan Produk: {$product->name} ({$validated['quantity']} unit)",
+                'reference' => $ref,
+                'user_id' => Auth::id() ?? 1,
+            ]);
+
+            // 2. Journal Entry
+            $returAccount = Account::where('code', '4-103')->first();      // Retur Penjualan
+            $kasAccount = Account::where('code', '1-101')->first();        // Kas
+            $persediaanAccount = Account::where('code', '1-104')->first(); // Persediaan Barang Dagang
+            $hppAccount = Account::where('code', '5-101')->first();        // Harga Pokok Penjualan (HPP)
+
+            if ($returAccount && $kasAccount) {
+                $journalEntry = JournalEntry::create([
+                    'date' => Carbon::now(),
+                    'reference' => $ref,
+                    'description' => "Retur Penjualan Produk: {$product->name}",
+                ]);
+
+                // Journal for Revenue Refund
+                // Debit: Retur Penjualan (Revenue reduction), Credit: Kas (Asset reduction)
+                $items = [
+                    [
+                        'account_id' => $returAccount->id,
+                        'debit' => $amount,
+                        'credit' => 0,
+                    ],
+                    [
+                        'account_id' => $kasAccount->id,
+                        'debit' => 0,
+                        'credit' => $amount,
+                    ]
+                ];
+
+                // Journal for Inventory Reversal (If HPP and Inventory accounts exist)
+                if ($persediaanAccount && $hppAccount && $totalCogs > 0) {
+                    $items[] = [
+                        'account_id' => $persediaanAccount->id,
+                        'debit' => $totalCogs,
+                        'credit' => 0,
+                    ];
+                    $items[] = [
+                        'account_id' => $hppAccount->id,
+                        'debit' => 0,
+                        'credit' => $totalCogs,
+                    ];
+                }
+
+                $journalEntry->items()->createMany($items);
+            }
+        }
 
         return redirect()->route('inventory.index')->with('success', "{$validated['quantity']} unit {$product->name} berhasil masuk");
     }
@@ -191,6 +259,7 @@ class InventoryController extends Controller
         $validated = $request->validate([
             'product_id' => 'required|exists:products,id',
             'quantity' => 'required|integer|min:1',
+            'method' => 'required|string',
             'reference' => 'nullable|string',
         ]);
 
@@ -200,13 +269,15 @@ class InventoryController extends Controller
             return back()->with('error', 'Jumlah melebihi stok tersedia');
         }
 
+        $product->decrement('stock', $validated['quantity']);
+
         StockMovement::create([
             'product_id' => $product->id,
             'user_id' => Auth::id(),
             'type' => 'out',
             'quantity' => $validated['quantity'],
-            'reference' => $validated['reference'] ?? 'Manual',
-            'method' => 'Manual',
+            'reference' => $validated['reference'] ?? 'Sistem',
+            'method' => $validated['method'],
         ]);
 
         return redirect()->route('inventory.index')->with('success', "{$validated['quantity']} unit {$product->name} berhasil keluar");
