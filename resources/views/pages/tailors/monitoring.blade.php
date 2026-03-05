@@ -1,14 +1,14 @@
 @extends('layouts.app')
 
-@section('title', 'Monitor Proses Produksi')
-@section('breadcrumb', 'Monitor Proses Produksi')
+@section('title', 'Monitor Vendor Produksi')
+@section('breadcrumb', 'Monitor Vendor Produksi')
 
 @section('content')
 <div class="space-y-6">
     <!-- Header -->
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-            <h3 class="text-xl font-bold text-white mb-1">Monitor Vendor Penjahit</h3>
+            <h3 class="text-xl font-bold text-white mb-1">Monitor Vendor Produksi</h3>
             <p class="text-sm text-gray-400">Pantau progres produksi yang dialokasikan ke penjahit eksternal.</p>
         </div>
         <a href="{{ route('tailors.index') }}" class="flex items-center justify-center gap-2 px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg text-sm font-medium transition-colors w-full sm:w-auto">

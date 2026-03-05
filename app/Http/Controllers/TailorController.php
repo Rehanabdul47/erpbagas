@@ -27,7 +27,7 @@ class TailorController extends Controller
 
         Tailor::create($validated);
 
-        return redirect()->route('tailors.index')->with('success', "Penjahit {$validated['name']} berhasil ditambahkan");
+        return redirect()->route('tailors.index')->with('success', "Vendor {$validated['name']} berhasil ditambahkan");
     }
 
     public function update(Request $request, Tailor $tailor)
@@ -40,7 +40,7 @@ class TailorController extends Controller
 
         $tailor->update($validated);
 
-        return redirect()->route('tailors.index')->with('success', "Penjahit berhasil diupdate menjadi {$validated['name']}");
+        return redirect()->route('tailors.index')->with('success', "Vendor berhasil diupdate menjadi {$validated['name']}");
     }
 
     public function destroy(Tailor $tailor)
@@ -52,7 +52,7 @@ class TailorController extends Controller
         $name = $tailor->name;
         $tailor->delete();
 
-        return redirect()->route('tailors.index')->with('success', "Penjahit {$name} berhasil dihapus");
+        return redirect()->route('tailors.index')->with('success', "Vendor {$name} berhasil dihapus");
     }
 
     public function monitoring()

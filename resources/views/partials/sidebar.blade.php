@@ -14,8 +14,8 @@
             ['id' => 'purchase-orders', 'icon' => 'shopping-bag', 'label' => 'Purchase Order', 'route' => 'purchase-orders.index', 'visible' => true],
             ['id' => 'suppliers', 'icon' => 'truck', 'label' => 'Suppliers', 'route' => 'suppliers.index', 'visible' => true],
             ['id' => 'production', 'icon' => 'factory', 'label' => 'Produksi', 'route' => 'production.index', 'visible' => true],
-            ['id' => 'tailors', 'icon' => 'scissors', 'label' => 'Data Proses Produksi', 'route' => 'tailors.index', 'visible' => true],
-            ['id' => 'tailors-monitoring', 'icon' => 'activity', 'label' => 'Monitor Proses Produksi', 'route' => 'tailors.monitoring', 'visible' => true],
+            ['id' => 'tailors', 'icon' => 'scissors', 'label' => 'Vendor Produksi', 'route' => 'tailors.index', 'visible' => true],
+            ['id' => 'tailors-monitoring', 'icon' => 'activity', 'label' => 'Monitor Vendor Produksi', 'route' => 'tailors.monitoring', 'visible' => true],
             ['id' => 'categories', 'icon' => 'tags', 'label' => 'Kategori', 'route' => 'categories.index', 'visible' => true],
         ]],
         ['section' => 'DIVISI MARKETING', 'visible' => $isMgmt || $dept === 'Marketing' || ($user && $user->hasRole('Sales/Marketing')), 'items' => [
