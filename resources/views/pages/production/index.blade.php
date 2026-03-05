@@ -69,9 +69,16 @@
                                             <div class="h-full flex-1 {{ $currentIndex >= $index ? 'bg-amber-500' : 'bg-gray-600/50' }}" title="{{ $s }}"></div>
                                         @endforeach
                                     </div>
-                                    @if($prod->tailor_id)
+                                    @if($prod->tailor_id || $prod->cost > 0)
                                     <div class="mt-1.5 text-[10px] font-bold text-indigo-400 border border-indigo-500/20 px-2 py-0.5 rounded flex items-center justify-center gap-1 w-full bg-indigo-500/10">
-                                        <i data-lucide="scissors" class="w-3 h-3"></i> {{ $prod->tailor->name }}
+                                        @if($prod->tailor_id)
+                                            <i data-lucide="scissors" class="w-3 h-3"></i> {{ $prod->tailor->name }}
+                                        @else
+                                            <i data-lucide="factory" class="w-3 h-3"></i> Internal
+                                        @endif
+                                        @if($prod->cost > 0)
+                                            <span class="ml-1 text-gray-400 font-normal">| Rp {{ number_format($prod->cost, 0, ',', '.') }}</span>
+                                        @endif
                                     </div>
                                     @endif
                                 @elseif($prod->status === 'completed')

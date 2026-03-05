@@ -5,9 +5,13 @@ namespace App\Http\Controllers;
 use App\Models\Production;
 use App\Models\Product;
 use App\Models\StockMovement;
+use App\Models\CashTransaction;
+use App\Models\JournalEntry;
+use App\Models\Account;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Carbon\Carbon;
 
 class ProductionController extends Controller
 {
@@ -34,6 +38,7 @@ class ProductionController extends Controller
             'quantity' => 'required|integer|min:1',
             'date' => 'required|date',
             'tailor_id' => 'nullable|exists:tailors,id',
+            'cost' => 'nullable|numeric|min:0',
             'notes' => 'nullable|string',
         ]);
 
@@ -72,6 +77,7 @@ class ProductionController extends Controller
                 'tailor_id' => $validated['tailor_id'] ?? null,
                 'user_id' => Auth::id(),
                 'status' => 'processing',
+                'cost' => $validated['cost'] ?? 0,
                 'notes' => $validated['notes'],
             ]);
 
@@ -124,6 +130,45 @@ class ProductionController extends Controller
                     'reference' => 'Hasil Produksi #' . $production->id,
                     'method' => 'Production Result',
                 ]);
+
+                // Finance Synchronization: Deduct Production Cost
+                if ($production->cost > 0) {
+                    $ref = 'PROD-COST-' . $production->id . '-' . time();
+                    
+                    CashTransaction::create([
+                        'date' => Carbon::now(),
+                        'type' => 'out',
+                        'category' => 'Operational',
+                        'amount' => $production->cost,
+                        'description' => "Biaya Produksi/Jahit: {$production->product->name} (Qty: {$production->quantity})",
+                        'reference' => $ref,
+                        'user_id' => Auth::id() ?? 1,
+                    ]);
+
+                    $bebanProduksi = Account::where('code', '5-108')->first(); // Beban Lain-Lain / Produksi
+                    $kasAccount = Account::where('code', '1-101')->first();
+
+                    if ($bebanProduksi && $kasAccount) {
+                        $journalEntry = JournalEntry::create([
+                            'date' => Carbon::now(),
+                            'reference' => $ref,
+                            'description' => "Biaya Produksi/Jahit: {$production->product->name}",
+                        ]);
+
+                        $journalEntry->items()->createMany([
+                            [
+                                'account_id' => $bebanProduksi->id,
+                                'debit' => $production->cost,
+                                'credit' => 0,
+                            ],
+                            [
+                                'account_id' => $kasAccount->id,
+                                'debit' => 0,
+                                'credit' => $production->cost,
+                            ]
+                        ]);
+                    }
+                }
             } elseif ($validated['status'] === 'cancelled') {
                 // Return raw materials
                 foreach ($production->product->billOfMaterialsAsFinal as $bom) {
@@ -178,6 +223,45 @@ class ProductionController extends Controller
                     'reference' => 'Hasil Produksi #' . $production->id . ' (Selesai)',
                     'method' => 'Production Result',
                 ]);
+
+                // Finance Synchronization: Deduct Production Cost
+                if ($production->cost > 0) {
+                    $ref = 'PROD-COST-' . $production->id . '-' . time();
+                    
+                    CashTransaction::create([
+                        'date' => Carbon::now(),
+                        'type' => 'out',
+                        'category' => 'Operational',
+                        'amount' => $production->cost,
+                        'description' => "Biaya Produksi/Jahit: {$production->product->name} (Qty: {$production->quantity})",
+                        'reference' => $ref,
+                        'user_id' => Auth::id() ?? 1,
+                    ]);
+
+                    $bebanProduksi = Account::where('code', '5-108')->first(); // Beban Lain-Lain / Produksi
+                    $kasAccount = Account::where('code', '1-101')->first();
+
+                    if ($bebanProduksi && $kasAccount) {
+                        $journalEntry = JournalEntry::create([
+                            'date' => Carbon::now(),
+                            'reference' => $ref,
+                            'description' => "Biaya Produksi/Jahit: {$production->product->name}",
+                        ]);
+
+                        $journalEntry->items()->createMany([
+                            [
+                                'account_id' => $bebanProduksi->id,
+                                'debit' => $production->cost,
+                                'credit' => 0,
+                            ],
+                            [
+                                'account_id' => $kasAccount->id,
+                                'debit' => 0,
+                                'credit' => $production->cost,
+                            ]
+                        ]);
+                    }
+                }
 
                 $message = "Produksi selesai. Barang jadi telah ditambahkan ke stok.";
             } else {

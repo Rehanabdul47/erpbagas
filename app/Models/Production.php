@@ -9,6 +9,7 @@ class Production extends Model
     protected $fillable = [
         'product_id',
         'quantity',
+        'cost',
         'date',
         'user_id',
         'tailor_id',
