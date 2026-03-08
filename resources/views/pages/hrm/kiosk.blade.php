@@ -74,19 +74,35 @@
                 <div id="reader" class="w-full aspect-[4/3] bg-black"></div>
                 
                 <!-- Camera Missing/Permission Overlay -->
-                <div x-show="!cameraActive" class="absolute inset-0 bg-slate-950/90 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center z-[60]">
-                    <div class="w-16 h-16 bg-indigo-500/10 text-indigo-400 rounded-full flex items-center justify-center mb-4">
+                <div x-show="!cameraActive" class="absolute inset-0 bg-slate-950/95 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center z-[60]">
+                    <div class="w-16 h-16 bg-red-500/10 text-red-400 rounded-full flex items-center justify-center mb-4" x-show="!window.isSecureContext">
+                        <i data-lucide="shield-alert" class="w-8 h-8"></i>
+                    </div>
+                    <div class="w-16 h-16 bg-indigo-500/10 text-indigo-400 rounded-full flex items-center justify-center mb-4" x-show="window.isSecureContext">
                         <i data-lucide="camera-off" class="w-8 h-8"></i>
                     </div>
-                    <h3 class="text-lg font-bold text-white mb-2">Kamera Tidak Aktif</h3>
-                    <p class="text-xs text-slate-400 mb-6 leading-relaxed">System memerlukan akses kamera untuk pemindaian QR dan verifikasi foto wajah.</p>
-                    <button @click="initScanner()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-lg shadow-indigo-500/20 active:scale-95 flex items-center gap-2">
-                        <i data-lucide="video" class="w-4 h-4"></i> Izinkan Akses Kamera
-                    </button>
+                    
+                    <h3 class="text-lg font-bold text-white mb-2" x-text="!window.isSecureContext ? 'Koneksi Tidak Aman' : 'Kamera Tidak Aktif'"></h3>
+                    
+                    <p class="text-xs text-slate-400 mb-6 leading-relaxed" x-show="!window.isSecureContext">
+                        Browser memblokir kamera di jaringan non-HTTPS/Localhost. <br>Gunakan <b>localhost</b> atau <b>HTTPS</b>.
+                    </p>
+                    <p class="text-xs text-slate-400 mb-6 leading-relaxed" x-show="window.isSecureContext">
+                        System memerlukan akses kamera untuk pemindaian QR dan verifikasi foto wajah.
+                    </p>
+
+                    <div class="flex flex-col gap-3 w-full max-w-[200px]">
+                        <button @click="initScanner()" x-show="window.isSecureContext" class="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-lg shadow-indigo-500/20 active:scale-95 flex items-center justify-center gap-2">
+                            <i data-lucide="video" class="w-4 h-4"></i> Izinkan Akses
+                        </button>
+                        <button @click="cameraActive = true; cameraStatus = 'Mode Manual'" class="bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border border-white/10 flex items-center justify-center gap-2">
+                            <i data-lucide="keyboard" class="w-4 h-4"></i> Gunakan NIP Manual
+                        </button>
+                    </div>
                 </div>
 
                 <div class="absolute bottom-3 left-1/2 -translate-x-1/2 bg-black/60 text-white px-5 py-2 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-2 backdrop-blur-md border border-white/10 z-50">
-                    <span class="w-1.5 h-1.5 rounded-full animate-ping" :class="cameraActive ? 'bg-indigo-500' : 'bg-red-500'"></span>
+                    <span class="w-1.5 h-1.5 rounded-full" :class="cameraActive && cameraStatus.includes('Aktif') ? 'bg-emerald-500 animate-ping' : 'bg-red-500'"></span>
                     <span x-text="cameraStatus">Initializing...</span>
                 </div>
             </div>
@@ -220,6 +236,7 @@
                 status: 'present',
                 message: { show: false, type: 'success', title: '', desc: '', time: '' },
                 recentLogs: [],
+                html5QrCode: null,
 
                 init() {
                     this.updateClock();
@@ -250,12 +267,40 @@
                 },
 
                 async initScanner() {
+                    if (!window.isSecureContext && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+                        this.cameraStatus = "Insecure Context (HTTPS Required)";
+                        this.cameraActive = false;
+                        return;
+                    }
+
                     this.cameraStatus = "Meminta Akses...";
                     try {
-                        const html5QrCode = new Html5Qrcode("reader");
+                        if (this.html5QrCode && this.html5QrCode.isScanning) {
+                            await this.html5QrCode.stop();
+                        }
+                        
+                        if (!this.html5QrCode) {
+                            this.html5QrCode = new Html5Qrcode("reader");
+                        }
+
                         const config = { fps: 10, qrbox: { width: 250, height: 250 } };
-                        await html5QrCode.start(
-                            { facingMode: "user" }, 
+                        let startConfig = { facingMode: "user" };
+                        
+                        // Try getting devices first to prompt explicit permission
+                        try {
+                            if (navigator.mediaDevices && navigator.mediaDevices.enumerateDevices) {
+                                const devices = await Html5Qrcode.getCameras();
+                                if (devices && devices.length > 0) {
+                                    const frontCamera = devices.find(c => c.label.toLowerCase().includes('front') || c.label.toLowerCase().includes('user'));
+                                    startConfig = frontCamera ? frontCamera.id : devices[0].id;
+                                }
+                            }
+                        } catch (e) {
+                            console.warn("Could not get cameras list explicitly:", e);
+                        }
+
+                        await this.html5QrCode.start(
+                            startConfig, 
                             config,
                             (decodedText) => {
                                 if (!this.isProcessing) {
@@ -269,12 +314,20 @@
                     } catch (err) {
                         console.error("Error starting scanner:", err);
                         this.cameraActive = false;
-                        if (err.name === 'NotAllowedError' || err === 'NotAllowedError') {
+                        
+                        const errStr = (err && typeof err === 'object') ? (err.name || err.message || String(err)) : String(err);
+                        
+                        if (errStr.includes('NotAllowedError') || errStr.includes('Permission')) {
                             this.cameraStatus = "Akses Kamera Ditolak";
-                        } else if (err.name === 'NotFoundError' || err === 'NotFoundError') {
-                            this.cameraStatus = "Kamera Tidak Ditemukan";
+                        } else if (errStr.includes('NotFoundError') || errStr.includes('NotReadableError') || errStr.includes('OverconstrainedError') || errStr.includes('streaming not supported')) {
+                            this.cameraStatus = "Kamera/Streaming Bermasalah";
                         } else {
                             this.cameraStatus = "Error Kamera";
+                        }
+                        
+                        if (this.html5QrCode) {
+                            try { this.html5QrCode.clear(); } catch(e) {}
+                            this.html5QrCode = null;
                         }
                     } finally {
                         this.$nextTick(() => lucide.createIcons());

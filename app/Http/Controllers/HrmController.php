@@ -18,38 +18,63 @@ class HrmController extends Controller
     public function index(Request $request)
     {
         $activeTab = $request->input('tab', 'employees');
-        
-        $employees = Employee::with(['branch', 'attendances'])->latest()->get();
         $branches = \App\Models\Branch::where('is_active', true)->get();
         
-        // Attendance logic
+        // Date & Period handling
         $attendanceDate = $request->input('date', date('Y-m-d'));
-        $attendances = Attendance::with('employee')
-            ->whereDate('date', $attendanceDate)
-            ->get();
-            
-        // Leave / Sick logic
-        $leaves = Attendance::with('employee')
-            ->whereIn('status', ['leave', 'sick'])
-            ->latest('date')
-            ->get();
-            
-        // Payroll logic
         $payrollMonth = $request->input('month', date('Y-m'));
         $periodMonth = Carbon::parse($payrollMonth)->month;
         $periodYear = Carbon::parse($payrollMonth)->year;
         
-        $payrolls = Payroll::with('employee')
-            ->where('period_month', $periodMonth)
-            ->where('period_year', $periodYear)
-            ->get();
- 
+        $employeesQuery = Employee::with(['branch', 'attendances'])->latest();
+        $attendanceQuery = Attendance::with('employee')->whereDate('date', $attendanceDate);
+        $leavesQuery = Attendance::with('employee')->whereIn('status', ['leave', 'sick'])->latest('date');
+        $payrollQuery = Payroll::with('employee')->where('period_month', $periodMonth)->where('period_year', $periodYear);
+        
+        $statsRaw = [
+            'totalEmployees' => Employee::query(),
+            'activeEmployees' => Employee::where('status', 'active'),
+            'presentToday' => Attendance::whereDate('date', date('Y-m-d'))->where('status', 'present'),
+            'leavesToday' => Attendance::whereDate('date', date('Y-m-d'))->whereIn('status', ['leave', 'sick']),
+            'payrollTotal' => (clone $payrollQuery)
+        ];
+
+        if (!auth()->user()->hasRole('Executive')) {
+            $userBranchId = auth()->user()->branch_id;
+            if ($userBranchId == 1) { // Pusat
+                $employeesQuery->where(function($q) use ($userBranchId) { $q->where('branch_id', $userBranchId)->orWhereNull('branch_id'); });
+                $attendanceQuery->whereHas('employee', function($q) use ($userBranchId) { $q->where('branch_id', $userBranchId)->orWhereNull('branch_id'); });
+                $leavesQuery->whereHas('employee', function($q) use ($userBranchId) { $q->where('branch_id', $userBranchId)->orWhereNull('branch_id'); });
+                $payrollQuery->whereHas('employee', function($q) use ($userBranchId) { $q->where('branch_id', $userBranchId)->orWhereNull('branch_id'); });
+                foreach(['totalEmployees', 'activeEmployees'] as $key) {
+                    $statsRaw[$key]->where(function($q) use ($userBranchId) { $q->where('branch_id', $userBranchId)->orWhereNull('branch_id'); });
+                }
+                foreach(['presentToday', 'leavesToday'] as $key) {
+                    $statsRaw[$key]->whereHas('employee', function($q) use ($userBranchId) { $q->where('branch_id', $userBranchId)->orWhereNull('branch_id'); });
+                }
+            } else {
+                $employeesQuery->where('branch_id', $userBranchId);
+                $attendanceQuery->whereHas('employee', function($q) use ($userBranchId) { $q->where('branch_id', $userBranchId); });
+                $leavesQuery->whereHas('employee', function($q) use ($userBranchId) { $q->where('branch_id', $userBranchId); });
+                $payrollQuery->whereHas('employee', function($q) use ($userBranchId) { $q->where('branch_id', $userBranchId); });
+                $statsRaw['totalEmployees']->where('branch_id', $userBranchId);
+                $statsRaw['activeEmployees']->where('branch_id', $userBranchId);
+                $statsRaw['presentToday']->whereHas('employee', function($q) use ($userBranchId) { $q->where('branch_id', $userBranchId); });
+                $statsRaw['leavesToday']->whereHas('employee', function($q) use ($userBranchId) { $q->where('branch_id', $userBranchId); });
+            }
+        }
+
+        $employees = $employeesQuery->get();
+        $attendances = $attendanceQuery->get();
+        $leaves = $leavesQuery->get();
+        $payrolls = $payrollQuery->get();
+
         $stats = [
-            'totalEmployees' => $employees->count(),
-            'activeEmployees' => $employees->where('status', 'active')->count(),
-            'presentToday' => Attendance::whereDate('date', date('Y-m-d'))->where('status', 'present')->count(),
-            'payrollTotal' => $payrolls->sum('net_salary'),
-            'leavesToday' => Attendance::whereDate('date', date('Y-m-d'))->whereIn('status', ['leave', 'sick'])->count(),
+            'totalEmployees' => $statsRaw['totalEmployees']->count(),
+            'activeEmployees' => $statsRaw['activeEmployees']->count(),
+            'presentToday' => $statsRaw['presentToday']->count(),
+            'payrollTotal' => $statsRaw['payrollTotal']->sum('net_salary'),
+            'leavesToday' => $statsRaw['leavesToday']->count(),
         ];
 
         $settings = HrmSetting::pluck('value', 'key')->all();

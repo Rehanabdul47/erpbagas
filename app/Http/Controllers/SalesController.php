@@ -18,7 +18,27 @@ class SalesController extends Controller
         $customers = Customer::withCount('sales')->get();
         
         $salesQuery = Sale::with('customer', 'branch')->latest();
-        if ($branchId !== 'all') {
+        
+        if (!auth()->user()->hasRole('Executive')) {
+            $userBranchId = auth()->user()->branch_id;
+            if ($userBranchId == 1) { // Pusat
+                $salesQuery->where(function($q) use ($userBranchId) {
+                    $q->where('branch_id', $userBranchId)->orWhereNull('branch_id');
+                });
+                $totalRevenueQuery = Sale::whereMonth('sale_date', Carbon::now()->month)
+                    ->where(function($q) use ($userBranchId) {
+                        $q->where('branch_id', $userBranchId)->orWhereNull('branch_id');
+                    });
+                $totalSalesQuery = Sale::where(function($q) use ($userBranchId) {
+                    $q->where('branch_id', $userBranchId)->orWhereNull('branch_id');
+                });
+            } else {
+                $salesQuery->where('branch_id', $userBranchId);
+                $totalRevenueQuery = Sale::whereMonth('sale_date', Carbon::now()->month)->where('branch_id', $userBranchId);
+                $totalSalesQuery = Sale::where('branch_id', $userBranchId);
+            }
+            $branchId = $userBranchId;
+        } else if ($branchId !== 'all') {
             $salesQuery->where('branch_id', $branchId);
             $totalRevenueQuery = Sale::whereMonth('sale_date', Carbon::now()->month)->where('branch_id', $branchId);
             $totalSalesQuery = Sale::where('branch_id', $branchId);

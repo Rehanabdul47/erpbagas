@@ -13,17 +13,16 @@ class UserController extends Controller
     public function index()
     {
         $currentUser = auth()->user();
-        $isManagement = $currentUser->hasAnyRole(['Executive', 'Manager']);
-
+        $isExecutive = $currentUser->hasRole('Executive');
         $query = User::with(['roles', 'branch']);
         
-        // Apply branch scoping for non-management users
-        if (!$isManagement) {
+        // Only Executives can see all users. Others see only their own branch.
+        if (!$isExecutive) {
             $query->where('branch_id', $currentUser->branch_id);
         }
 
         $users = $query->get();
-        $requestedRoles = ['Executive', 'Manager', 'Supervisor', 'Staff', 'Operator Produksi', 'Sales/Marketing', 'Admin', 'Security', 'Driver'];
+        $requestedRoles = ['Executive', 'Manager', 'Staff'];
         $roles = Role::whereIn('name', $requestedRoles)->get();
 
         // Extract unique departments and branches for frontend filters based on the scoped users
@@ -42,10 +41,28 @@ class UserController extends Controller
 
     public function create()
     {
-        $requestedRoles = ['Executive', 'Manager', 'Supervisor', 'Staff', 'Operator Produksi', 'Sales/Marketing', 'Admin', 'Security', 'Driver'];
+        $requestedRoles = ['Executive', 'Manager', 'Staff'];
         $roles = Role::whereIn('name', $requestedRoles)->get();
-        $departments = ['All', 'Produksi', 'Marketing', 'Digital Marketing', 'Keuangan', 'HRD & GA', 'Warehouse/Logistik', 'IT Support'];
-        $branches = Branch::where('is_active', true)->get();
+        // Unified department list (matching HRM and display)
+        $departments = [
+            'all' => 'All Departments',
+            'Produksi' => 'Produksi',
+            'Marketing' => 'Marketing (Offline)',
+            'Digital Marketing' => 'Digital Marketing (Online)',
+            'Keuangan' => 'Keuangan',
+            'HRD & GA' => 'HRD & GA',
+            'Warehouse / Logistik' => 'Warehouse / Logistik',
+            'IT Support' => 'IT Support'
+        ];
+        $currentUser = auth()->user();
+        $isExecutive = $currentUser->hasRole('Executive');
+        
+        // Executives can assign any branch. Others only their own.
+        if ($isExecutive) {
+            $branches = Branch::where('is_active', true)->get();
+        } else {
+            $branches = Branch::where('id', $currentUser->branch_id)->get();
+        }
 
         return view('pages.users.create', compact('roles', 'departments', 'branches'))
             ->with('activePage', 'users');
@@ -72,21 +89,23 @@ class UserController extends Controller
 
         $user->assignRole($validated['role']);
 
-        // Auto-create Employee Record
-        \App\Models\Employee::create([
-            'nip' => 'EMP-' . now()->format('Ymd') . '-' . str_pad($user->id, 3, '0', STR_PAD_LEFT),
-            'name' => $user->name,
-            'email' => $user->email,
-            'phone' => '-', // Default phone
-            'position' => ucfirst(str_replace('_', ' ', $validated['role'])),
-            'department' => ucfirst($validated['department']),
-            'branch_id' => $validated['branch_id'] ?? null,
-            'join_date' => now()->toDateString(),
-            'basic_salary' => 0,
-            'status' => 'active',
-        ]);
+        // Auto-create/Update Employee Record
+        \App\Models\Employee::updateOrCreate(
+            ['email' => $user->email],
+            [
+                'nip' => 'EMP-' . now()->format('Ymd') . '-' . str_pad($user->id, 3, '0', STR_PAD_LEFT),
+                'name' => $user->name,
+                'phone' => '-',
+                'position' => $validated['role'],
+                'department' => $validated['department'],
+                'branch_id' => $validated['branch_id'] ?? null,
+                'join_date' => now()->toDateString(),
+                'basic_salary' => 0,
+                'status' => 'active',
+            ]
+        );
 
-        return redirect()->route('hrm.index')->with('success', "User {$user->name} berhasil ditambahkan dan data Pegawai otomatis dibuat.");
+        return redirect()->route('users.index')->with('success', "User {$user->name} berhasil ditambahkan.");
     }
 
     public function edit(User $user)
@@ -96,10 +115,27 @@ class UserController extends Controller
             abort(403, 'Unauthorized action. You can only edit users within your own branch.');
         }
 
-        $requestedRoles = ['Executive', 'Manager', 'Supervisor', 'Staff', 'Operator Produksi', 'Sales/Marketing', 'Admin', 'Security', 'Driver'];
+        $requestedRoles = ['Executive', 'Manager', 'Staff'];
         $roles = Role::whereIn('name', $requestedRoles)->get();
-        $departments = ['All', 'Produksi', 'Marketing', 'Digital Marketing', 'Keuangan', 'HRD & GA', 'Warehouse/Logistik', 'IT Support'];
-        $branches = Branch::where('is_active', true)->get();
+        $departments = [
+            'all' => 'All Departments',
+            'Produksi' => 'Produksi',
+            'Marketing' => 'Marketing (Offline)',
+            'Digital Marketing' => 'Digital Marketing (Online)',
+            'Keuangan' => 'Keuangan',
+            'HRD & GA' => 'HRD & GA',
+            'Warehouse / Logistik' => 'Warehouse / Logistik',
+            'IT Support' => 'IT Support'
+        ];
+        $currentUser = auth()->user();
+        $isExecutive = $currentUser->hasRole('Executive');
+        
+        // Executives can assign any branch. Others only their own.
+        if ($isExecutive) {
+            $branches = Branch::where('is_active', true)->get();
+        } else {
+            $branches = Branch::where('id', $currentUser->branch_id)->get();
+        }
 
         return view('pages.users.edit', compact('user', 'roles', 'departments', 'branches'))
             ->with('activePage', 'users');
@@ -133,6 +169,16 @@ class UserController extends Controller
         }
 
         $user->syncRoles([$validated['role']]);
+
+        // Sync with Employee record (using original email to find the record if email changed)
+        $oldEmail = $user->getOriginal('email');
+        \App\Models\Employee::where('email', $oldEmail)->update([
+            'email' => $user->email,
+            'name' => $user->name,
+            'position' => $validated['role'],
+            'department' => $validated['department'],
+            'branch_id' => $validated['branch_id'] ?? null,
+        ]);
 
         return redirect()->route('users.index')->with('success', "User {$user->name} berhasil diupdate");
     }

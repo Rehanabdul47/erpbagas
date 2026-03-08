@@ -95,7 +95,7 @@
                         <th class="px-5 py-3 font-medium">Pengguna</th>
                         <th class="px-5 py-3 font-medium">Role</th>
                         <th class="px-5 py-3 font-medium">Departemen</th>
-                        <th class="px-5 py-3 font-medium">Penempatan</th>
+                        <th class="px-5 py-3 font-medium">Cabang / Toko</th>
                         <th class="px-5 py-3 font-medium">Bergabung</th>
                         <th class="px-5 py-3 font-medium text-right">Aksi</th>
                     </tr>
@@ -146,7 +146,7 @@
                                     {{ $u->branch->name }}
                                 </div>
                             @else
-                                <span class="text-gray-500 text-sm font-medium italic">Pusat</span>
+                                <span class="text-gray-500 text-sm font-medium italic">Kantor Pusat</span>
                             @endif
                         </td>
                         <td class="px-5 py-3 text-gray-400 text-xs font-mono">
@@ -218,7 +218,7 @@
                 <div class="text-sm text-indigo-300 font-medium mb-1" x-text="activeUser?.email"></div>
                 <div class="text-xs text-gray-400 flex items-center justify-center gap-1 mb-4">
                     <i data-lucide="map-pin" class="w-3 h-3"></i>
-                    <span x-text="activeUser?.branch?.name || 'Pusat'"></span>
+                    <span x-text="activeUser?.branch?.name || 'Kantor Pusat'"></span>
                 </div>
                 
                 <span class="px-3 py-1 rounded-full text-xs font-bold border bg-gray-900/80 border-gray-700 text-gray-300 shadow-inner" x-text="activeUserRoles() || 'No Role'"></span>

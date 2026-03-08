@@ -32,7 +32,17 @@ class PosController extends Controller
             ->with(['customer', 'items.product', 'branch'])
             ->latest();
             
-        if ($branchId !== 'all') {
+        if (!auth()->user()->hasRole('Executive')) {
+            $userBranchId = auth()->user()->branch_id;
+            if ($userBranchId == 1) { // Pusat
+                $posHistoryQuery->where(function($q) use ($userBranchId) {
+                    $q->where('branch_id', $userBranchId)->orWhereNull('branch_id');
+                });
+            } else {
+                $posHistoryQuery->where('branch_id', $userBranchId);
+            }
+            $branchId = $userBranchId; // Force branch_id filter
+        } else if ($branchId !== 'all') {
             $posHistoryQuery->where('branch_id', $branchId);
         }
             

@@ -223,7 +223,7 @@
             <form method="GET" action="{{ route('pos.index') }}" class="flex items-center gap-2">
                 <div class="relative w-full sm:w-48 shrink-0">
                     <select name="branch_id" onchange="this.form.submit()" class="w-full bg-gray-900 border border-gray-700 text-white rounded-lg pl-3 pr-10 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all appearance-none cursor-pointer shadow-inner">
-                        <option value="all" {{ $branchId === 'all' ? 'selected' : '' }}>Semua Cabang</option>
+                        <option value="all" {{ $branchId === 'all' ? 'selected' : '' }}>Semua Cabang / Toko</option>
                         @foreach($branches as $b)
                             <option value="{{ $b->id }}" {{ $branchId == $b->id ? 'selected' : '' }}>{{ $b->name }}</option>
                         @endforeach
@@ -242,7 +242,7 @@
                                 <th class="px-5 py-3 font-medium">Invoice</th>
                                 <th class="px-5 py-3 font-medium">Waktu</th>
                                 <th class="px-5 py-3 font-medium">Customer</th>
-                                <th class="px-5 py-3 font-medium">Cabang</th>
+                                <th class="px-5 py-3 font-medium">Cabang / Toko</th>
                                 <th class="px-5 py-3 font-medium">Item Terjual</th>
                                 <th class="px-5 py-3 font-medium">Total Amount</th>
                                 <th class="px-5 py-3 font-medium">Metode</th>
@@ -257,7 +257,7 @@
                                 <td class="px-5 py-3 font-bold text-white">{{ $sale->customer->name }}</td>
                                 <td class="px-5 py-3 text-gray-400 text-xs flex items-center gap-1">
                                     <i data-lucide="map-pin" class="w-3 h-3 text-indigo-500/50"></i>
-                                    {{ $sale->branch ? $sale->branch->name : 'Pusat' }}
+                                    {{ $sale->branch ? $sale->branch->name : 'Kantor Pusat' }}
                                 </td>
                                 <td class="px-5 py-3 text-gray-300"><span class="bg-gray-700 px-2 py-0.5 rounded text-xs">{{ $sale->items->count() }} Item</span></td>
                                 <td class="px-5 py-3 font-bold text-white">Rp {{ number_format($sale->total_amount, 0, ',', '.') }}</td>

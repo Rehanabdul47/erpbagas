@@ -84,7 +84,7 @@
                 <div class="overflow-x-auto w-full border border-gray-700/50 rounded-lg">
                     <table class="w-full text-left text-sm whitespace-nowrap">
                         <thead class="bg-gray-900/50 text-gray-400 text-xs uppercase tracking-wider border-b border-gray-700/50">
-                            <tr><th class="px-4 py-3 font-medium">NIP</th><th class="px-4 py-3 font-medium">Nama</th><th class="px-4 py-3 font-medium">Jabatan</th><th class="px-4 py-3 font-medium">Lokasi Kerja</th><th class="px-4 py-3 font-medium">Status</th><th class="px-4 py-3 font-medium text-right">Aksi</th></tr>
+                            <tr><th class="px-4 py-3 font-medium">NIP</th><th class="px-4 py-3 font-medium">Nama</th><th class="px-4 py-3 font-medium">Jabatan</th><th class="px-4 py-3 font-medium">Cabang / Toko</th><th class="px-4 py-3 font-medium">Status</th><th class="px-4 py-3 font-medium text-right">Aksi</th></tr>
                         </thead>
                         <tbody class="divide-y divide-gray-700/50">
                             @forelse($employees as $emp)
@@ -150,7 +150,7 @@
                 <div class="overflow-x-auto w-full border border-gray-700/50 rounded-lg">
                     <table class="w-full text-left text-sm whitespace-nowrap">
                         <thead class="bg-gray-900/50 text-gray-400 text-xs uppercase tracking-wider border-b border-gray-700/50">
-                            <tr><th class="px-4 py-3 font-medium">Karyawan</th><th class="px-4 py-3 font-medium">Lokasi Kerja</th><th class="px-4 py-3 font-medium">Foto</th><th class="px-4 py-3 font-medium">Status</th><th class="px-4 py-3 font-medium">Jam Masuk</th><th class="px-4 py-3 font-medium">Jam Keluar</th><th class="px-4 py-3 font-medium">Catatan</th><th class="px-4 py-3 font-medium text-right">Action</th></tr>
+                            <tr><th class="px-4 py-3 font-medium">Karyawan</th><th class="px-4 py-3 font-medium">Cabang / Toko</th><th class="px-4 py-3 font-medium">Foto</th><th class="px-4 py-3 font-medium">Status</th><th class="px-4 py-3 font-medium">Jam Masuk</th><th class="px-4 py-3 font-medium">Jam Keluar</th><th class="px-4 py-3 font-medium">Catatan</th><th class="px-4 py-3 font-medium text-right">Action</th></tr>
                         </thead>
                         <tbody id="attendance-table-body" class="divide-y divide-gray-700/50">
                             @foreach($employees as $emp)
@@ -214,7 +214,7 @@
                 <div class="overflow-x-auto w-full border border-gray-700/50 rounded-lg">
                     <table class="w-full text-left text-sm whitespace-nowrap">
                         <thead class="bg-gray-900/50 text-gray-400 text-xs uppercase tracking-wider border-b border-gray-700/50">
-                            <tr><th class="px-4 py-3 font-medium">Tanggal</th><th class="px-4 py-3 font-medium">Karyawan</th><th class="px-4 py-3 font-medium">Lokasi</th><th class="px-4 py-3 font-medium">Status</th><th class="px-4 py-3 font-medium">Keterangan</th></tr>
+                            <tr><th class="px-4 py-3 font-medium">Tanggal</th><th class="px-4 py-3 font-medium">Karyawan</th><th class="px-4 py-3 font-medium">Cabang / Toko</th><th class="px-4 py-3 font-medium">Status</th><th class="px-4 py-3 font-medium">Keterangan</th></tr>
                         </thead>
                         <tbody class="divide-y divide-gray-700/50">
                             @forelse($leaves as $lv)
@@ -224,7 +224,7 @@
                                 <td class="px-4 py-3 text-gray-400">
                                     <div class="flex items-center gap-1 text-[11px] text-indigo-400 font-medium">
                                         <i data-lucide="map-pin" class="w-3 h-3"></i>
-                                        {{ $lv->employee->branch ? $lv->employee->branch->name : 'Pusat' }}
+                                        {{ $lv->employee->branch ? $lv->employee->branch->name : 'Kantor Pusat' }}
                                     </div>
                                 </td>
                                 <td class="px-4 py-3">
@@ -260,14 +260,14 @@
                 <div class="overflow-x-auto w-full border border-gray-700/50 rounded-lg">
                     <table class="w-full text-left text-sm whitespace-nowrap">
                         <thead class="bg-gray-900/50 text-gray-400 text-xs uppercase tracking-wider border-b border-gray-700/50">
-                            <tr><th class="px-4 py-3 font-medium">Karyawan</th><th class="px-4 py-3 font-medium">Cabang</th><th class="px-4 py-3 font-medium">Gaji Pokok</th><th class="px-4 py-3 font-medium">Tunjangan</th><th class="px-4 py-3 font-medium">Potongan</th><th class="px-4 py-3 font-medium">Total Bersih</th><th class="px-4 py-3 font-medium">Status</th><th class="px-4 py-3 font-medium text-right">Aksi</th></tr>
+                            <tr><th class="px-4 py-3 font-medium">Karyawan</th><th class="px-4 py-3 font-medium">Cabang / Toko</th><th class="px-4 py-3 font-medium">Gaji Pokok</th><th class="px-4 py-3 font-medium">Tunjangan</th><th class="px-4 py-3 font-medium">Potongan</th><th class="px-4 py-3 font-medium">Total Bersih</th><th class="px-4 py-3 font-medium">Status</th><th class="px-4 py-3 font-medium text-right">Aksi</th></tr>
                         </thead>
                         <tbody class="divide-y divide-gray-700/50">
                             @forelse($payrolls as $pay)
                             <tr @click="viewPayrollDetail({{ json_encode($pay->load('employee')) }})" class="hover:bg-indigo-500/10 transition-colors cursor-pointer group">
                                 <td class="px-4 py-3 font-bold text-white">{{ $pay->employee->name }}</td>
                                 <td class="px-4 py-3">
-                                    <div class="text-[11px] text-gray-500 uppercase font-bold">{{ $pay->employee->branch ? $pay->employee->branch->name : 'Pusat' }}</div>
+                                    <div class="text-[11px] text-gray-500 uppercase font-bold">{{ $pay->employee->branch ? $pay->employee->branch->name : 'Kantor Pusat' }}</div>
                                 </td>
                                 <td class="px-4 py-3 text-gray-300">Rp {{ number_format($pay->basic_salary, 0, ',', '.') }}</td>
                                 <td class="px-4 py-3 text-emerald-400">+ Rp {{ number_format($pay->allowance, 0, ',', '.') }}</td>

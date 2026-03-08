@@ -111,8 +111,8 @@
                     <div class="relative">
                         <i data-lucide="briefcase" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500"></i>
                         <select name="department" class="w-full bg-gray-900/50 border border-gray-700 text-white rounded-lg pl-10 pr-10 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all focus:bg-gray-900 appearance-none cursor-pointer" required>
-                            @foreach($departments as $dept)
-                            <option value="{{ $dept }}" {{ old('department', $user->department) === $dept ? 'selected' : '' }} class="capitalize">{{ $dept }}</option>
+                            @foreach($departments as $value => $label)
+                            <option value="{{ $value }}" {{ old('department', $user->department) === $value ? 'selected' : '' }}>{{ $label }}</option>
                             @endforeach
                         </select>
                         <i data-lucide="chevron-down" class="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none"></i>
@@ -121,12 +121,14 @@
 
                 <div class="space-y-2">
                     <label class="text-xs font-bold text-gray-400 uppercase tracking-wider flex justify-between">
-                        <span>Penempatan (Cabang/Lokasi)</span>
+                        <span>Cabang / Toko</span>
                     </label>
                     <div class="relative">
                         <i data-lucide="map-pin" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500"></i>
                         <select name="branch_id" class="w-full bg-gray-900/50 border border-gray-700 text-white rounded-lg pl-10 pr-10 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all focus:bg-gray-900 appearance-none cursor-pointer">
-                            <option value="" {{ old('branch_id', $user->branch_id) ? '' : 'selected' }}>Pusat (Tidak ada cabang)</option>
+                            @if(auth()->user()->hasRole('Executive') || auth()->user()->branch_id === null || auth()->user()->branch_id == 1 || $user->branch_id === null)
+                            <option value="" {{ old('branch_id', $user->branch_id) ? '' : 'selected' }}>Kantor Pusat</option>
+                            @endif
                             @foreach($branches as $branch)
                             <option value="{{ $branch->id }}" {{ old('branch_id', $user->branch_id) == $branch->id ? 'selected' : '' }} class="capitalize">{{ $branch->name }}</option>
                             @endforeach

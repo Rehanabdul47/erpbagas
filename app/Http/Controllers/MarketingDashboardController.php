@@ -17,6 +17,13 @@ class MarketingDashboardController extends Controller
         $currentYear = Carbon::now()->year;
         
         $branchId = $request->input('branch_id', 'all');
+        if (!auth()->user()->hasRole('Executive')) {
+            $branchId = auth()->user()->branch_id;
+            // Normalize so those with null branch id (Pusat) are treated as branch 1 (Pusat logic)
+            if ($branchId === null) {
+                $branchId = 1;
+            }
+        }
         $startDate = $request->input('start_date', Carbon::now()->subDays(29)->format('Y-m-d'));
         $endDate = $request->input('end_date', Carbon::now()->format('Y-m-d'));
         

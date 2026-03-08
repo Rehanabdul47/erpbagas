@@ -16,6 +16,7 @@ class User extends Authenticatable
         'email',
         'password',
         'department',
+        'branch_id',
     ];
 
     /**
@@ -49,5 +50,10 @@ class User extends Authenticatable
     public function branch()
     {
         return $this->belongsTo(Branch::class);
+    }
+
+    public function employee()
+    {
+        return $this->hasOne(Employee::class, 'email', 'email');
     }
 }

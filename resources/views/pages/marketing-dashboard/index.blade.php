@@ -58,11 +58,12 @@
                 </div>
             </div>
 
+            @if(auth()->user()->hasRole('Executive'))
             <div class="flex flex-col">
-                <span class="text-[9px] font-black text-indigo-400 uppercase tracking-widest px-1">Pilih Cabang</span>
+                <span class="text-[9px] font-black text-indigo-400 uppercase tracking-widest px-1">Pilih Cabang / Toko</span>
                 <div class="relative w-48 mt-1">
                     <select name="branch_id" class="w-full bg-gray-950 border border-gray-700/50 text-white rounded-lg pl-3 pr-10 py-1.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all appearance-none cursor-pointer shadow-inner">
-                        <option value="all" {{ $branchId === 'all' ? 'selected' : '' }}>Semua Cabang (POS)</option>
+                        <option value="all" {{ $branchId === 'all' ? 'selected' : '' }}>Semua Cabang / Toko</option>
                         @foreach($branches as $b)
                             <option value="{{ $b->id }}" {{ $branchId == $b->id ? 'selected' : '' }}>{{ $b->name }}</option>
                         @endforeach
@@ -70,6 +71,7 @@
                     <i data-lucide="chevron-down" class="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none"></i>
                 </div>
             </div>
+            @endif
 
             <div class="flex items-end h-full self-end mb-0.5">
                 <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold px-4 py-2 rounded-lg transition-all flex items-center gap-2 shadow-lg shadow-indigo-600/20 active:scale-95">
