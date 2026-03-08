@@ -47,22 +47,6 @@ class ProductionDashboardController extends Controller
             ->take(5)
             ->get();
             
-        $recentTransfers = \App\Models\StockMovement::with(['product.category', 'user'])
-            ->where('type', 'out')
-            ->where('reference', 'LIKE', 'Kirim ke%')
-            ->latest()
-            ->take(5)
-            ->get();
-            
-        $branches = \App\Models\Branch::where('is_active', true)->get();
-        $transferProducts = Product::where('type', 'final_product')
-            ->where('stock', '>', 0)
-            ->where(function($q) {
-                $branchId = auth()->user()->branch_id ?? 1;
-                $q->where('branch_id', $branchId)->orWhereNull('branch_id');
-            })
-            ->get();
-            
         $activePage = 'production-dashboard';
 
         return view('pages.production-dashboard.index', compact(
@@ -79,9 +63,6 @@ class ProductionDashboardController extends Controller
             'activeProductions',
             'criticalStockProducts',
             'recentPos',
-            'recentTransfers',
-            'branches',
-            'transferProducts',
             'activePage'
         ));
     }

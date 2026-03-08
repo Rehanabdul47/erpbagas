@@ -19,19 +19,8 @@ class ProductionController extends Controller
     {
         $productions = Production::with(['product.category', 'user', 'tailor'])->latest()->get();
         $tailors = \App\Models\Tailor::all();
-        $branches = \App\Models\Branch::where('is_active', true)->get();
         
-        // Final products for transfer options
-        $transferProducts = Product::where('type', 'final_product')
-            ->where('stock', '>', 0)
-            ->where(function($q) {
-                // Determine user's branch
-                $branchId = auth()->user()->branch_id ?? 1;
-                $q->where('branch_id', $branchId)->orWhereNull('branch_id');
-            })
-            ->get();
-
-        return view('pages.production.index', compact('productions', 'tailors', 'branches', 'transferProducts'))
+        return view('pages.production.index', compact('productions', 'tailors'))
             ->with('activePage', 'production');
     }
 
@@ -314,79 +303,5 @@ class ProductionController extends Controller
         }
     }
 
-    public function transferStock(Request $request)
-    {
-        $validated = $request->validate([
-            'product_id' => 'required|exists:products,id',
-            'branch_id' => 'required|exists:branches,id',
-            'quantity' => 'required|integer|min:1',
-            'notes' => 'nullable|string',
-        ]);
 
-        $sourceProduct = Product::findOrFail($validated['product_id']);
-        
-        // Ensure source product has enough stock
-        if ($sourceProduct->stock < $validated['quantity']) {
-            return back()->with('error', 'Stok tidak mencukupi untuk melakukan pengiriman.');
-        }
-
-        // Prevent transferring to the same branch
-        $sourceBranchId = $sourceProduct->branch_id ?? 1; // Assuming null is Pusat (1)
-        if ($sourceBranchId == $validated['branch_id']) {
-            return back()->with('error', 'Cabang tujuan tidak boleh sama dengan cabang asal.');
-        }
-
-        DB::beginTransaction();
-        try {
-            // Deduct stock from source
-            $sourceProduct->decrement('stock', $validated['quantity']);
-            
-            $destinationBranch = \App\Models\Branch::find($validated['branch_id']);
-            $sourceBranchName = $sourceProduct->branch ? $sourceProduct->branch->name : 'Kantor Pusat';
-
-            // Log source movement
-            StockMovement::create([
-                'product_id' => $sourceProduct->id,
-                'user_id' => Auth::id(),
-                'type' => 'out',
-                'quantity' => $validated['quantity'],
-                'reference' => 'Kirim ke ' . $destinationBranch->name,
-                'method' => 'Transfer Out',
-                'notes' => $validated['notes']
-            ]);
-
-            // Find or create product in destination branch
-            $destinationProduct = Product::where('sku', $sourceProduct->sku)
-                ->where('branch_id', $validated['branch_id'])
-                ->first();
-
-            if (!$destinationProduct) {
-                // Clone the product structure for the new branch
-                $destinationProduct = $sourceProduct->replicate();
-                $destinationProduct->branch_id = $validated['branch_id'];
-                $destinationProduct->stock = 0;
-                $destinationProduct->save();
-            }
-
-            // Increment stock at destination
-            $destinationProduct->increment('stock', $validated['quantity']);
-
-            // Log destination movement
-            StockMovement::create([
-                'product_id' => $destinationProduct->id,
-                'user_id' => Auth::id(),
-                'type' => 'in',
-                'quantity' => $validated['quantity'],
-                'reference' => 'Terima dari ' . $sourceBranchName,
-                'method' => 'Transfer In',
-                'notes' => $validated['notes']
-            ]);
-
-            DB::commit();
-            return redirect()->route('production.index')->with('success', "Berhasil mengirim {$validated['quantity']} unit {$sourceProduct->name} ke {$destinationBranch->name}.");
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return back()->with('error', 'Terjadi kesalahan sistem saat memproses pengiriman: ' . $e->getMessage());
-        }
-    }
 }

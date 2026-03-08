@@ -84,7 +84,7 @@ Route::middleware('auth')->group(function () {
         Route::put('/{production}/update-status', [ProductionController::class, 'updateStatus'])->name('update-status');
         Route::put('/{production}/advance-stage', [ProductionController::class, 'advanceStage'])->name('advance-stage');
         Route::put('/{production}/assign-tailor', [ProductionController::class, 'assignTailor'])->name('assign-tailor');
-        Route::post('/transfer', [ProductionController::class, 'transferStock'])->name('transfer');
+
     });
 
     // M. Tailors

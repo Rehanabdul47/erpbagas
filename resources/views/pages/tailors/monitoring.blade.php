@@ -4,7 +4,7 @@
 @section('breadcrumb', 'Monitor Vendor Produksi')
 
 @section('content')
-<div class="space-y-6">
+<div class="space-y-6" x-data="monitoringPage()">
     <!-- Header -->
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
@@ -52,11 +52,11 @@
                                 $totalTagihan = $tailor->productions->sum(function($p) { return $p->cost * $p->quantity; });
                             @endphp
                             @if($totalTagihan > 0)
-                            <div class="text-[10px] text-gray-400">Total Tagihan: <span class="text-emerald-400 font-bold">Rp {{ number_format($totalTagihan, 0, ',', '.') }}</span></div>
+                            <div class="text-[20px] text-gray-400">Total Tagihan: <span class="text-emerald-400 font-bold">Rp {{ number_format($totalTagihan, 0, ',', '.') }}</span></div>
                             @endif
                         </div>
+                        
                     </div>
-
                     <!-- Active Productions List -->
                     <div class="p-4 flex flex-col gap-3 min-h-[150px] max-h-[400px] overflow-y-auto">
                         @forelse($tailor->productions as $production)
@@ -85,9 +85,24 @@
                                             {{ $production->stage_label }}
                                         </div>
                                     </div>
-                                    <a href="{{ route('production.index') }}?search={{ $production->id }}" class="shrink-0 p-1.5 rounded-lg bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700 transition-colors" title="Lihat di Produksi">
-                                        <i data-lucide="external-link" class="w-4 h-4"></i>
-                                    </a>
+                                    <div class="flex items-center gap-2">
+                                        @if($production->is_last_stage)
+                                            <button type="button" 
+                                                @click="openConfirmModal('finish', 'Selesaikan Produksi?', 'Produksi sudah di tahap akhir. Tandai selesai dan masukkan ke stok?', '{{ route('production.update-status', $production) }}', 'PUT', 'completed')"
+                                                class="flex items-center justify-center w-8 h-8 rounded-lg text-xs font-bold transition-colors bg-emerald-500/10 hover:bg-emerald-500 text-emerald-400 hover:text-white" title="Selesai">
+                                                <i data-lucide="check-check" class="w-4 h-4"></i>
+                                            </button>
+                                        @else
+                                            <button type="button" 
+                                                @click="openConfirmModal('advance', 'Ke Tahap Selanjutnya?', 'Lanjutkan ke tahap \'{{ addslashes($production->getNextStage() ?? '') }}\'?', '{{ route('production.advance-stage', $production) }}', 'PUT')"
+                                                class="flex items-center justify-center w-8 h-8 rounded-lg text-xs font-bold transition-colors bg-indigo-500/10 hover:bg-indigo-500 text-indigo-400 hover:text-white" title="Tahap Selanjutnya">
+                                                <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                                            </button>
+                                        @endif
+                                        <a href="{{ route('production.index') }}?search={{ $production->id }}" class="flex items-center justify-center w-8 h-8 shrink-0 rounded-lg bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700 transition-colors" title="Lihat di Produksi">
+                                            <i data-lucide="external-link" class="w-4 h-4"></i>
+                                        </a>
+                                    </div>
                                 </div>
                             </div>
                         @empty
@@ -101,5 +116,76 @@
             @endforeach
         </div>
     @endif
+
+    {{-- Universal Confirmation Modal --}}
+    <div x-show="confirmModal" x-cloak style="display: none;" class="fixed inset-0 bg-gray-900/80 backdrop-blur-sm z-[200] flex items-center justify-center p-4 transition-opacity">
+        <div @click.away="confirmModal = false" class="bg-gray-800 border border-gray-700 rounded-xl shadow-2xl w-full max-w-sm overflow-hidden flex flex-col">
+            <div class="px-5 py-4 border-b border-gray-700/50 flex items-center justify-between">
+                <h3 class="font-bold text-white flex items-center gap-2">
+                    <i data-lucide="alert-circle" x-show="confirmType === 'advance'" class="w-5 h-5 text-indigo-400"></i>
+                    <i data-lucide="check-check" x-show="confirmType === 'finish'" class="w-5 h-5 text-emerald-400"></i>
+                    <span x-text="confirmTitle"> Konfirmasi</span>
+                </h3>
+                <button type="button" @click="confirmModal = false" class="text-gray-400 hover:text-white transition-colors">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <div class="p-5 flex flex-col gap-4 text-center items-center justify-center">
+                <div class="w-16 h-16 rounded-full flex items-center justify-center mb-2 shadow-inner"
+                     :class="confirmType === 'advance' ? 'bg-indigo-500/10 text-indigo-500' : 'bg-emerald-500/10 text-emerald-500'">
+                    <i data-lucide="arrow-right" x-show="confirmType === 'advance'" class="w-8 h-8"></i>
+                    <i data-lucide="check-check" x-show="confirmType === 'finish'" class="w-8 h-8"></i>
+                </div>
+                <div>
+                    <h4 class="text-lg font-bold text-white mb-1" x-text="confirmTitle"></h4>
+                    <p class="text-sm text-gray-400" x-text="confirmDesc"></p>
+                </div>
+            </div>
+            <div class="px-5 py-4 border-t border-gray-700/50 bg-gray-800/50 flex justify-end gap-3">
+                <button type="button" @click="confirmModal = false" class="px-4 py-2 hover:bg-gray-700 text-gray-300 rounded-lg text-sm font-medium transition-colors">Batal</button>
+                <form :action="confirmAction" method="POST" class="m-0">
+                    @csrf 
+                    <template x-if="confirmMethod !== 'POST'">
+                        <input type="hidden" name="_method" :value="confirmMethod">
+                    </template>
+                    <template x-if="confirmStatusPayload">
+                        <input type="hidden" name="status" :value="confirmStatusPayload">
+                    </template>
+                    
+                    <button type="submit" 
+                            class="px-5 py-2 text-white rounded-lg text-sm font-medium transition-colors shadow-sm"
+                            :class="confirmType === 'advance' ? 'bg-indigo-600 hover:bg-indigo-500 shadow-indigo-600/20' : 'bg-emerald-600 hover:bg-emerald-500 shadow-emerald-600/20'"
+                            x-text="confirmType === 'advance' ? 'Lanjutkan Tahap' : 'Selesaikan'">
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
 </div>
+
+@push('scripts')
+<script>
+document.addEventListener('alpine:init', () => {
+    Alpine.data('monitoringPage', () => ({
+        confirmModal: false,
+        confirmType: '',
+        confirmTitle: '',
+        confirmDesc: '',
+        confirmAction: '',
+        confirmMethod: 'POST',
+        confirmStatusPayload: null,
+
+        openConfirmModal(type, title, desc, action, method = 'POST', statusPayload = null) {
+            this.confirmType = type;
+            this.confirmTitle = title;
+            this.confirmDesc = desc;
+            this.confirmAction = action;
+            this.confirmMethod = method;
+            this.confirmStatusPayload = statusPayload;
+            this.confirmModal = true;
+        }
+    }));
+});
+</script>
+@endpush
 @endsection

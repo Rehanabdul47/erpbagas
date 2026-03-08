@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Product extends Model
 {
     protected $fillable = [
-        'sku', 'name', 'image', 'category_id', 'stock', 'safety_stock',
+        'sku', 'name', 'image', 'category_id', 'branch_id', 'stock', 'safety_stock',
         'price', 'cogs', 'batch', 'location', 'type'
     ];
 
@@ -17,6 +17,11 @@ class Product extends Model
         'price' => 'decimal:2',
         'cogs' => 'decimal:2',
     ];
+
+    public function branch(): BelongsTo
+    {
+        return $this->belongsTo(Branch::class);
+    }
 
     public function category(): BelongsTo
     {

@@ -18,9 +18,6 @@
             <p class="text-xs text-gray-400 mt-0.5">Rangkuman operasional divisi produksi, inventori, dan suplai.</p>
         </div>
         <div class="ml-auto flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-            <button type="button" @click="transferModal = true" class="flex items-center justify-center gap-2 px-4 py-2 bg-gray-800 border border-gray-700 hover:bg-gray-700 text-white rounded-lg text-xs font-medium transition-all shadow-sm active:scale-[0.98] w-full sm:w-auto">
-                <i data-lucide="send" class="w-3.5 h-3.5"></i> Kirim ke Cabang
-            </button>
             <a href="{{ route('production.create') }}" class="flex items-center justify-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-medium transition-colors shadow-sm shadow-indigo-600/20">
                 <i data-lucide="plus" class="w-3.5 h-3.5"></i> Mulai Produksi
             </a>
@@ -71,7 +68,7 @@
         </div>
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 pb-6">
+    <div class="grid grid-cols-1 gap-6 pb-6">
         {{-- Produksi Aktif --}}
         <div class="bg-gray-800 border border-gray-700/50 rounded-xl shadow-sm flex flex-col h-full">
             <div class="p-5 border-b border-gray-700/50 flex items-center justify-between">
@@ -224,102 +221,11 @@
             </div>
         </div>
 
-        {{-- Riwayat Pengiriman Cabang --}}
-        <div class="bg-gray-800 border border-gray-700/50 rounded-xl shadow-sm flex flex-col h-full lg:col-span-1">
-            <div class="p-5 border-b border-gray-700/50 flex items-center justify-between">
-                <h4 class="font-bold text-white flex items-center gap-2">
-                    <i data-lucide="truck" class="w-4 h-4 text-cyan-400"></i> Kirim ke Cabang
-                </h4>
-                <a href="{{ route('inventory.index') }}" class="text-xs text-indigo-400 hover:text-indigo-300">Riwayat Mutasi →</a>
-            </div>
-            <div class="p-0 flex-1 relative min-h-[250px]">
-                <div class="absolute inset-0 overflow-y-auto w-full">
-                    <table class="w-full text-left text-sm whitespace-nowrap">
-                        <thead class="bg-gray-900/50 text-gray-400 text-xs uppercase tracking-wider sticky top-0 z-10 border-b border-gray-700/50 backdrop-blur-md">
-                            <tr>
-                                <th class="px-5 py-3 font-medium">Waktu</th>
-                                <th class="px-5 py-3 font-medium">Tujuan</th>
-                                <th class="px-5 py-3 font-medium">Produk</th>
-                                <th class="px-5 py-3 font-medium">Qty</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-gray-700/50">
-                            @forelse($recentTransfers as $transfer)
-                            <tr class="hover:bg-gray-700/20 transition-colors">
-                                <td class="px-5 py-3 text-gray-400 text-xs">{{ $transfer->created_at->format('d M H:i') }}</td>
-                                <td class="px-5 py-3 text-indigo-400 font-medium">{{ str_replace('Kirim ke ', '', $transfer->reference) }}</td>
-                                <td class="px-5 py-3 text-gray-300">
-                                    <div class="font-bold text-white">{{ $transfer->product->sku }}</div>
-                                    <div class="text-xs text-gray-500">{{ Str::limit($transfer->product->name, 20) }}</div>
-                                </td>
-                                <td class="px-5 py-3">
-                                    <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-cyan-500/10 text-cyan-400">{{ $transfer->quantity }}</span>
-                                </td>
-                            </tr>
-                            @empty
-                            <tr>
-                                <td colspan="4" class="px-5 py-8 text-center text-gray-500">
-                                    <i data-lucide="package-minus" class="w-8 h-8 mx-auto mb-2 text-gray-600"></i>
-                                    Belum ada riwayat pengiriman.
-                                </td>
-                            </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
-            </div>
         </div>
+    </div>
     </div>
 
-    {{-- Transfer Stock Modal --}}
-    <div x-show="transferModal" x-cloak style="display: none;" class="fixed inset-0 bg-gray-900/80 backdrop-blur-sm z-[150] flex items-center justify-center p-4">
-        <div @click.away="transferModal = false" class="bg-gray-800 border border-gray-700 rounded-xl max-w-lg w-full outline-none overflow-hidden">
-            <div class="px-5 py-4 border-b border-gray-700/50 flex items-center justify-between">
-                <h3 class="font-bold text-white flex items-center gap-2"><i data-lucide="send" class="w-5 h-5 text-indigo-400"></i> Kirim Barang ke Cabang</h3>
-                <button type="button" @click="transferModal = false" class="text-gray-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
-            </div>
-            <form action="{{ route('production.transfer') }}" method="POST">
-                @csrf
-                <div class="px-5 py-6 space-y-4">
-                    <div>
-                        <label class="block text-xs font-medium text-gray-400 uppercase tracking-wider mb-2">Pilih Produk</label>
-                        <select name="product_id" required class="w-full bg-gray-900 border border-gray-700 text-white rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none select2-enable">
-                            <option value="">-- Pilih Produk Jadi --</option>
-                            @foreach($transferProducts as $tp)
-                                <option value="{{ $tp->id }}">{{ $tp->sku }} - {{ $tp->name }} (Stok: {{ $tp->stock }})</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-xs font-medium text-gray-400 uppercase tracking-wider mb-2">Cabang Tujuan</label>
-                            <select name="branch_id" required class="w-full bg-gray-900 border border-gray-700 text-white rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
-                                <option value="">-- Pilih Cabang --</option>
-                                @foreach($branches as $b)
-                                    @continue((auth()->user()->branch_id ?? 1) == $b->id)
-                                    <option value="{{ $b->id }}">{{ $b->name }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-xs font-medium text-gray-400 uppercase tracking-wider mb-2">Jumlah Dikirim</label>
-                            <input type="number" name="quantity" required min="1" placeholder="Masukkan jumlah" class="w-full bg-gray-900 border border-gray-700 text-white rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none placeholder-gray-600">
-                        </div>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-medium text-gray-400 uppercase tracking-wider mb-2">Catatan (Opsional)</label>
-                        <textarea name="notes" rows="2" placeholder="Cth: Pengiriman rutin / via Ekspedisi..." class="w-full bg-gray-900 border border-gray-700 text-white rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none placeholder-gray-600"></textarea>
-                    </div>
-                </div>
-                <div class="px-5 py-4 border-t border-gray-700/50 bg-gray-800/50 flex justify-end gap-3">
-                    <button type="button" @click="transferModal = false" class="px-4 py-2 hover:bg-gray-700 text-gray-300 rounded-lg text-sm font-medium transition-colors">Batal</button>
-                    <button type="submit" class="px-6 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm font-medium transition-colors shadow-sm shadow-indigo-600/20 flex items-center gap-2">
-                        <i data-lucide="send" class="w-4 h-4"></i> Proses Kirim
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
+
 </div>
 
 @push('scripts')
