@@ -73,9 +73,26 @@
             </div>
             
             <div class="space-y-2">
-                <label class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Lokasi Default</label>
+                <label class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Lokasi / Rak Default</label>
                 <input type="text" name="location" value="{{ old('location') }}" placeholder="Rak A1"
                        class="w-full bg-gray-900 border border-gray-700 text-white rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all placeholder-gray-600">
+            </div>
+
+            <div class="space-y-2 md:col-span-2">
+                <label class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Cabang / Toko <span class="text-red-500">*</span></label>
+                @hasrole('Executive')
+                <select name="branch_id" required class="w-full bg-gray-900 border border-gray-700 text-white rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all">
+                    <option value="">Pilih Cabang (Pusat jika kosong)</option>
+                    @foreach($branches as $branch)
+                    <option value="{{ $branch->id }}" {{ old('branch_id') == $branch->id ? 'selected' : '' }}>{{ $branch->name }}</option>
+                    @endforeach
+                </select>
+                @else
+                <div class="w-full bg-gray-800 border border-gray-700 text-gray-400 rounded-xl px-4 py-3 text-sm cursor-not-allowed">
+                    {{ auth()->user()->branch->name ?? 'Pusat' }} (Terkunci)
+                </div>
+                <input type="hidden" name="branch_id" value="{{ auth()->user()->branch_id ?? 1 }}">
+                @endhasrole
             </div>
             
             <div class="space-y-2 md:col-span-2">

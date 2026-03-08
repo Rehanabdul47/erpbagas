@@ -10,6 +10,7 @@
     category: '',
     status: '',
     type: '',
+    branch_id: new URLSearchParams(window.location.search).get('branch_id') || '',
     showStockIn: false,
     showStockOut: false,
     showOpnameModal: false,
@@ -87,6 +88,21 @@
                     <option value="final_product">🌟 Final Product</option>
                     <option value="raw_material">🧱 Raw Material</option>
                 </select>
+                @hasrole('Executive')
+                <div class="flex items-center gap-2">
+                    <select x-model="branch_id" @change="window.location.href = '?tab=' + activeTab + (branch_id ? '&branch_id=' + branch_id : '')" class="w-full sm:w-48 bg-gray-900 border border-gray-700 text-white rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all">
+                        <option value="">Semua Cabang (Global)</option>
+                        @foreach($branches as $branch)
+                        <option value="{{ $branch->id }}" {{ request('branch_id') == $branch->id ? 'selected' : '' }}>{{ $branch->name }}</option>
+                        @endforeach
+                    </select>
+                    @if(request('branch_id'))
+                        <a href="{{ route('inventory.index') }}" class="p-2 text-gray-400 hover:text-red-400 bg-gray-900 border border-gray-700 rounded-lg transition-colors" title="Batal Filter Cabang">
+                            <i data-lucide="x" class="w-4 h-4"></i>
+                        </a>
+                    @endif
+                </div>
+                @endhasrole
                 <div class="sm:ml-auto flex flex-wrap gap-2 w-full sm:w-auto">
                     <a href="{{ route('inventory.create') }}" class="flex items-center justify-center gap-2 px-3 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm font-medium transition-colors"><i data-lucide="plus" class="w-4 h-4"></i> Tambah</a>
                     <button @click="showStockIn = true" class="flex items-center justify-center gap-2 px-3 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-sm font-medium transition-colors"><i data-lucide="arrow-down-circle" class="w-4 h-4"></i> Masuk</button>
@@ -150,7 +166,10 @@
                             <td class="px-4 py-3 text-gray-300">Rp {{ number_format($p->price, 0, ',', '.') }}</td>
                             <td class="px-4 py-3 text-gray-300">Rp {{ number_format($p->cogs, 0, ',', '.') }}</td>
                             @endhasanyrole
-                            <td class="px-4 py-3 text-gray-400">{{ $p->location }}</td>
+                            <td class="px-4 py-3">
+                                <span class="text-gray-400 block">{{ $p->branch ? $p->branch->name : 'Pusat' }}</span>
+                                <span class="text-xs text-gray-500">{{ $p->location }}</span>
+                            </td>
                             <td class="px-4 py-3">
                                 <span class="px-2 py-1 rounded-full text-[10px] font-bold 
                                     {{ $p->status === 'ok' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 

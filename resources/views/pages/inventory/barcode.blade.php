@@ -13,6 +13,7 @@
     <div class="inline-block bg-white p-10 border border-gray-200 rounded-2xl mb-8 print:border-none print:m-0 print:p-4">
         <div class="mb-3 font-bold text-xl text-black tracking-widest">
             {{ $product->sku }}
+            <div class="text-[10px] font-normal tracking-normal text-gray-500 mt-1 uppercase">{{ $product->branch->name ?? 'Pusat' }}</div>
         </div>
         
         <div class="mb-3 flex justify-center">

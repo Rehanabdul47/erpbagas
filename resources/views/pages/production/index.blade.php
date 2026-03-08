@@ -22,9 +22,14 @@
     <!-- Header Section -->
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <h3 class="text-xl font-bold text-white mb-0">Daftar Produksi</h3>
-        <a href="{{ route('production.create') }}" class="flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-sm font-medium transition-all shadow-lg shadow-indigo-600/20 active:scale-[0.98] w-full sm:w-auto">
-            <i data-lucide="plus" class="w-4 h-4"></i> Mulai Produksi
-        </a>
+        <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+            <button type="button" @click="transferModal = true" class="flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-800 border border-gray-700 hover:bg-gray-700 text-white rounded-xl text-sm font-medium transition-all shadow-sm active:scale-[0.98] w-full sm:w-auto">
+                <i data-lucide="send" class="w-4 h-4"></i> Kirim ke Cabang
+            </button>
+            <a href="{{ route('production.create') }}" class="flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-sm font-medium transition-all shadow-lg shadow-indigo-600/20 active:scale-[0.98] w-full sm:w-auto">
+                <i data-lucide="plus" class="w-4 h-4"></i> Mulai Produksi
+            </a>
+        </div>
     </div>
 
     <!-- Table Container -->
@@ -162,6 +167,54 @@
                 </div>
             </form>
         </div>
+    {{-- Transfer Stock Modal --}}
+    <div x-show="transferModal" x-cloak style="display: none;" class="fixed inset-0 bg-gray-900/80 backdrop-blur-sm z-[150] flex items-center justify-center p-4">
+        <div @click.away="transferModal = false" class="bg-gray-800 border border-gray-700 rounded-xl max-w-lg w-full outline-none overflow-hidden">
+            <div class="px-5 py-4 border-b border-gray-700/50 flex items-center justify-between">
+                <h3 class="font-bold text-white flex items-center gap-2"><i data-lucide="send" class="w-5 h-5 text-indigo-400"></i> Kirim Barang ke Cabang</h3>
+                <button type="button" @click="transferModal = false" class="text-gray-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <form action="{{ route('production.transfer') }}" method="POST">
+                @csrf
+                <div class="px-5 py-6 space-y-4">
+                    <div>
+                        <label class="block text-xs font-medium text-gray-400 uppercase tracking-wider mb-2">Pilih Produk</label>
+                        <select name="product_id" required class="w-full bg-gray-900 border border-gray-700 text-white rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none select2-enable">
+                            <option value="">-- Pilih Produk Jadi --</option>
+                            @foreach($transferProducts as $tp)
+                                <option value="{{ $tp->id }}">{{ $tp->sku }} - {{ $tp->name }} (Stok: {{ $tp->stock }})</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-medium text-gray-400 uppercase tracking-wider mb-2">Cabang Tujuan</label>
+                            <select name="branch_id" required class="w-full bg-gray-900 border border-gray-700 text-white rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+                                <option value="">-- Pilih Cabang --</option>
+                                @foreach($branches as $b)
+                                    @continue((auth()->user()->branch_id ?? 1) == $b->id)
+                                    <option value="{{ $b->id }}">{{ $b->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-400 uppercase tracking-wider mb-2">Jumlah Dikirim</label>
+                            <input type="number" name="quantity" required min="1" placeholder="Masukkan jumlah" class="w-full bg-gray-900 border border-gray-700 text-white rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none placeholder-gray-600">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-400 uppercase tracking-wider mb-2">Catatan (Opsional)</label>
+                        <textarea name="notes" rows="2" placeholder="Cth: Pengiriman rutin / via Ekspedisi..." class="w-full bg-gray-900 border border-gray-700 text-white rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none placeholder-gray-600"></textarea>
+                    </div>
+                </div>
+                <div class="px-5 py-4 border-t border-gray-700/50 bg-gray-800/50 flex justify-end gap-3">
+                    <button type="button" @click="transferModal = false" class="px-4 py-2 hover:bg-gray-700 text-gray-300 rounded-lg text-sm font-medium transition-colors">Batal</button>
+                    <button type="submit" class="px-6 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm font-medium transition-colors shadow-sm shadow-indigo-600/20 flex items-center gap-2">
+                        <i data-lucide="send" class="w-4 h-4"></i> Proses Kirim
+                    </button>
+                </div>
+            </form>
+        </div>
     </div>
 
     {{-- Universal Confirmation Modal --}}
@@ -214,6 +267,7 @@
 document.addEventListener('alpine:init', () => {
     Alpine.data('productionPage', () => ({
         tailorModal: false,
+        transferModal: false,
         selectedProdId: null,
         selectedTailorId: '',
 

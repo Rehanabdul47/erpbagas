@@ -17,27 +17,76 @@ class InventoryController extends Controller
 {
     public function index()
     {
-        $products = Product::with('category')->get();
+        $user = Auth::user();
+        $isExecutive = $user->hasRole('Executive');
+        
+        // Scope queries based on role
+        $productQuery = Product::with(['category', 'branch']);
+        $movementQuery = StockMovement::with(['product.branch', 'user'])->latest();
+        $opnameQuery = StockOpname::with(['product.branch', 'user'])->latest();
+        
+        $branches = collect();
+        if ($isExecutive) {
+            $branches = \App\Models\Branch::where('is_active', true)->get();
+            if (request('branch_id')) {
+                $productQuery->where('branch_id', request('branch_id'));
+                $movementQuery->whereHas('product', function($q) {
+                    $q->where('branch_id', request('branch_id'));
+                });
+                $opnameQuery->whereHas('product', function($q) {
+                    $q->where('branch_id', request('branch_id'));
+                });
+            }
+        } else {
+            // Normalize Pusat to 1 or null depending on data entry, assuming branch_id 1 is the default
+            $branchId = $user->branch_id ?? 1;
+            
+            $productQuery->where(function ($q) use ($branchId) {
+                $q->where('branch_id', $branchId)->orWhereNull('branch_id');
+            });
+            $movementQuery->whereHas('product', function($q) use ($branchId) {
+                $q->where('branch_id', $branchId)->orWhereNull('branch_id');
+            });
+            $opnameQuery->whereHas('product', function($q) use ($branchId) {
+                $q->where('branch_id', $branchId)->orWhereNull('branch_id');
+            });
+        }
+
+        $products = $productQuery->get();
         $categories = Category::all();
-        $movements = StockMovement::with(['product', 'user'])->latest()->limit(20)->get();
-        $opnameHistory = StockOpname::with(['product', 'user'])->latest()->limit(10)->get();
+        $movements = $movementQuery->limit(20)->get();
+        $opnameHistory = $opnameQuery->limit(10)->get();
 
         $stats = [
             'totalSku' => $products->count(),
             'totalStock' => $products->sum('stock'),
             'lowStock' => $products->where('status', 'low')->count(),
-            'outOfStock' => $products->where('status', 'out')->count(),
+            'outOfStock' => $products->where('stock', 0)->count(),
         ];
 
-        return view('pages.inventory.index', compact('products', 'categories', 'movements', 'opnameHistory', 'stats'))
+        return view('pages.inventory.index', compact('products', 'categories', 'movements', 'opnameHistory', 'stats', 'branches'))
             ->with('activePage', 'inventory');
     }
 
     public function create()
     {
+        $user = Auth::user();
+        $isExecutive = $user->hasRole('Executive');
+        $branchId = $user->branch_id ?? 1;
+
         $categories = Category::all();
-        $rawMaterials = Product::where('type', 'raw_material')->get();
-        return view('pages.inventory.create', compact('categories', 'rawMaterials'))
+        
+        $rawMaterialsQuery = Product::where('type', 'raw_material');
+        if (!$isExecutive) {
+            $rawMaterialsQuery->where(function($q) use ($branchId) {
+                $q->where('branch_id', $branchId)->orWhereNull('branch_id');
+            });
+        }
+        $rawMaterials = $rawMaterialsQuery->get();
+        
+        $branches = $isExecutive ? \App\Models\Branch::where('is_active', true)->get() : collect();
+
+        return view('pages.inventory.create', compact('categories', 'rawMaterials', 'branches', 'isExecutive'))
             ->with('activePage', 'inventory');
     }
 
@@ -55,7 +104,10 @@ class InventoryController extends Controller
             'location' => 'nullable|string',
             'image' => 'nullable|string',
             'image_file' => 'nullable|image|max:2048',
+            'image' => 'nullable|string',
+            'image_file' => 'nullable|image|max:2048',
             'type' => 'required|in:raw_material,final_product',
+            'branch_id' => 'nullable|exists:branches,id',
             'boms' => 'nullable|array',
             'boms.*.raw_material_id' => 'nullable|exists:products,id',
             'boms.*.quantity' => 'nullable|numeric|min:0.01',
@@ -64,6 +116,10 @@ class InventoryController extends Controller
         if ($request->hasFile('image_file')) {
             $path = $request->file('image_file')->store('products', 'public');
             $validated['image'] = 'storage/' . $path;
+        }
+
+        if (!Auth::user()->hasRole('Executive')) {
+            $validated['branch_id'] = Auth::user()->branch_id ?? 1;
         }
 
         $product = Product::create($validated);
@@ -96,13 +152,32 @@ class InventoryController extends Controller
 
     public function edit(Product $product)
     {
+        $user = Auth::user();
+        $isExecutive = $user->hasRole('Executive');
+        $branchId = $user->branch_id ?? 1;
+
         $categories = Category::all();
-        $rawMaterials = Product::where('type', 'raw_material')
-                                ->where('id', '!=', $product->id)
-                                ->get();
+        
+        $rawMaterialsQuery = Product::where('type', 'raw_material')
+                                ->where('id', '!=', $product->id);
+                                
+        if (!$isExecutive) {
+            // Include items in user's branch, or items with no branch, OR the items currently selected in the BOM (even if branch changed)
+            $existingBomRawMaterialIds = $product->billOfMaterialsAsFinal->pluck('raw_material_id')->toArray();
+            
+            $rawMaterialsQuery->where(function($q) use ($branchId, $existingBomRawMaterialIds) {
+                $q->where('branch_id', $branchId)
+                  ->orWhereNull('branch_id')
+                  ->orWhereIn('id', $existingBomRawMaterialIds);
+            });
+        }
+        $rawMaterials = $rawMaterialsQuery->get();
+        
+        $branches = $isExecutive ? \App\Models\Branch::where('is_active', true)->get() : collect();
+
         $product->load('billOfMaterialsAsFinal.rawMaterial');
 
-        return view('pages.inventory.edit', compact('product', 'categories', 'rawMaterials'))
+        return view('pages.inventory.edit', compact('product', 'categories', 'rawMaterials', 'branches', 'isExecutive'))
             ->with('activePage', 'inventory');
     }
 
@@ -120,6 +195,7 @@ class InventoryController extends Controller
             'image' => 'nullable|string',
             'image_file' => 'nullable|image|max:2048',
             'type' => 'required|in:raw_material,final_product',
+            'branch_id' => 'nullable|exists:branches,id',
             'boms' => 'nullable|array',
             'boms.*.raw_material_id' => 'nullable|exists:products,id',
             'boms.*.quantity' => 'nullable|numeric|min:0.01',
@@ -128,6 +204,14 @@ class InventoryController extends Controller
         if ($request->hasFile('image_file')) {
             $path = $request->file('image_file')->store('products', 'public');
             $validated['image'] = 'storage/' . $path;
+        }
+
+        if (!Auth::user()->hasRole('Executive')) {
+             // Managers/Staff can't change branch info, lock it to theirs
+            $validated['branch_id'] = Auth::user()->branch_id ?? 1;
+        } elseif (!isset($validated['branch_id'])) {
+             // In case executive clears it, fallback to 1 (Pusat) / null
+            $validated['branch_id'] = 1;
         }
 
         $product->update($validated);
