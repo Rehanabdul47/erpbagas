@@ -109,15 +109,25 @@ x-init="$nextTick(() => {
                         </h3>
                         <span class="text-[10px] font-black text-gray-500 uppercase tracking-widest">Public Information</span>
                     </div>
-                    <form action="{{ route('settings.update') }}" method="POST">
+                    <form action="{{ route('settings.update') }}" method="POST" enctype="multipart/form-data">
                         @csrf
                         <input type="hidden" name="group" value="company">
                         <div class="p-6 space-y-6">
                             <div class="flex flex-col sm:flex-row gap-6">
-                                <div class="w-24 h-24 sm:w-32 sm:h-32 rounded-3xl bg-gray-900 border-2 border-dashed border-gray-700 flex flex-col items-center justify-center gap-2 cursor-pointer hover:border-indigo-500 transition-all group shrink-0">
-                                    <i data-lucide="upload-cloud" class="w-6 h-6 text-gray-600 group-hover:text-indigo-400 group-hover:scale-110 transition-all"></i>
-                                    <span class="text-[8px] font-black text-gray-500 uppercase text-center px-2 group-hover:text-indigo-400 transition-colors">Upload<br>Brand Logo</span>
-                                </div>
+                                <label for="company_logo" class="w-24 h-24 sm:w-32 sm:h-32 rounded-3xl bg-gray-900 border-2 border-dashed border-gray-700 flex flex-col items-center justify-center gap-2 cursor-pointer hover:border-indigo-500 transition-all group shrink-0 relative overflow-hidden">
+                                    @if(isset($settings['company_logo']) && $settings['company_logo'])
+                                        <img src="{{ asset($settings['company_logo']) }}" alt="Company Logo" class="absolute inset-0 w-full h-full object-contain p-2 bg-white/5">
+                                        <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center transition-all">
+                                            <i data-lucide="upload-cloud" class="w-6 h-6 text-white mb-1"></i>
+                                            <span class="text-[8px] font-black text-white uppercase text-center px-2">Change<br>Logo</span>
+                                        </div>
+                                    @else
+                                        <i data-lucide="upload-cloud" class="w-6 h-6 text-gray-600 group-hover:text-indigo-400 group-hover:scale-110 transition-all"></i>
+                                        <span class="text-[8px] font-black text-gray-500 uppercase text-center px-2 group-hover:text-indigo-400 transition-colors">Upload<br>Brand Logo</span>
+                                    @endif
+                                </label>
+                                <input type="file" id="company_logo" name="company_logo" class="hidden" accept="image/*">
+
                                 <div class="flex-1 space-y-6">
                                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                         <div class="space-y-1.5">

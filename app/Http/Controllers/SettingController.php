@@ -21,7 +21,14 @@ class SettingController extends Controller
 
         foreach ($settings as $key => $value) {
             if ($key === 'group') continue;
-            
+
+            if ($request->hasFile($key)) {
+                $file = $request->file($key);
+                $filename = 'logo_' . time() . '.' . $file->getClientOriginalExtension();
+                $file->move(public_path('assets/images'), $filename);
+                $value = 'assets/images/' . $filename;
+            }
+
             Setting::updateOrCreate(
                 ['key' => $key],
                 ['value' => $value, 'group' => $group]

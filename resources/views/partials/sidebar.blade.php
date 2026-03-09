@@ -50,8 +50,16 @@
 <aside :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'" id="sidebar" class="fixed top-0 left-0 h-full w-64 bg-gray-800/95 border-r border-gray-700/50 flex flex-col z-[100] transition-transform duration-300">
     <div class="h-16 flex items-center justify-between px-6 border-b border-gray-700/50 shrink-0">
         <div class="flex items-center gap-3 text-indigo-400 font-bold tracking-widest text-lg">
-            <i data-lucide="hexagon" class="w-6 h-6"></i>
-            <span>GUPALA</span>
+            @php
+                $sidebarLogo = \App\Models\Setting::where('key', 'company_logo')->value('value');
+                $sidebarName = \App\Models\Setting::where('key', 'company_name')->value('value') ?? 'GUPALA';
+            @endphp
+            @if($sidebarLogo)
+                <img src="{{ asset($sidebarLogo) }}" alt="Logo" class="w-8 h-8 object-contain">
+            @else
+                <i data-lucide="hexagon" class="w-6 h-6"></i>
+            @endif
+            <span class="truncate max-w-[130px]">{{ $sidebarName }}</span>
         </div>
         <button @click="sidebarOpen = false" id="sidebar-toggle" class="lg:hidden p-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-700 transition-colors">
             <i data-lucide="x" class="w-5 h-5"></i>
