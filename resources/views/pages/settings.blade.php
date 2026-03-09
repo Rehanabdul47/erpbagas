@@ -134,7 +134,7 @@
 
                             <div class="space-y-1.5">
                                 <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest pl-1">Business HQ Address</label>
-                                <textarea rows="3" class="w-full bg-gray-900 border border-gray-700 text-white rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all">Jl. Antigravity No. 10, Jakarta Selatan, Indonesia</textarea>
+                                <textarea rows="3" class="w-full bg-gray-900 border border-gray-700 text-white rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all">Jl. pembatikan,warulor,wiradesa,Indonesia</textarea>
                             </div>
 
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">

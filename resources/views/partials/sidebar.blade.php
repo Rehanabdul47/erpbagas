@@ -16,6 +16,7 @@
             ['id' => 'production', 'icon' => 'factory', 'label' => 'Produksi', 'route' => 'production.index', 'visible' => true],
             ['id' => 'tailors', 'icon' => 'scissors', 'label' => 'Vendor Produksi', 'route' => 'tailors.index', 'visible' => true],
             ['id' => 'tailors-monitoring', 'icon' => 'activity', 'label' => 'Monitor Vendor Produksi', 'route' => 'tailors.monitoring', 'visible' => true],
+            ['id' => 'production-transfers', 'icon' => 'arrow-right-left', 'label' => 'Transfer Barang', 'route' => 'production.transfers.index', 'visible' => true],
             ['id' => 'categories', 'icon' => 'tags', 'label' => 'Kategori', 'route' => 'categories.index', 'visible' => true],
         ]],
         ['section' => 'DIVISI MARKETING', 'visible' => $isMgmt || $dept === 'Marketing' || ($user && $user->hasRole('Sales/Marketing')), 'items' => [

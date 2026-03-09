@@ -11,10 +11,11 @@
 
 @section('content')
 <div class="bg-gray-800 border border-gray-700/50 rounded-xl shadow-sm p-6 w-full max-w-4xl" 
+     x-init="type = '{{ old('type', 'final_product') }}'; imageMode = '{{ old('image_file') ? 'upload' : 'url' }}'; boms = {{ old('boms') ? json_encode(array_values(old('boms'))) : '[{ raw_material_id: \'\' , quantity: 1 }]' }}"
      x-data="{
-         type: '{{ old('type', 'final_product') }}',
-         imageMode: '{{ old('image_file') ? 'upload' : 'url' }}',
-         boms: {{ old('boms') ? json_encode(array_values(old('boms'))) : '[{ raw_material_id: \'\' , quantity: 1 }]' }},
+         type: '',
+         imageMode: '',
+         boms: [],
          rawMaterials: {{ json_encode($rawMaterials) }},
          addBom() {
              this.boms.push({ raw_material_id: '', quantity: 1 });
@@ -184,7 +185,7 @@
                     <p class="text-[11px] text-gray-500">Masukkan link URL gambar langsung (contoh dari Unsplash)</p>
                     <div class="relative">
                         <i data-lucide="link" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500"></i>
-                        <input type="url" name="image" value="{{ old('image') }}" placeholder="https://example.com/image.jpg"
+                        <input type="text" name="image" value="{{ old('image') }}" placeholder="https://example.com/image.jpg"
                                :disabled="imageMode !== 'url'"
                                class="w-full bg-gray-900 border border-gray-700 text-white pl-10 pr-4 py-3 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all placeholder-gray-600">
                     </div>

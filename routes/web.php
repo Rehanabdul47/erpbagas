@@ -18,6 +18,7 @@ use App\Http\Controllers\FinanceDashboardController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\HrmDashboardController;
 use App\Http\Controllers\TailorController; // Added TailorController import
+use App\Http\Controllers\ProductionTransferController; // Added ProductionTransferController
 
 use App\Http\Controllers\RedeemCodeController;
 
@@ -85,6 +86,9 @@ Route::middleware('auth')->group(function () {
         Route::put('/{production}/advance-stage', [ProductionController::class, 'advanceStage'])->name('advance-stage');
         Route::put('/{production}/assign-tailor', [ProductionController::class, 'assignTailor'])->name('assign-tailor');
 
+        // Stock Transfers
+        Route::resource('transfers', ProductionTransferController::class)->except(['show', 'edit', 'update', 'destroy']);
+        Route::put('/transfers/{transfer}/status', [ProductionTransferController::class, 'updateStatus'])->name('transfers.update-status');
     });
 
     // M. Tailors

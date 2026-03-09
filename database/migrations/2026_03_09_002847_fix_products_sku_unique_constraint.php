@@ -12,7 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('products', function (Blueprint $table) {
-            //
+            $table->dropUnique(['sku']);
+            $table->unique(['sku', 'branch_id']);
         });
     }
 
@@ -22,7 +23,8 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('products', function (Blueprint $table) {
-            //
+            $table->dropUnique(['sku', 'branch_id']);
+            $table->unique('sku');
         });
     }
 };
