@@ -181,6 +181,6 @@ Route::middleware('auth')->group(function () {
         Route::delete('/customers/{customer}', [SalesController::class, 'destroyCustomer'])->name('customers.destroy');
     });
 
-    Route::get('/settings', fn() => view('pages.settings', ['activePage' => 'settings']))->name('settings');
+    Route::get('/settings', [\App\Http\Controllers\SettingController::class, 'index'])->name('settings');
     Route::post('/settings', [\App\Http\Controllers\SettingController::class, 'update'])->name('settings.update');
 });

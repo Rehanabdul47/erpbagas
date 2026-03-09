@@ -6,10 +6,11 @@
 @section('content')
 <div class="max-w-6xl mx-auto space-y-6" x-data="{ 
     activeTab: 'company',
-    darkMode: true,
-    notifications: true,
-    emailAlerts: true,
-    autoBackup: false,
+    darkMode: {{ ($settings['dark_mode'] ?? 'true') === 'true' ? 'true' : 'false' }},
+    notifications: {{ ($settings['notifications'] ?? 'true') === 'true' ? 'true' : 'false' }},
+    emailAlerts: {{ ($settings['email_alerts'] ?? 'true') === 'true' ? 'true' : 'false' }},
+    autoBackup: {{ ($settings['auto_backup'] ?? 'false') === 'true' ? 'true' : 'false' }},
+    twoFactor: {{ ($settings['two_factor'] ?? 'false') === 'true' ? 'true' : 'false' }},
     saveSettings() {
         this.$dispatch('global-alert', {
             type: 'success',
@@ -18,7 +19,18 @@
             confirmText: 'PROCEED'
         });
     }
-}">
+}"
+@if(session('success'))
+x-init="$nextTick(() => { 
+    $dispatch('global-alert', {
+        type: 'success',
+        title: 'SUCCESS',
+        message: '{{ session('success') }}',
+        confirmText: 'PROCEED'
+    });
+})"
+@endif
+>
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-2">
         <div class="flex items-center gap-4">
             <div class="w-12 h-12 rounded-2xl bg-indigo-500/10 text-indigo-400 flex items-center justify-center border border-indigo-500/20">
@@ -97,7 +109,9 @@
                         </h3>
                         <span class="text-[10px] font-black text-gray-500 uppercase tracking-widest">Public Information</span>
                     </div>
-                    <form @submit.prevent="saveSettings()">
+                    <form action="{{ route('settings.update') }}" method="POST">
+                        @csrf
+                        <input type="hidden" name="group" value="company">
                         <div class="p-6 space-y-6">
                             <div class="flex flex-col sm:flex-row gap-6">
                                 <div class="w-24 h-24 sm:w-32 sm:h-32 rounded-3xl bg-gray-900 border-2 border-dashed border-gray-700 flex flex-col items-center justify-center gap-2 cursor-pointer hover:border-indigo-500 transition-all group shrink-0">
@@ -108,25 +122,25 @@
                                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                         <div class="space-y-1.5">
                                             <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest pl-1">Company Name</label>
-                                            <input type="text" value="GUPALA INDONESIA" class="w-full bg-gray-900 border border-gray-700 text-white rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all font-bold">
+                                            <input type="text" name="company_name" value="{{ $settings['company_name'] ?? 'GUPALA INDONESIA' }}" class="w-full bg-gray-900 border border-gray-700 text-white rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all font-bold">
                                         </div>
                                         <div class="space-y-1.5">
                                             <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest pl-1">Legal ENTITY / TYPE</label>
-                                            <select class="w-full bg-gray-900 border border-gray-700 text-white rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all font-bold">
-                                                <option>PT (Persero Terbatas)</option>
-                                                <option>CV (Commanditaire Vennootschap)</option>
-                                                <option>Individual</option>
+                                            <select name="company_type" class="w-full bg-gray-900 border border-gray-700 text-white rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all font-bold">
+                                                <option value="PT" {{ ($settings['company_type'] ?? '') == 'PT' ? 'selected' : '' }}>PT (Persero Terbatas)</option>
+                                                <option value="CV" {{ ($settings['company_type'] ?? '') == 'CV' ? 'selected' : '' }}>CV (Commanditaire Vennootschap)</option>
+                                                <option value="Individual" {{ ($settings['company_type'] ?? '') == 'Individual' ? 'selected' : '' }}>Individual</option>
                                             </select>
                                         </div>
                                     </div>
                                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                         <div class="space-y-1.5">
                                             <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest pl-1">Tax ID (NPWP)</label>
-                                            <input type="text" value="01.234.567.8-901.000" class="w-full bg-gray-900 border border-gray-700 text-white rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all font-mono">
+                                            <input type="text" name="tax_id" value="{{ $settings['tax_id'] ?? '01.234.567.8-901.000' }}" class="w-full bg-gray-900 border border-gray-700 text-white rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all font-mono">
                                         </div>
                                         <div class="space-y-1.5">
                                             <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest pl-1">Industry Sector</label>
-                                            <input type="text" value="Manufacturing & Retail" class="w-full bg-gray-900 border border-gray-700 text-white rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all font-bold">
+                                            <input type="text" name="industry_sector" value="{{ $settings['industry_sector'] ?? 'Manufacturing & Retail' }}" class="w-full bg-gray-900 border border-gray-700 text-white rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all font-bold">
                                         </div>
                                     </div>
                                 </div>
@@ -134,17 +148,17 @@
 
                             <div class="space-y-1.5">
                                 <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest pl-1">Business HQ Address</label>
-                                <textarea rows="3" class="w-full bg-gray-900 border border-gray-700 text-white rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all">Jl. pembatikan,warulor,wiradesa,Indonesia</textarea>
+                                <textarea name="address" rows="3" class="w-full bg-gray-900 border border-gray-700 text-white rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all">{{ $settings['address'] ?? 'Jl. pembatikan,warulor,wiradesa,Indonesia' }}</textarea>
                             </div>
 
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div class="space-y-1.5">
                                     <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest pl-1">Primary Email</label>
-                                    <input type="email" value="corporate@gupala.com" class="w-full bg-gray-900 border border-gray-700 text-white rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all">
+                                    <input type="email" name="primary_email" value="{{ $settings['primary_email'] ?? 'corporate@gupala.com' }}" class="w-full bg-gray-900 border border-gray-700 text-white rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all">
                                 </div>
                                 <div class="space-y-1.5">
                                     <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest pl-1">Contact / WhatsApp</label>
-                                    <input type="text" value="+62 812 3456 7890" class="w-full bg-gray-900 border border-gray-700 text-white rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all">
+                                    <input type="text" name="contact_phone" value="{{ $settings['contact_phone'] ?? '+62 812 3456 7890' }}" class="w-full bg-gray-900 border border-gray-700 text-white rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all">
                                 </div>
                             </div>
                         </div>
@@ -165,48 +179,51 @@
                             <i data-lucide="globe" class="w-5 h-5 text-indigo-400"></i> REGIONAL & LOCALE
                         </h3>
                     </div>
-                    <div class="p-6 space-y-6">
+                    <form action="{{ route('settings.update') }}" method="POST">
+                        @csrf
+                        <input type="hidden" name="group" value="localization">
+                        <div class="p-6 space-y-6">
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
                             <div class="space-y-1.5">
                                 <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest pl-1">Base Currency</label>
-                                <select class="w-full bg-gray-900 border border-gray-700 text-white rounded-xl px-4 py-2.5 outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-bold">
-                                    <option value="IDR">IDR - Indonesian Rupiah (Rp)</option>
-                                    <option value="USD">USD - US Dollar ($)</option>
-                                    <option value="EUR">EUR - Euro (€)</option>
+                                <select name="base_currency" class="w-full bg-gray-900 border border-gray-700 text-white rounded-xl px-4 py-2.5 outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-bold">
+                                    <option value="IDR" {{ ($settings['base_currency'] ?? '') == 'IDR' ? 'selected' : '' }}>IDR - Indonesian Rupiah (Rp)</option>
+                                    <option value="USD" {{ ($settings['base_currency'] ?? '') == 'USD' ? 'selected' : '' }}>USD - US Dollar ($)</option>
+                                    <option value="EUR" {{ ($settings['base_currency'] ?? '') == 'EUR' ? 'selected' : '' }}>EUR - Euro (€)</option>
                                 </select>
                             </div>
                             <div class="space-y-1.5">
                                 <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest pl-1">Server Timezone</label>
-                                <select class="w-full bg-gray-900 border border-gray-700 text-white rounded-xl px-4 py-2.5 outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-bold">
-                                    <option value="GMT+7">(GMT+07:00) Western Indonesia Time</option>
-                                    <option value="GMT+8">(GMT+08:00) Central Indonesia Time</option>
-                                    <option value="GMT+9">(GMT+09:00) Eastern Indonesia Time</option>
+                                <select name="timezone" class="w-full bg-gray-900 border border-gray-700 text-white rounded-xl px-4 py-2.5 outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-bold">
+                                    <option value="GMT+7" {{ ($settings['timezone'] ?? '') == 'GMT+7' ? 'selected' : '' }}>(GMT+07:00) Western Indonesia Time</option>
+                                    <option value="GMT+8" {{ ($settings['timezone'] ?? '') == 'GMT+8' ? 'selected' : '' }}>(GMT+08:00) Central Indonesia Time</option>
+                                    <option value="GMT+9" {{ ($settings['timezone'] ?? '') == 'GMT+9' ? 'selected' : '' }}>(GMT+09:00) Eastern Indonesia Time</option>
                                 </select>
                             </div>
                         </div>
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
                             <div class="space-y-1.5">
                                 <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest pl-1">Date Format</label>
-                                <select class="w-full bg-gray-900 border border-gray-700 text-white rounded-xl px-4 py-2.5 outline-none focus:ring-2 focus:ring-indigo-500 transition-all">
-                                    <option>DD/MM/YYYY (31/12/2026)</option>
-                                    <option>MM/DD/YYYY (12/31/2026)</option>
-                                    <option>YYYY-MM-DD (2026-12-31)</option>
+                                <select name="date_format" class="w-full bg-gray-900 border border-gray-700 text-white rounded-xl px-4 py-2.5 outline-none focus:ring-2 focus:ring-indigo-500 transition-all">
+                                    <option value="DD/MM/YYYY" {{ ($settings['date_format'] ?? '') == 'DD/MM/YYYY' ? 'selected' : '' }}>DD/MM/YYYY (31/12/2026)</option>
+                                    <option value="MM/DD/YYYY" {{ ($settings['date_format'] ?? '') == 'MM/DD/YYYY' ? 'selected' : '' }}>MM/DD/YYYY (12/31/2026)</option>
+                                    <option value="YYYY-MM-DD" {{ ($settings['date_format'] ?? '') == 'YYYY-MM-DD' ? 'selected' : '' }}>YYYY-MM-DD (2026-12-31)</option>
                                 </select>
                             </div>
                             <div class="space-y-1.5">
                                 <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest pl-1">Number Format</label>
-                                <select class="w-full bg-gray-900 border border-gray-700 text-white rounded-xl px-4 py-2.5 outline-none focus:ring-2 focus:ring-indigo-500 transition-all">
-                                    <option>1.234.567,89 (Decimal Comma)</option>
-                                    <option>1,234,567.89 (Decimal Point)</option>
+                                <select name="number_format" class="w-full bg-gray-900 border border-gray-700 text-white rounded-xl px-4 py-2.5 outline-none focus:ring-2 focus:ring-indigo-500 transition-all">
+                                    <option value="id" {{ ($settings['number_format'] ?? '') == 'id' ? 'selected' : '' }}>1.234.567,89 (Decimal Comma)</option>
+                                    <option value="en" {{ ($settings['number_format'] ?? '') == 'en' ? 'selected' : '' }}>1,234,567.89 (Decimal Point)</option>
                                 </select>
                             </div>
                         </div>
-                    </div>
-                    <div class="px-6 py-4 bg-gray-900/50 border-t border-gray-700/50 flex justify-end">
-                        <button @click="saveSettings()" class="px-6 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-sm font-black uppercase tracking-widest transition-all shadow-lg active:scale-95">
-                            Update Locale
-                        </button>
-                    </div>
+                        <div class="px-6 py-4 bg-gray-900/50 border-t border-gray-700/50 flex justify-end">
+                            <button type="submit" class="px-6 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-sm font-black uppercase tracking-widest transition-all shadow-lg active:scale-95">
+                                Update Locale
+                            </button>
+                        </div>
+                    </form>
                 </div>
             </div>
 
@@ -218,8 +235,12 @@
                             <i data-lucide="shield-check" class="w-5 h-5 text-indigo-400"></i> SYSTEM SECURITY
                         </h3>
                     </div>
-                    <div class="p-6 space-y-6">
-                        <div class="space-y-4">
+                    <form action="{{ route('settings.update') }}" method="POST">
+                        @csrf
+                        <input type="hidden" name="group" value="security">
+                        <input type="hidden" name="two_factor" :value="twoFactor ? 'true' : 'false'">
+                        <div class="p-6 space-y-6">
+                            <div class="space-y-4">
                             <div class="flex items-center justify-between p-4 bg-gray-900/50 border border-gray-700 rounded-2xl">
                                 <div class="flex items-center gap-4">
                                     <div class="w-10 h-10 rounded-xl bg-orange-500/10 text-orange-400 flex items-center justify-center">
@@ -230,8 +251,8 @@
                                         <div class="text-[10px] text-gray-500 font-bold">Require 2FA for all administrative accounts</div>
                                     </div>
                                 </div>
-                                <div class="w-12 h-6 rounded-full relative cursor-pointer transition-colors" :class="false ? 'bg-indigo-600' : 'bg-gray-700'">
-                                    <div class="absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform"></div>
+                                <div @click="twoFactor = !twoFactor" class="w-12 h-6 rounded-full relative cursor-pointer transition-colors" :class="twoFactor ? 'bg-indigo-600' : 'bg-gray-700'">
+                                    <div class="absolute top-1 w-4 h-4 bg-white rounded-full transition-transform" :class="twoFactor ? 'right-1' : 'left-1'"></div>
                                 </div>
                             </div>
 
@@ -245,11 +266,11 @@
                                         <div class="text-[10px] text-gray-500 font-bold">Auto-logout after period of inactivity</div>
                                     </div>
                                 </div>
-                                <select class="bg-gray-800 border border-gray-700 text-white text-xs rounded-lg px-2 py-1 outline-none">
-                                    <option>15 Minutes</option>
-                                    <option selected>30 Minutes</option>
-                                    <option>1 Hour</option>
-                                    <option>4 Hours</option>
+                                <select name="session_timeout" class="bg-gray-800 border border-gray-700 text-white text-xs rounded-lg px-2 py-1 outline-none">
+                                    <option value="15" {{ ($settings['session_timeout'] ?? '') == '15' ? 'selected' : '' }}>15 Minutes</option>
+                                    <option value="30" {{ ($settings['session_timeout'] ?? '') == '30' ? 'selected' : '' }}>30 Minutes</option>
+                                    <option value="60" {{ ($settings['session_timeout'] ?? '') == '60' ? 'selected' : '' }}>1 Hour</option>
+                                    <option value="240" {{ ($settings['session_timeout'] ?? '') == '240' ? 'selected' : '' }}>4 Hours</option>
                                 </select>
                             </div>
 
@@ -263,10 +284,16 @@
                                         <div class="text-[10px] text-gray-500 font-bold uppercase tracking-widest mt-0.5">Complexity Level: <span class="text-indigo-400">High</span></div>
                                     </div>
                                 </div>
-                                <button class="text-[10px] font-black text-indigo-400 uppercase tracking-widest hover:text-indigo-300">Configure</button>
+                                <button type="button" class="text-[10px] font-black text-indigo-400 uppercase tracking-widest hover:text-indigo-300">Configure</button>
                             </div>
                         </div>
                     </div>
+                    <div class="px-6 py-4 bg-gray-900/50 border-t border-gray-700/50 flex justify-end">
+                        <button type="submit" class="px-6 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-sm font-black uppercase tracking-widest transition-all shadow-lg active:scale-95">
+                            Save Security
+                        </button>
+                    </div>
+                    </form>
                 </div>
             </div>
 
@@ -276,8 +303,15 @@
                     <h3 class="font-black text-white flex items-center gap-2 italic tracking-tight uppercase">
                         <i data-lucide="palette" class="w-5 h-5 text-indigo-400"></i> App Preferences
                     </h3>
+                    <form action="{{ route('settings.update') }}" method="POST">
+                    @csrf
+                    <input type="hidden" name="group" value="preferences">
+                    <input type="hidden" name="dark_mode" :value="darkMode ? 'true' : 'false'">
+                    <input type="hidden" name="notifications" :value="notifications ? 'true' : 'false'">
+                    <input type="hidden" name="email_alerts" :value="emailAlerts ? 'true' : 'false'">
+                    
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div @click="darkMode = !darkMode" class="flex items-center justify-between p-4 bg-gray-900/50 border border-gray-700 rounded-2xl cursor-pointer hover:bg-gray-900 transition-all hover:border-indigo-500/50 group">
+                        <div @click="darkMode = !darkMode; $el.closest('form').submit()" class="flex items-center justify-between p-4 bg-gray-900/50 border border-gray-700 rounded-2xl cursor-pointer hover:bg-gray-900 transition-all hover:border-indigo-500/50 group">
                             <div class="flex items-center gap-4">
                                 <div class="w-10 h-10 rounded-xl bg-indigo-500/10 text-indigo-400 flex items-center justify-center group-hover:scale-110 transition-transform">
                                     <i data-lucide="moon" class="w-5 h-5" x-show="darkMode"></i>
@@ -293,7 +327,7 @@
                             </div>
                         </div>
                         
-                        <div @click="notifications = !notifications" class="flex items-center justify-between p-4 bg-gray-900/50 border border-gray-700 rounded-2xl cursor-pointer hover:bg-gray-900 transition-all hover:border-indigo-500/50 group">
+                        <div @click="notifications = !notifications; $el.closest('form').submit()" class="flex items-center justify-between p-4 bg-gray-900/50 border border-gray-700 rounded-2xl cursor-pointer hover:bg-gray-900 transition-all hover:border-indigo-500/50 group">
                             <div class="flex items-center gap-4">
                                 <div class="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center group-hover:scale-110 transition-transform">
                                     <i data-lucide="zap" class="w-5 h-5"></i>
@@ -308,7 +342,7 @@
                             </div>
                         </div>
 
-                        <div @click="emailAlerts = !emailAlerts" class="flex items-center justify-between p-4 bg-gray-900/50 border border-gray-700 rounded-2xl cursor-pointer hover:bg-gray-900 transition-all hover:border-indigo-500/50 group">
+                        <div @click="emailAlerts = !emailAlerts; $el.closest('form').submit()" class="flex items-center justify-between p-4 bg-gray-900/50 border border-gray-700 rounded-2xl cursor-pointer hover:bg-gray-900 transition-all hover:border-indigo-500/50 group">
                             <div class="flex items-center gap-4">
                                 <div class="w-10 h-10 rounded-xl bg-indigo-500/10 text-indigo-400 flex items-center justify-center group-hover:scale-110 transition-transform">
                                     <i data-lucide="mail" class="w-5 h-5"></i>
@@ -323,6 +357,7 @@
                             </div>
                         </div>
                     </div>
+                    </form>
                 </div>
             </div>
 
@@ -335,6 +370,10 @@
                         </h3>
                         <span class="px-2 py-0.5 bg-emerald-500/10 text-emerald-400 text-[8px] font-black uppercase rounded border border-emerald-500/20">All Safe</span>
                     </div>
+                    <form action="{{ route('settings.update') }}" method="POST">
+                        @csrf
+                        <input type="hidden" name="group" value="backup">
+                        <input type="hidden" name="auto_backup" :value="autoBackup ? 'true' : 'false'">
                     <div class="p-6 space-y-6">
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <button class="flex items-center gap-4 p-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl transition-all shadow-xl shadow-indigo-600/20 group">
@@ -357,7 +396,7 @@
                             </button>
                         </div>
 
-                        <div @click="autoBackup = !autoBackup" class="flex items-center justify-between p-4 bg-gray-900/30 border border-gray-700 border-dashed rounded-2xl cursor-pointer hover:bg-gray-900 transition-all">
+                        <div @click="autoBackup = !autoBackup; $el.closest('form').submit()" class="flex items-center justify-between p-4 bg-gray-900/30 border border-gray-700 border-dashed rounded-2xl cursor-pointer hover:bg-gray-900 transition-all">
                             <div class="flex items-center gap-4">
                                 <div class="w-10 h-10 rounded-xl bg-indigo-500/10 text-indigo-400 flex items-center justify-center">
                                     <i data-lucide="refresh-cw" class="w-5 h-5" :class="autoBackup && 'animate-spin-slow'"></i>
@@ -372,6 +411,7 @@
                             </div>
                         </div>
                     </div>
+                    </form>
                 </div>
             </div>
         </div>

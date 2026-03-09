@@ -8,6 +8,12 @@ use App\Models\Setting;
 
 class SettingController extends Controller
 {
+    public function index()
+    {
+        $settings = Setting::pluck('value', 'key')->all();
+        return view('pages.settings', compact('settings'))->with('activePage', 'settings');
+    }
+
     public function update(Request $request)
     {
         $settings = $request->except('_token', '_method');
