@@ -191,7 +191,7 @@ x-init="$nextTick(() => {
             </div>
 
             {{-- Tab: Localization --}}
-            <div x-show="activeTab === 'localization'" x-cloak style="display: none;" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4" x-transition:enter-end="opacity-100 translate-y-0" class="space-y-6">
+            <div x-show="activeTab === 'localization'" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4" x-transition:enter-end="opacity-100 translate-y-0" class="space-y-6">
                 <div class="bg-gray-800 border border-gray-700/50 rounded-2xl shadow-2xl overflow-hidden">
                     <div class="p-6 border-b border-gray-700/50 bg-gradient-to-r from-gray-800 to-gray-800/50">
                         <h3 class="font-black text-white flex items-center gap-2 italic tracking-tight">
@@ -237,6 +237,7 @@ x-init="$nextTick(() => {
                                 </select>
                             </div>
                         </div>
+                        </div>
                         <div class="px-6 py-4 bg-gray-900/50 border-t border-gray-700/50 flex justify-end">
                             <button type="submit" class="px-6 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-sm font-black uppercase tracking-widest transition-all shadow-lg active:scale-95">
                                 Update Locale
@@ -247,7 +248,7 @@ x-init="$nextTick(() => {
             </div>
 
             {{-- Tab: Security --}}
-            <div x-show="activeTab === 'security'" x-cloak style="display: none;" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4" x-transition:enter-end="opacity-100 translate-y-0" class="space-y-6">
+            <div x-show="activeTab === 'security'" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4" x-transition:enter-end="opacity-100 translate-y-0" class="space-y-6">
                 <div class="bg-gray-800 border border-gray-700/50 rounded-2xl shadow-2xl overflow-hidden">
                     <div class="p-6 border-b border-gray-700/50 bg-gradient-to-r from-gray-800 to-gray-800/50">
                         <h3 class="font-black text-white flex items-center gap-2 italic tracking-tight">
@@ -347,7 +348,7 @@ x-init="$nextTick(() => {
             </div>
 
             {{-- Tab: Preferences --}}
-            <div x-show="activeTab === 'preferences'" x-cloak style="display: none;" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4" x-transition:enter-end="opacity-100 translate-y-0" class="space-y-6">
+            <div x-show="activeTab === 'preferences'" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4" x-transition:enter-end="opacity-100 translate-y-0" class="space-y-6">
                 <div class="bg-gray-800 border border-gray-700/50 rounded-2xl shadow-2xl overflow-hidden p-6 space-y-6">
                     <h3 class="font-black text-white flex items-center gap-2 italic tracking-tight uppercase">
                         <i data-lucide="palette" class="w-5 h-5 text-indigo-400"></i> App Preferences
@@ -360,7 +361,7 @@ x-init="$nextTick(() => {
                     <input type="hidden" name="email_alerts" :value="emailAlerts ? 'true' : 'false'">
                     
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div @click="darkMode = !darkMode; $el.closest('form').submit()" class="flex items-center justify-between p-4 bg-gray-900/50 border border-gray-700 rounded-2xl cursor-pointer hover:bg-gray-900 transition-all hover:border-indigo-500/50 group">
+                        <div @click="darkMode = !darkMode; $nextTick(() => { $el.closest('form').submit() })" class="flex items-center justify-between p-4 bg-gray-900/50 border border-gray-700 rounded-2xl cursor-pointer hover:bg-gray-900 transition-all hover:border-indigo-500/50 group">
                             <div class="flex items-center gap-4">
                                 <div class="w-10 h-10 rounded-xl bg-indigo-500/10 text-indigo-400 flex items-center justify-center group-hover:scale-110 transition-transform">
                                     <i data-lucide="moon" class="w-5 h-5" x-show="darkMode"></i>
@@ -376,7 +377,7 @@ x-init="$nextTick(() => {
                             </div>
                         </div>
                         
-                        <div @click="notifications = !notifications; $el.closest('form').submit()" class="flex items-center justify-between p-4 bg-gray-900/50 border border-gray-700 rounded-2xl cursor-pointer hover:bg-gray-900 transition-all hover:border-indigo-500/50 group">
+                        <div @click="notifications = !notifications; $nextTick(() => { $el.closest('form').submit() })" class="flex items-center justify-between p-4 bg-gray-900/50 border border-gray-700 rounded-2xl cursor-pointer hover:bg-gray-900 transition-all hover:border-indigo-500/50 group">
                             <div class="flex items-center gap-4">
                                 <div class="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center group-hover:scale-110 transition-transform">
                                     <i data-lucide="zap" class="w-5 h-5"></i>
@@ -391,7 +392,7 @@ x-init="$nextTick(() => {
                             </div>
                         </div>
 
-                        <div @click="emailAlerts = !emailAlerts; $el.closest('form').submit()" class="flex items-center justify-between p-4 bg-gray-900/50 border border-gray-700 rounded-2xl cursor-pointer hover:bg-gray-900 transition-all hover:border-indigo-500/50 group">
+                        <div @click="emailAlerts = !emailAlerts; $nextTick(() => { $el.closest('form').submit() })" class="flex items-center justify-between p-4 bg-gray-900/50 border border-gray-700 rounded-2xl cursor-pointer hover:bg-gray-900 transition-all hover:border-indigo-500/50 group">
                             <div class="flex items-center gap-4">
                                 <div class="w-10 h-10 rounded-xl bg-indigo-500/10 text-indigo-400 flex items-center justify-center group-hover:scale-110 transition-transform">
                                     <i data-lucide="mail" class="w-5 h-5"></i>
@@ -411,7 +412,7 @@ x-init="$nextTick(() => {
             </div>
 
             {{-- Tab: Backup --}}
-            <div x-show="activeTab === 'backup'" x-cloak style="display: none;" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4" x-transition:enter-end="opacity-100 translate-y-0" class="space-y-6">
+            <div x-show="activeTab === 'backup'" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4" x-transition:enter-end="opacity-100 translate-y-0" class="space-y-6">
                 <div class="bg-gray-800 border border-gray-700/50 rounded-2xl shadow-2xl overflow-hidden">
                     <div class="p-6 border-b border-gray-700/50 bg-gradient-to-r from-gray-800 to-gray-800/50 flex justify-between items-center">
                         <h3 class="font-black text-white flex items-center gap-2 italic tracking-tight uppercase">
