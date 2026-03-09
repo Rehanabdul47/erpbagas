@@ -27,10 +27,10 @@
     <div class="receipt bg-white shadow-xl mx-auto rounded-sm border border-gray-200">
         {{-- Header --}}
         <div class="text-center mb-6 space-y-1">
-            <h1 class="text-lg font-black tracking-tighter uppercase">GUPALA INDONESIA</h1>
+            <h1 class="text-lg font-black tracking-tighter uppercase">GUPALA BATIK</h1>
             <p class="text-[10px] text-gray-800 font-bold uppercase leading-none">{{ $sale->branch ? 'Cabang ' . $sale->branch->name : 'Kantor Pusat' }}</p>
-            <p class="text-[9px] text-gray-500 uppercase leading-none pt-1">Jl. Antigravity No. 10, Jakarta Selatan</p>
-            <p class="text-[9px] text-gray-500 leading-none">Telp: +62 812 3456 7890</p>
+            <p class="text-[9px] text-gray-500 uppercase leading-none pt-1">{{ $sale->branch?->address ?? 'Jl. Pembatikan , Wiradesa' }}</p>
+            <p class="text-[9px] text-gray-500 leading-none">Telp: {{ $sale->branch?->phone ?? '+62 812 3456 7890' }}</p>
             <div class="border-b-[1px] border-dashed border-gray-300 pt-4"></div>
         </div>
 
@@ -96,7 +96,7 @@
                     </div>
                 </div>
             </div>
-            <p class="text-[8px] text-gray-400 uppercase tracking-tighter italic">Sistem POS Gupala ERP v1.0.0</p>
+            <p class="text-[8px] text-gray-400 uppercase tracking-tighter italic">GUPALA BATIK</p>
         </div>
     </div>
 

@@ -9,6 +9,7 @@ use App\Models\PurchaseOrder;
 use App\Models\Supplier;
 use App\Models\Tailor;
 use App\Models\Category;
+use App\Models\StockTransfer;
 
 class ProductionDashboardController extends Controller
 {
@@ -29,6 +30,7 @@ class ProductionDashboardController extends Controller
             $q->whereIn('status', ['pending', 'in_progress', 'processing']);
         })->count();
         $totalCategories = Category::count();
+        $activeTransfersCount = StockTransfer::whereIn('status', ['pending', 'sending'])->count();
 
         // Fetch lists for widgets
         $activeProductions = Production::with(['product', 'tailor'])
@@ -47,6 +49,11 @@ class ProductionDashboardController extends Controller
             ->take(5)
             ->get();
             
+        $recentTransfers = StockTransfer::with(['sourceBranch', 'destinationBranch', 'product'])
+            ->latest()
+            ->take(5)
+            ->get();
+            
         $activePage = 'production-dashboard';
 
         return view('pages.production-dashboard.index', compact(
@@ -60,9 +67,11 @@ class ProductionDashboardController extends Controller
             'totalTailors',
             'activeTailorsCount',
             'totalCategories',
+            'activeTransfersCount',
             'activeProductions',
             'criticalStockProducts',
             'recentPos',
+            'recentTransfers',
             'activePage'
         ));
     }

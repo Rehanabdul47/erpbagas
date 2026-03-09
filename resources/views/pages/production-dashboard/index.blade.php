@@ -66,9 +66,14 @@
             <div class="text-3xl font-bold text-white mb-1">{{ $activeTailorsCount }}</div>
             <div class="text-gray-400 text-sm">Penjahit Aktif</div>
         </div>
+        <div class="bg-gray-800 border border-gray-700/50 rounded-xl p-5 shadow-sm">
+            <div class="w-10 h-10 rounded-lg bg-indigo-500/10 text-indigo-400 flex items-center justify-center mb-4"><i data-lucide="arrow-right-left" class="w-5 h-5"></i></div>
+            <div class="text-3xl font-bold text-white mb-1">{{ $activeTransfersCount }}</div>
+            <div class="text-gray-400 text-sm">Transfer Aktif</div>
+        </div>
     </div>
 
-    <div class="grid grid-cols-1 gap-6 pb-6">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 pb-6">
         {{-- Produksi Aktif --}}
         <div class="bg-gray-800 border border-gray-700/50 rounded-xl shadow-sm flex flex-col h-full">
             <div class="p-5 border-b border-gray-700/50 flex items-center justify-between">
@@ -212,6 +217,65 @@
                                 <td colspan="4" class="px-5 py-8 text-center text-gray-500">
                                     <i data-lucide="file-x" class="w-8 h-8 mx-auto mb-2 text-gray-600"></i>
                                     Belum ada data Purchase Order.
+                                </td>
+                            </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        {{-- Logistik & Transfer --}}
+        <div class="bg-gray-800 border border-gray-700/50 rounded-xl shadow-sm flex flex-col h-full lg:col-span-1">
+            <div class="p-5 border-b border-gray-700/50 flex items-center justify-between">
+                <h4 class="font-bold text-white flex items-center gap-2">
+                    <i data-lucide="arrow-right-left" class="w-4 h-4 text-indigo-400"></i> Logistik & Transfer
+                </h4>
+                <a href="{{ route('production.transfers.index') }}" class="text-xs text-indigo-400 hover:text-indigo-300">Lihat Semua →</a>
+            </div>
+            <div class="p-0 flex-1 relative min-h-[250px]">
+                <div class="absolute inset-0 overflow-y-auto w-full">
+                    <table class="w-full text-left text-sm whitespace-nowrap">
+                        <thead class="bg-gray-900/50 text-gray-400 text-xs uppercase tracking-wider sticky top-0 z-10 border-b border-gray-700/50 backdrop-blur-md">
+                            <tr>
+                                <th class="px-5 py-3 font-medium">Referensi</th>
+                                <th class="px-5 py-3 font-medium">Alur Distribusi</th>
+                                <th class="px-5 py-3 font-medium text-center">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-700/50">
+                            @forelse($recentTransfers as $trf)
+                            <tr class="hover:bg-gray-700/20 transition-colors">
+                                <td class="px-5 py-3">
+                                    <p class="font-mono font-bold text-indigo-400 text-xs truncate max-w-[100px]">#{{ $trf->reference }}</p>
+                                    <p class="text-[10px] text-gray-500">{{ $trf->created_at->format('d/m/y') }}</p>
+                                </td>
+                                <td class="px-5 py-3">
+                                    <div class="flex flex-col gap-0.5">
+                                        <span class="text-xs text-gray-300 font-medium truncate max-w-[120px]">{{ $trf->sourceBranch->name }}</span>
+                                        <i data-lucide="arrow-down" class="w-3 h-3 text-gray-600"></i>
+                                        <span class="text-xs text-indigo-300 font-medium truncate max-w-[120px]">{{ $trf->destinationBranch->name }}</span>
+                                    </div>
+                                </td>
+                                <td class="px-5 py-3 text-center">
+                                    @php
+                                        $trColors = [
+                                            'pending' => 'bg-gray-500/10 text-gray-400 border-gray-500/20',
+                                            'sending' => 'bg-amber-500/10 text-amber-500 border-amber-500/20',
+                                            'received' => 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
+                                        ];
+                                    @endphp
+                                    <span class="px-2 py-0.5 rounded-full text-[9px] font-bold border {{ $trColors[$trf->status] ?? '' }}">
+                                        {{ ucfirst($trf->status) }}
+                                    </span>
+                                </td>
+                            </tr>
+                            @empty
+                            <tr>
+                                <td colspan="3" class="px-5 py-8 text-center text-gray-500">
+                                    <i data-lucide="arrow-right-left" class="w-8 h-8 mx-auto mb-2 text-gray-600"></i>
+                                    Tidak ada riwayat transfer.
                                 </td>
                             </tr>
                             @endforelse
