@@ -183,4 +183,6 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/settings', [\App\Http\Controllers\SettingController::class, 'index'])->name('settings');
     Route::post('/settings', [\App\Http\Controllers\SettingController::class, 'update'])->name('settings.update');
+    Route::post('/settings/backup/manual', [\App\Http\Controllers\SettingController::class, 'manualBackup'])->name('settings.backup.manual');
+    Route::post('/settings/export/audit', [\App\Http\Controllers\SettingController::class, 'exportAudit'])->name('settings.export.audit');
 });

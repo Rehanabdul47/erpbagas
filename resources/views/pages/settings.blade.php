@@ -426,20 +426,20 @@ x-init="$nextTick(() => {
                         <input type="hidden" name="auto_backup" :value="autoBackup ? 'true' : 'false'">
                     <div class="p-6 space-y-6">
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <button class="flex items-center gap-4 p-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl transition-all shadow-xl shadow-indigo-600/20 group">
+                            <button type="submit" formaction="{{ route('settings.backup.manual') }}" formmethod="POST" class="flex items-center gap-4 p-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl transition-all shadow-xl shadow-indigo-600/20 group w-full text-left">
                                 <div class="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center shrink-0">
                                     <i data-lucide="download" class="w-6 h-6 group-hover:bounce transition-all"></i>
                                 </div>
-                                <div class="text-left">
+                                <div>
                                     <div class="text-sm font-black uppercase tracking-tight">Manual Backup</div>
                                     <div class="text-[10px] opacity-70 font-bold">Download Full DB Snapshot</div>
                                 </div>
                             </button>
-                            <button class="flex items-center gap-4 p-4 bg-gray-900 border border-gray-700 text-white rounded-2xl hover:border-gray-500 transition-all group">
+                            <button type="submit" formaction="{{ route('settings.export.audit') }}" formmethod="POST" class="flex items-center gap-4 p-4 bg-gray-900 border border-gray-700 text-white rounded-2xl hover:border-gray-500 transition-all group w-full text-left">
                                 <div class="w-12 h-12 rounded-xl bg-gray-800 flex items-center justify-center shrink-0">
                                     <i data-lucide="file-json" class="w-6 h-6 text-indigo-400"></i>
                                 </div>
-                                <div class="text-left">
+                                <div>
                                     <div class="text-sm font-black uppercase tracking-tight">Export Audit Log</div>
                                     <div class="text-[10px] text-gray-500 font-bold uppercase">CSV / JSON Format</div>
                                 </div>

@@ -20,5 +20,10 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         \App\Models\CashTransaction::observe(\App\Observers\CashTransactionObserver::class);
+
+        // Share global settings to all views
+        view()->composer('*', function ($view) {
+            $view->with('global_settings', \App\Models\Setting::pluck('value', 'key')->all());
+        });
     }
 }

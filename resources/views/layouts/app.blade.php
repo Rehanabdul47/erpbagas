@@ -3,7 +3,10 @@
 <head>
     @include('partials.head')
 </head>
-<body class="bg-gray-900 text-slate-100 min-h-screen text-sm font-sans antialiased" x-data="{ sidebarOpen: window.innerWidth > 1024 }" :class="sidebarOpen ? 'overflow-hidden lg:overflow-auto' : 'overflow-x-hidden'">
+<body class="bg-gray-900 text-slate-100 min-h-screen text-sm font-sans antialiased {{ ($global_settings['dark_mode'] ?? 'true') === 'true' ? 'theme-dark' : 'theme-light' }}" 
+      data-notifications="{{ $global_settings['notifications'] ?? 'true' }}" 
+      x-data="{ sidebarOpen: window.innerWidth > 1024 }" 
+      :class="sidebarOpen ? 'overflow-hidden lg:overflow-auto' : 'overflow-x-hidden'">
     <!-- Mobile Sidebar Backdrop -->
     <div x-show="sidebarOpen" x-transition.opacity x-cloak style="display: none;" class="fixed inset-0 bg-gray-900/80 backdrop-blur-sm z-[90] lg:hidden" @click="sidebarOpen = false"></div>
 

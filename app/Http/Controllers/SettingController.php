@@ -26,8 +26,24 @@ class SettingController extends Controller
             if ($request->new_password !== $request->new_password_confirmation) {
                 return back()->with('error', 'Konfirmasi kata sandi baru tidak cocok.');
             }
-            if (strlen($request->new_password) < 6) {
-                return back()->with('error', 'Kata sandi baru minimal 6 karakter.');
+            $passwordPolicy = \App\Models\Setting::where('key', 'password_policy')->value('value') ?? 'low';
+            
+            $rules = ['required', 'string', 'min:6'];
+            if ($passwordPolicy === 'medium') {
+                $rules = ['required', 'string', 'min:8', 'regex:/[a-zA-Z]/', 'regex:/[0-9]/'];
+            } elseif ($passwordPolicy === 'high') {
+                $rules = ['required', 'string', 'min:8', 'regex:/[a-z]/', 'regex:/[A-Z]/', 'regex:/[0-9]/', 'regex:/[@$!%*#?&]/'];
+            }
+
+            $validator = \Illuminate\Support\Facades\Validator::make($request->all(), [
+                'new_password' => $rules
+            ], [
+                'new_password.min' => 'Kata sandi baru minimal :min karakter.',
+                'new_password.regex' => 'Kata sandi baru tidak memenuhi kriteria kebijakan keamanan (Medium: min 8 karakter alfanumerik. High: min 8 karakter dengan kombinasi huruf besar, kecil, angka, & simbol).'
+            ]);
+
+            if ($validator->fails()) {
+                return back()->with('error', $validator->errors()->first('new_password'));
             }
 
             $user = auth()->user();
@@ -52,5 +68,62 @@ class SettingController extends Controller
         }
 
         return back()->with('success', 'Pengaturan berhasil diperbarui');
+    }
+
+    public function manualBackup()
+    {
+        $data = [
+            'timestamp' => now()->toIso8601String(),
+            'users' => \App\Models\User::all(),
+            'settings' => \App\Models\Setting::all(),
+        ];
+
+        if (class_exists(\Spatie\Permission\Models\Role::class)) {
+            $data['roles'] = \Spatie\Permission\Models\Role::all();
+            $data['permissions'] = \Spatie\Permission\Models\Permission::all();
+        }
+
+        $json = json_encode($data, JSON_PRETTY_PRINT);
+        $filename = 'gupala-backup-' . date('Ymd_His') . '.json';
+
+        return response()->streamDownload(function () use ($json) {
+            echo $json;
+        }, $filename, [
+            'Content-Type' => 'application/json',
+        ]);
+    }
+
+    public function exportAudit()
+    {
+        $users = \App\Models\User::all();
+
+        $filename = 'gupala-audit-log-' . date('Ymd_His') . '.csv';
+        $headers = [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+        ];
+
+        $callback = function () use ($users) {
+            $file = fopen('php://output', 'w');
+            fputcsv($file, ['ID', 'Name', 'Email', 'Role', 'Created At', 'Last Updated']);
+
+            foreach ($users as $user) {
+                // Check if spatie roles is applied
+                $role = method_exists($user, 'getRoleNames') ? $user->getRoleNames()->join(', ') : 'N/A';
+                
+                fputcsv($file, [
+                    $user->id,
+                    $user->name,
+                    $user->email,
+                    $role,
+                    $user->created_at,
+                    $user->updated_at,
+                ]);
+            }
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
     }
 }
