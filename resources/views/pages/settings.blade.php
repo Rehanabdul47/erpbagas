@@ -29,6 +29,15 @@ x-init="$nextTick(() => {
         confirmText: 'PROCEED'
     });
 })"
+@elseif(session('error'))
+x-init="$nextTick(() => { 
+    $dispatch('global-alert', {
+        type: 'error',
+        title: 'ERROR',
+        message: '{{ session('error') }}',
+        confirmText: 'CLOSE'
+    });
+})"
 @endif
 >
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-2">
@@ -250,6 +259,32 @@ x-init="$nextTick(() => {
                         <input type="hidden" name="group" value="security">
                         <input type="hidden" name="two_factor" :value="twoFactor ? 'true' : 'false'">
                         <div class="p-6 space-y-6">
+                            
+                            {{-- Ubah Kata Sandi --}}
+                            <div class="bg-gray-900/50 border border-gray-700 overflow-hidden rounded-2xl">
+                                <div class="px-4 py-3 border-b border-gray-700/50 bg-gray-800/50">
+                                    <h4 class="text-xs font-black text-white uppercase tracking-widest flex items-center gap-2">
+                                        <i data-lucide="key" class="w-4 h-4 text-indigo-400"></i> Change Password
+                                    </h4>
+                                </div>
+                                <div class="p-4 space-y-4">
+                                    <div class="space-y-1.5">
+                                        <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest pl-1">Current Password</label>
+                                        <input type="password" name="current_password" class="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all placeholder-gray-600" placeholder="Enter current password">
+                                    </div>
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <div class="space-y-1.5">
+                                            <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest pl-1">New Password</label>
+                                            <input type="password" name="new_password" class="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all placeholder-gray-600" placeholder="Enter new password">
+                                        </div>
+                                        <div class="space-y-1.5">
+                                            <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest pl-1">Confirm Password</label>
+                                            <input type="password" name="new_password_confirmation" class="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all placeholder-gray-600" placeholder="Confirm new password">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
                             <div class="space-y-4">
                             <div class="flex items-center justify-between p-4 bg-gray-900/50 border border-gray-700 rounded-2xl">
                                 <div class="flex items-center gap-4">
@@ -284,17 +319,21 @@ x-init="$nextTick(() => {
                                 </select>
                             </div>
 
-                            <div class="flex items-center justify-between p-4 bg-gray-900/50 border border-gray-700 rounded-2xl border-dashed">
+                            <div class="flex items-center justify-between p-4 bg-gray-900/50 border border-gray-700 rounded-2xl">
                                 <div class="flex items-center gap-4">
                                     <div class="w-10 h-10 rounded-xl bg-gray-500/10 text-gray-400 flex items-center justify-center">
                                         <i data-lucide="fingerprint" class="w-5 h-5"></i>
                                     </div>
                                     <div>
                                         <div class="text-sm font-black text-white uppercase tracking-tight">Password Policy</div>
-                                        <div class="text-[10px] text-gray-500 font-bold uppercase tracking-widest mt-0.5">Complexity Level: <span class="text-indigo-400">High</span></div>
+                                        <div class="text-[10px] text-gray-500 font-bold uppercase mt-0.5">Enforce rules for all users</div>
                                     </div>
                                 </div>
-                                <button type="button" class="text-[10px] font-black text-indigo-400 uppercase tracking-widest hover:text-indigo-300">Configure</button>
+                                <select name="password_policy" class="bg-gray-800 border border-gray-700 text-white text-xs rounded-lg px-2 py-1 outline-none">
+                                    <option value="low" {{ ($settings['password_policy'] ?? '') == 'low' ? 'selected' : '' }}>Low (Min 6 chars)</option>
+                                    <option value="medium" {{ ($settings['password_policy'] ?? '') == 'medium' ? 'selected' : '' }}>Medium (Alphanumeric)</option>
+                                    <option value="high" {{ ($settings['password_policy'] ?? 'high') == 'high' ? 'selected' : '' }}>High (Special chars + Uppercase)</option>
+                                </select>
                             </div>
                         </div>
                     </div>
