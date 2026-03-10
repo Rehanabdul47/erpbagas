@@ -11,22 +11,28 @@ use App\Models\Product;
 use App\Models\CashTransaction;
 use App\Models\JournalEntry;
 use App\Models\Account;
+use App\Traits\BranchScope;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 
 class PurchaseOrderController extends Controller
 {
+    use BranchScope;
     public function index()
     {
-        $purchaseOrders = PurchaseOrder::with(['supplier', 'user'])->latest()->get();
+        $query = PurchaseOrder::with(['supplier', 'user'])->latest();
+        $this->scopeByUserBranch($query);
+        $purchaseOrders = $query->get();
         return view('pages.purchase-orders.index', compact('purchaseOrders'))->with('activePage', 'purchase-orders');
     }
 
     public function create()
     {
         $suppliers = Supplier::all();
-        $products = Product::where('type', '!=', 'Service')->get();
+        $productsQuery = Product::where('type', '!=', 'Service');
+        $this->scopeByBranch($productsQuery);
+        $products = $productsQuery->get();
         return view('pages.purchase-orders.create', compact('suppliers', 'products'))->with('activePage', 'purchase-orders');
     }
 

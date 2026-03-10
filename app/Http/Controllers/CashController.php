@@ -3,11 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Models\CashTransaction;
+use App\Traits\BranchScope;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 
 class CashController extends Controller
 {
+    use BranchScope;
+
     public function index(Request $request)
     {
         $month = $request->input('month', date('Y-m'));
@@ -15,6 +18,7 @@ class CashController extends Controller
         $endDate = $startDate->copy()->endOfMonth();
 
         $query = CashTransaction::with('user');
+        $this->scopeByUserBranch($query);
 
         if ($request->filled('month')) {
             $query->whereBetween('date', [$startDate, $endDate]);
@@ -35,14 +39,21 @@ class CashController extends Controller
 
         $transactions = $query->latest('date')->latest('id')->get();
 
-        // Calculate stats for the selected month (or all time if no month filter, though default is current month)
-        $currentMonthTransactions = CashTransaction::whereBetween('date', [$startDate, $endDate])->get();
+        // Calculate stats for the selected month - scoped by branch
+        $currentMonthQuery = CashTransaction::whereBetween('date', [$startDate, $endDate]);
+        $this->scopeByUserBranch($currentMonthQuery);
+        $currentMonthTransactions = $currentMonthQuery->get();
         $monthlyIn = $currentMonthTransactions->where('type', 'in')->sum('amount');
         $monthlyOut = $currentMonthTransactions->where('type', 'out')->sum('amount');
 
-        // Total balance is all time In - Out
-        $totalIn = CashTransaction::where('type', 'in')->sum('amount');
-        $totalOut = CashTransaction::where('type', 'out')->sum('amount');
+        // Total balance is all time In - Out - scoped by branch
+        $totalInQuery = CashTransaction::where('type', 'in');
+        $this->scopeByUserBranch($totalInQuery);
+        $totalIn = $totalInQuery->sum('amount');
+
+        $totalOutQuery = CashTransaction::where('type', 'out');
+        $this->scopeByUserBranch($totalOutQuery);
+        $totalOut = $totalOutQuery->sum('amount');
         $totalBalance = $totalIn - $totalOut;
 
         $stats = [

@@ -8,6 +8,7 @@ use App\Models\StockMovement;
 use App\Models\CashTransaction;
 use App\Models\JournalEntry;
 use App\Models\Account;
+use App\Traits\BranchScope;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
@@ -15,9 +16,12 @@ use Carbon\Carbon;
 
 class ProductionController extends Controller
 {
+    use BranchScope;
     public function index()
     {
-        $productions = Production::with(['product.category', 'user', 'tailor'])->latest()->get();
+        $productionsQuery = Production::with(['product.category', 'user', 'tailor'])->latest();
+        $this->scopeByRelationBranch($productionsQuery, 'product');
+        $productions = $productionsQuery->get();
         $tailors = \App\Models\Tailor::all();
         
         return view('pages.production.index', compact('productions', 'tailors'))
@@ -26,7 +30,9 @@ class ProductionController extends Controller
 
     public function create()
     {
-        $finalProducts = Product::where('type', 'final_product')->with('billOfMaterialsAsFinal.rawMaterial')->get();
+        $finalProductsQuery = Product::where('type', 'final_product')->with('billOfMaterialsAsFinal.rawMaterial');
+        $this->scopeByBranch($finalProductsQuery);
+        $finalProducts = $finalProductsQuery->get();
         $tailors = \App\Models\Tailor::all();
         return view('pages.production.create', compact('finalProducts', 'tailors'))
             ->with('activePage', 'production');

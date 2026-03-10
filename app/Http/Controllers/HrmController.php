@@ -9,12 +9,14 @@ use App\Models\HrmSetting;
 use App\Models\CashTransaction;
 use App\Models\JournalEntry;
 use App\Models\Account;
+use App\Traits\BranchScope;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use App\Events\AttendanceRecorded;
 
 class HrmController extends Controller
 {
+    use BranchScope;
     public function index(Request $request)
     {
         $activeTab = $request->input('tab', 'employees');
@@ -178,7 +180,9 @@ class HrmController extends Controller
         $month = $date->month;
         $year = $date->year;
 
-        $employees = Employee::where('status', 'active')->get();
+        $employeesQuery = Employee::where('status', 'active');
+        $this->scopeByBranch($employeesQuery);
+        $employees = $employeesQuery->get();
 
         foreach ($employees as $emp) {
             // Check if payroll already exists

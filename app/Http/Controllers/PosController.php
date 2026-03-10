@@ -12,6 +12,7 @@ use App\Models\JournalItem;
 use App\Models\Account;
 use App\Models\Customer;
 use App\Models\Branch;
+use App\Traits\BranchScope;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
@@ -20,12 +21,15 @@ use App\Models\RedeemCode;
 
 class PosController extends Controller
 {
+    use BranchScope;
     public function index(Request $request)
     {
         $branchId = $request->query('branch_id', 'all');
         $branches = Branch::latest()->get();
 
-        $products = Product::where('stock', '>', 0)->with('category')->get();
+        $productsQuery = Product::where('stock', '>', 0)->with('category');
+        $this->scopeByBranch($productsQuery);
+        $products = $productsQuery->get();
         $customers = Customer::all();
         
         $posHistoryQuery = Sale::where('invoice_no', 'like', 'POS-%')

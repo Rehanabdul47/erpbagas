@@ -5,10 +5,13 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\CashTransaction;
 use App\Models\Account;
+use App\Traits\BranchScope;
 use Carbon\Carbon;
 
 class FinanceDashboardController extends Controller
 {
+    use BranchScope;
+
     public function index()
     {
         $currentMonth = Carbon::now()->month;
@@ -17,20 +20,28 @@ class FinanceDashboardController extends Controller
         $startDate = Carbon::now()->startOfMonth();
         $endDate = Carbon::now()->endOfMonth();
 
-        // 1. Saldo Kas & Arus Kas (From CashTransaction like CashController)
-        $monthlyIn = CashTransaction::whereMonth('date', $currentMonth)
+        // 1. Saldo Kas & Arus Kas - scoped by user's branch
+        $monthlyInQuery = CashTransaction::whereMonth('date', $currentMonth)
                                     ->whereYear('date', $currentYear)
-                                    ->where('type', 'in')
-                                    ->sum('amount');
+                                    ->where('type', 'in');
+        $this->scopeByUserBranch($monthlyInQuery);
+        $monthlyIn = $monthlyInQuery->sum('amount');
                                     
-        $monthlyOut = CashTransaction::whereMonth('date', $currentMonth)
+        $monthlyOutQuery = CashTransaction::whereMonth('date', $currentMonth)
                                      ->whereYear('date', $currentYear)
-                                     ->where('type', 'out')
-                                     ->sum('amount');
+                                     ->where('type', 'out');
+        $this->scopeByUserBranch($monthlyOutQuery);
+        $monthlyOut = $monthlyOutQuery->sum('amount');
                                      
         // Current Balance: All In - All Out
-        $totalInAll = CashTransaction::where('type', 'in')->sum('amount');
-        $totalOutAll = CashTransaction::where('type', 'out')->sum('amount');
+        $totalInQuery = CashTransaction::where('type', 'in');
+        $this->scopeByUserBranch($totalInQuery);
+        $totalInAll = $totalInQuery->sum('amount');
+
+        $totalOutQuery = CashTransaction::where('type', 'out');
+        $this->scopeByUserBranch($totalOutQuery);
+        $totalOutAll = $totalOutQuery->sum('amount');
+
         $currentBalance = $totalInAll - $totalOutAll;
 
         // 2. Net Income (From Journal Items / Accounts)
@@ -42,11 +53,10 @@ class FinanceDashboardController extends Controller
         $assets = $this->getAccountBalances('asset', null, $endDate);
         $totalAssets = $assets->sum('period_balance');
 
-        // 4. Recent Transactions
-        $recentTransactions = CashTransaction::with('user')
-                                              ->latest()
-                                              ->take(5)
-                                              ->get();
+        // 4. Recent Transactions - scoped by user's branch
+        $recentQuery = CashTransaction::with('user')->latest();
+        $this->scopeByUserBranch($recentQuery);
+        $recentTransactions = $recentQuery->take(5)->get();
 
         $activePage = 'finance-dashboard';
 
