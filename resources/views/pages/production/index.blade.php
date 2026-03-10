@@ -165,9 +165,7 @@
             </form>
         </div>
     </div>
-    
-    </div>
-    
+
     {{-- Universal Confirmation Modal --}}
     <div x-show="confirmModal" x-cloak style="display: none;" class="fixed inset-0 bg-gray-900/80 backdrop-blur-sm z-[200] flex items-center justify-center p-4 transition-opacity">
         <div @click.away="confirmModal = false" class="bg-gray-800 border border-gray-700 rounded-xl shadow-2xl w-full max-w-sm overflow-hidden flex flex-col">

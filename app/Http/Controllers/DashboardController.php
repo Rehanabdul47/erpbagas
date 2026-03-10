@@ -49,14 +49,14 @@ class DashboardController extends Controller
         // =============================================
         $posRevenueTodayQuery = Sale::whereDate('created_at', $today);
         $this->scopeByBranch($posRevenueTodayQuery);
-        $posRevenueToday = $posRevenueTodayQuery->sum('total_amount_paid');
+        $posRevenueToday = $posRevenueTodayQuery->sum('total_amount');
 
         $ecommerceRevenueToday = EcommerceOrder::whereDate('order_date', $today)->sum('total_amount');
         $totalRevenueToday = $posRevenueToday + $ecommerceRevenueToday;
 
         $posRevenueYesterdayQuery = Sale::whereDate('created_at', $today->copy()->subDay());
         $this->scopeByBranch($posRevenueYesterdayQuery);
-        $posRevenueYesterday = $posRevenueYesterdayQuery->sum('total_amount_paid');
+        $posRevenueYesterday = $posRevenueYesterdayQuery->sum('total_amount');
 
         $ecommerceRevenueYesterday = EcommerceOrder::whereDate('order_date', $today->copy()->subDay())->sum('total_amount');
         $totalRevenueYesterday = $posRevenueYesterday + $ecommerceRevenueYesterday;
@@ -296,10 +296,10 @@ class DashboardController extends Controller
         $this->scopeByBranch($recentPosQuery);
         $recentPos = $recentPosQuery->take(5)->get()->map(function($sale) {
             return [
-                'id' => $sale->invoice_number,
+                'id' => $sale->invoice_no,
                 'channel' => 'POS / Kasir',
                 'customer' => $sale->customer ? $sale->customer->name : 'Walk-in',
-                'total' => $sale->total_amount_paid,
+                'total' => $sale->total_amount,
                 'status' => 'completed',
                 'date' => $sale->created_at
             ];
@@ -419,7 +419,7 @@ class DashboardController extends Controller
 
                 $posQuery = Sale::whereDate('created_at', $date);
                 $this->scopeByBranch($posQuery);
-                $posData->push($posQuery->sum('total_amount_paid'));
+                $posData->push($posQuery->sum('total_amount'));
 
                 $ecomData->push(EcommerceOrder::whereDate('order_date', $date)->sum('total_amount'));
             }
@@ -482,7 +482,7 @@ class DashboardController extends Controller
             if ($platform === 'pos') {
                 $posQuery = Sale::whereDate('created_at', $date);
                 $this->scopeByBranch($posQuery);
-                $singleData->push($posQuery->sum('total_amount_paid'));
+                $singleData->push($posQuery->sum('total_amount'));
             } else {
                 $singleData->push(
                     EcommerceOrder::whereDate('order_date', $date)
