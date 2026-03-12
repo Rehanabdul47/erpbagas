@@ -8,12 +8,18 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Customer extends Model
 {
     protected $fillable = [
+        'branch_id',
         'name',
         'email',
         'phone',
         'address',
         'status',
     ];
+
+    public function branch()
+    {
+        return $this->belongsTo(Branch::class);
+    }
 
     public function sales(): HasMany
     {

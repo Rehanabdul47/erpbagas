@@ -17,8 +17,10 @@ use App\Http\Controllers\DigitalMarketingDashboardController;
 use App\Http\Controllers\FinanceDashboardController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\HrmDashboardController;
-use App\Http\Controllers\TailorController; // Added TailorController import
-use App\Http\Controllers\ProductionTransferController; // Added ProductionTransferController
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\ProductionTransferController;
+use App\Http\Controllers\TailorController;
 
 use App\Http\Controllers\RedeemCodeController;
 
@@ -29,8 +31,11 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
 // Protected routes
 Route::middleware('auth')->group(function () {
-    Route::get('/dashboard', [\App\Http\Controllers\DashboardController::class, 'index'])->name('dashboard');
-    Route::get('/dashboard/chart-data', [\App\Http\Controllers\DashboardController::class, 'chartDataApi'])->name('dashboard.chart-data');
+    // Notifications API
+    Route::get('/api/notifications', [NotificationController::class, 'getNotifications'])->name('api.notifications');
+
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/dashboard/chart-data', [DashboardController::class, 'chartDataApi'])->name('dashboard.chart-data');
 
     // Redeem Codes
     Route::prefix('redeem-codes')->name('redeem-codes.')->group(function () {

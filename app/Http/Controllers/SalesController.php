@@ -5,47 +5,35 @@ namespace App\Http\Controllers;
 use App\Models\Customer;
 use App\Models\Sale;
 use App\Models\Product;
+use App\Traits\BranchScope;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 
 class SalesController extends Controller
 {
+    use BranchScope;
+
     public function index(Request $request)
     {
         $branchId = $request->input('branch_id', 'all');
-        $branches = \App\Models\Branch::latest()->get();
+        $branches = $this->getBranchesForFilter();
 
-        $customers = Customer::withCount('sales')->get();
+        if (!$this->isExecutive()) {
+            $branchId = auth()->user()->branch_id ?? 1;
+        }
+
+        $customersQuery = Customer::withCount('sales');
+        $this->scopeByBranch($customersQuery, $branchId);
+        $customers = $customersQuery->get();
         
         $salesQuery = Sale::with('customer', 'branch')->latest();
-        
-        if (!auth()->user()->hasRole('Executive')) {
-            $userBranchId = auth()->user()->branch_id;
-            if ($userBranchId == 1) { // Pusat
-                $salesQuery->where(function($q) use ($userBranchId) {
-                    $q->where('branch_id', $userBranchId)->orWhereNull('branch_id');
-                });
-                $totalRevenueQuery = Sale::whereMonth('sale_date', Carbon::now()->month)
-                    ->where(function($q) use ($userBranchId) {
-                        $q->where('branch_id', $userBranchId)->orWhereNull('branch_id');
-                    });
-                $totalSalesQuery = Sale::where(function($q) use ($userBranchId) {
-                    $q->where('branch_id', $userBranchId)->orWhereNull('branch_id');
-                });
-            } else {
-                $salesQuery->where('branch_id', $userBranchId);
-                $totalRevenueQuery = Sale::whereMonth('sale_date', Carbon::now()->month)->where('branch_id', $userBranchId);
-                $totalSalesQuery = Sale::where('branch_id', $userBranchId);
-            }
-            $branchId = $userBranchId;
-        } else if ($branchId !== 'all') {
-            $salesQuery->where('branch_id', $branchId);
-            $totalRevenueQuery = Sale::whereMonth('sale_date', Carbon::now()->month)->where('branch_id', $branchId);
-            $totalSalesQuery = Sale::where('branch_id', $branchId);
-        } else {
-            $totalRevenueQuery = Sale::whereMonth('sale_date', Carbon::now()->month);
-            $totalSalesQuery = Sale::query();
-        }
+        $this->scopeByBranch($salesQuery, $branchId);
+
+        $totalRevenueQuery = Sale::whereMonth('sale_date', Carbon::now()->month);
+        $this->scopeByBranch($totalRevenueQuery, $branchId);
+
+        $totalSalesQuery = Sale::query();
+        $this->scopeByBranch($totalSalesQuery, $branchId);
 
         $sales = $salesQuery->limit(20)->get();
         
@@ -70,6 +58,8 @@ class SalesController extends Controller
             'status' => 'required|in:active,inactive,leads',
         ]);
 
+        $validated['branch_id'] = auth()->user()->branch_id;
+
         Customer::create($validated);
 
         return redirect()->route('sales.index', ['tab' => 'customers'])->with('success', 'Customer berhasil ditambahkan');
@@ -84,6 +74,7 @@ class SalesController extends Controller
         ]);
 
         $validated['status'] = 'active'; // Default for quick POS creation
+        $validated['branch_id'] = auth()->user()->branch_id;
         
         $customer = Customer::create($validated);
 

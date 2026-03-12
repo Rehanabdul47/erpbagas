@@ -7,53 +7,47 @@ use App\Models\Sale;
 use App\Models\Customer;
 use App\Models\RedeemCode;
 use App\Models\Branch;
+use App\Traits\BranchScope;
 use Carbon\Carbon;
 
 class MarketingDashboardController extends Controller
 {
+    use BranchScope;
+
     public function index(Request $request)
     {
         $currentMonth = Carbon::now()->month;
         $currentYear = Carbon::now()->year;
         
         $branchId = $request->input('branch_id', 'all');
-        if (!auth()->user()->hasRole('Executive')) {
-            $branchId = auth()->user()->branch_id;
-            // Normalize so those with null branch id (Pusat) are treated as branch 1 (Pusat logic)
-            if ($branchId === null) {
-                $branchId = 1;
-            }
+        $branches = $this->getBranchesForFilter();
+
+        if (!$this->isExecutive()) {
+            $branchId = auth()->user()->branch_id ?? 1;
         }
+
         $startDate = $request->input('start_date', Carbon::now()->subDays(29)->format('Y-m-d'));
         $endDate = $request->input('end_date', Carbon::now()->format('Y-m-d'));
         
-        $branches = Branch::latest()->get();
-
         // Metrics within date range
         $posQuery = Sale::whereDate('sale_date', '>=', $startDate)
             ->whereDate('sale_date', '<=', $endDate)
             ->whereIn('status', ['paid', 'completed']);
             
-        if ($branchId !== 'all') {
-            if ($branchId == 1) { // Assuming Branch 1 is Main Store (Pusat)
-                $posQuery->where(function($q) use ($branchId) {
-                    $q->where('branch_id', $branchId)->orWhereNull('branch_id');
-                });
-            } else {
-                $posQuery->where('branch_id', $branchId);
-            }
-        }
+        $this->scopeByBranch($posQuery, $branchId);
 
         $totalSalesMonth = (clone $posQuery)->count();
         $totalRevenueMonth = (clone $posQuery)->sum('total_amount');
 
         $activeCustomers = Customer::count();
 
-        $activeRedeemCodes = RedeemCode::where('is_active', true)
+        $activeRedeemCodesQuery = RedeemCode::where('is_active', true)
             ->where(function($query) {
                 $query->whereNull('valid_until')
                       ->orWhere('valid_until', '>=', now());
-            })->count();
+            });
+        $this->scopeByBranch($activeRedeemCodesQuery, $branchId);
+        $activeRedeemCodes = $activeRedeemCodesQuery->count();
 
         // Lists for widgets within date range
         $recentPosQuery = Sale::with(['customer', 'redeemCode', 'branch'])
@@ -61,15 +55,7 @@ class MarketingDashboardController extends Controller
             ->whereDate('sale_date', '<=', $endDate)
             ->latest('sale_date');
             
-        if ($branchId !== 'all') {
-            if ($branchId == 1) {
-                $recentPosQuery->where(function($q) use ($branchId) {
-                    $q->where('branch_id', $branchId)->orWhereNull('branch_id');
-                });
-            } else {
-                $recentPosQuery->where('branch_id', $branchId);
-            }
-        }
+        $this->scopeByBranch($recentPosQuery, $branchId);
             
         $recentPos = $recentPosQuery->take(5)
             ->get()
@@ -91,13 +77,15 @@ class MarketingDashboardController extends Controller
         // Recent transactions focusing only on POS
         $recentTransactions = $recentPos;
 
-        $newCustomers = Customer::latest()->take(5)->get();
+        $newCustomersQuery = Customer::latest();
+        $this->scopeByBranch($newCustomersQuery, $branchId);
+        $newCustomers = $newCustomersQuery->take(5)->get();
 
-        $activeCoupons = RedeemCode::where('is_active', true)
+        $activeCouponsQuery = RedeemCode::where('is_active', true)
             ->withCount('sales')
-            ->orderBy('sales_count', 'desc')
-            ->take(5)
-            ->get();
+            ->orderBy('sales_count', 'desc');
+        $this->scopeByBranch($activeCouponsQuery, $branchId);
+        $activeCoupons = $activeCouponsQuery->take(5)->get();
             
         // Combined Top Products
         $topPosProducts = \App\Models\SaleItem::with('product')
@@ -107,15 +95,7 @@ class MarketingDashboardController extends Controller
                   ->whereDate('sale_date', '<=', $endDate)
                   ->whereIn('status', ['paid', 'completed']);
                 
-                if ($branchId !== 'all') {
-                    if ($branchId == 1) {
-                        $q->where(function($sub) use ($branchId) {
-                            $sub->where('branch_id', $branchId)->orWhereNull('branch_id');
-                        });
-                    } else {
-                        $q->where('branch_id', $branchId);
-                    }
-                }
+                $this->scopeByBranch($q, $branchId);
             })
             ->groupBy('product_id')
             ->get();

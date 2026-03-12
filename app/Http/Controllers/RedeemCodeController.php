@@ -4,13 +4,19 @@ namespace App\Http\Controllers;
 
 use App\Models\RedeemCode;
 use App\Models\Customer;
+use App\Traits\BranchScope;
 use Illuminate\Http\Request;
 
 class RedeemCodeController extends Controller
 {
+    use BranchScope;
+
     public function index()
     {
-        $codes = RedeemCode::latest()->paginate(10);
+        $query = RedeemCode::latest();
+        $this->scopeByBranch($query);
+        $codes = $query->paginate(10);
+        
         return view('pages.redeem-codes.index', compact('codes'))->with('activePage', 'redeem-codes');
     }
 
@@ -28,6 +34,8 @@ class RedeemCodeController extends Controller
             'only_new_customer' => 'boolean',
             'only_returning_customer' => 'boolean',
         ]);
+
+        $validated['branch_id'] = auth()->user()->branch_id;
 
         RedeemCode::create($validated);
         return back()->with('success', 'Redeem code created successfully');
@@ -68,7 +76,16 @@ class RedeemCodeController extends Controller
 
         $customer = Customer::find($request->customer_id);
         
-        $code = RedeemCode::where('code', $request->code)->first();
+        $codeQuery = RedeemCode::where('code', $request->code);
+        // Scoping: can only apply codes from their own branch or global codes (null branch)
+        if (!$this->isExecutive()) {
+            $userBranchId = auth()->user()->branch_id;
+            $codeQuery->where(function($q) use ($userBranchId) {
+                $q->where('branch_id', $userBranchId)
+                  ->orWhereNull('branch_id');
+            });
+        }
+        $code = $codeQuery->first();
 
         if (!$code || !$code->isValid($request->customer_id)) {
             $msg = 'Kode redeem tidak valid, kedaluwarsa, atau sudah habis.';
@@ -78,13 +95,15 @@ class RedeemCodeController extends Controller
                 // Check usage limit per customer first if customer exists
                 $userUsage = 0;
                 if ($customer) {
-                    $userUsage = Sale::where('customer_id', $customer->id)
+                    $userUsage = \App\Models\Sale::where('customer_id', $customer->id)
                         ->where('redeem_code_id', $code->id)
                         ->count();
                 }
 
                 if (!$code->is_active) {
                     $msg = 'Kode redeem ini sudah tidak aktif.';
+                } elseif ($code->branch_id && $code->branch_id !== auth()->user()->branch_id && !$this->isExecutive()) {
+                    $msg = 'Kode redeem ini tidak berlaku untuk cabang Anda.';
                 } elseif ($code->max_uses > 0 && $code->used_count >= $code->max_uses) {
                     $msg = 'Kuota penggunaan kode redeem ini sudah habis.';
                 } elseif ($code->max_uses_per_customer > 0 && $userUsage >= $code->max_uses_per_customer) {

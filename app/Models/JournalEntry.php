@@ -10,6 +10,7 @@ class JournalEntry extends Model
     use HasFactory;
 
     protected $fillable = [
+        'branch_id',
         'date',
         'reference',
         'description',

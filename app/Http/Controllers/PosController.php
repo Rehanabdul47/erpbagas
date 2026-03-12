@@ -25,30 +25,25 @@ class PosController extends Controller
     public function index(Request $request)
     {
         $branchId = $request->query('branch_id', 'all');
-        $branches = Branch::latest()->get();
+        $branches = $this->getBranchesForFilter();
+
+        if (!$this->isExecutive()) {
+            $branchId = auth()->user()->branch_id ?? 1;
+        }
 
         $productsQuery = Product::where('stock', '>', 0)->with('category');
-        $this->scopeByBranch($productsQuery);
+        $this->scopeByBranch($productsQuery, $branchId);
         $products = $productsQuery->get();
-        $customers = Customer::all();
+
+        $customersQuery = Customer::query();
+        $this->scopeByBranch($customersQuery, $branchId);
+        $customers = $customersQuery->get();
         
         $posHistoryQuery = Sale::where('invoice_no', 'like', 'POS-%')
             ->with(['customer', 'items.product', 'branch'])
             ->latest();
             
-        if (!auth()->user()->hasRole('Executive')) {
-            $userBranchId = auth()->user()->branch_id;
-            if ($userBranchId == 1) { // Pusat
-                $posHistoryQuery->where(function($q) use ($userBranchId) {
-                    $q->where('branch_id', $userBranchId)->orWhereNull('branch_id');
-                });
-            } else {
-                $posHistoryQuery->where('branch_id', $userBranchId);
-            }
-            $branchId = $userBranchId; // Force branch_id filter
-        } else if ($branchId !== 'all') {
-            $posHistoryQuery->where('branch_id', $branchId);
-        }
+        $this->scopeByBranch($posHistoryQuery, $branchId);
             
         $posHistory = $posHistoryQuery->limit(20)->get();
         
@@ -174,6 +169,7 @@ class PosController extends Controller
 
                 if ($kasAccount && $pendapatanAccount && $hppAccount && $persediaanAccount) {
                     $journalEntry = JournalEntry::create([
+                        'branch_id' => Auth::user()->branch_id ?? 1,
                         'date' => Carbon::now(),
                         'reference' => $invoiceNo,
                         'description' => "Penjualan POS #{$invoiceNo}",

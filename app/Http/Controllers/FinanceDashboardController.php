@@ -75,6 +75,7 @@ class FinanceDashboardController extends Controller
     {
         $accounts = Account::where('type', $type)->with(['journalItems' => function($q) use ($startDate, $endDate) {
             $q->whereHas('journal', function($q) use ($startDate, $endDate) {
+                $this->scopeByBranch($q);
                 if ($startDate) {
                     $q->where('date', '>=', $startDate);
                 }

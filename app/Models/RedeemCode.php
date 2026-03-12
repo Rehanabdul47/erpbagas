@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class RedeemCode extends Model
 {
     protected $fillable = [
+        'branch_id',
         'code',
         'type', // percentage, fixed
         'value',
@@ -20,6 +21,11 @@ class RedeemCode extends Model
         'description',
         'is_active',
     ];
+
+    public function branch()
+    {
+        return $this->belongsTo(Branch::class);
+    }
 
     protected $casts = [
         'valid_from' => 'date',

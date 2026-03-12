@@ -47,6 +47,11 @@ class User extends Authenticatable
         return $this->hasRole(['Manager', 'Executive']);
     }
 
+    public function isExecutive(): bool
+    {
+        return $this->hasRole('Executive');
+    }
+
     public function branch()
     {
         return $this->belongsTo(Branch::class);

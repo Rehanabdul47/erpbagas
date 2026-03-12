@@ -4,10 +4,13 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Account;
+use App\Traits\BranchScope;
 use Carbon\Carbon;
 
 class FinanceReportController extends Controller
 {
+    use BranchScope;
+
     public function index(Request $request)
     {
         $month = $request->input('month', date('Y-m'));
@@ -88,6 +91,7 @@ class FinanceReportController extends Controller
     {
         $accounts = Account::where('type', $type)->with(['journalItems' => function($q) use ($startDate, $endDate) {
             $q->whereHas('journal', function($q) use ($startDate, $endDate) {
+                $this->scopeByBranch($q);
                 if ($startDate) {
                     $q->where('date', '>=', $startDate);
                 }

@@ -100,6 +100,7 @@ class CashController extends Controller
 
         if ($kasAccount && $otherAccount) {
             $journalEntry = \App\Models\JournalEntry::create([
+                'branch_id' => auth()->user()->branch_id,
                 'date' => $validated['date'],
                 'reference' => $validated['reference'] ?? 'CASH-' . $transaction->id,
                 'description' => "Transaksi Kas: " . $validated['description'],

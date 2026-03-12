@@ -404,51 +404,123 @@
     </div>
 
     <!-- ============================================= -->
-    <!-- Recent Orders (Marketing) -->
+    <!-- Logistics & Performance Combined -->
     <!-- ============================================= -->
-    <div class="bg-gray-800 border border-gray-700/50 rounded-xl shadow-sm">
-        <div class="p-5 border-b border-gray-700/50 flex items-center justify-between">
-            <div class="flex items-center gap-2 font-bold text-white"><i data-lucide="list-ordered" class="w-5 h-5 text-indigo-400"></i> Order Terbaru</div>
-            <a href="{{ route('orders') ?? '#' }}" class="text-sm text-indigo-400 hover:text-indigo-300 transition-colors">Lihat Semua &rarr;</a>
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+        @if(auth()->user()->isExecutive())
+        <!-- Branch Revenue (Omzet per Cabang) -->
+        <div class="lg:col-span-1 bg-gray-800 border border-gray-700/50 rounded-xl shadow-sm flex flex-col">
+            <div class="p-5 border-b border-gray-700/50 flex items-center justify-between">
+                <div class="flex items-center gap-2 font-bold text-white">
+                    <i data-lucide="award" class="w-5 h-5 text-amber-500"></i> Ranking Omzet Cabang
+                </div>
+                <div class="text-[10px] uppercase font-bold text-gray-500 tracking-wider">Bulan Ini</div>
+            </div>
+            <div class="p-2 flex-1">
+                <div class="w-full overflow-hidden rounded-lg border border-gray-700/50">
+                    <table class="w-full text-left text-[10px] uppercase tracking-tight">
+                        <thead class="bg-gray-900/50 text-gray-500 font-bold border-b border-gray-700/50">
+                            <tr>
+                                <th class="px-3 py-3 w-10 text-center">Rank</th>
+                                <th class="px-3 py-3">Nama Cabang</th>
+                                <th class="px-3 py-3 text-right">Growth</th>
+                                <th class="px-3 py-3 text-right">Omzet</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-700/50">
+                            @forelse($branchRevenue as $index => $branch)
+                            <tr class="hover:bg-gray-700/30 transition-colors">
+                                <td class="px-3 py-4 text-center">
+                                    @if($index === 0)
+                                        <i data-lucide="trophy" class="w-4 h-4 text-amber-500 mx-auto"></i>
+                                    @elseif($index === 1)
+                                        <i data-lucide="medal" class="w-4 h-4 text-gray-300 mx-auto"></i>
+                                    @elseif($index === 2)
+                                        <i data-lucide="medal" class="w-4 h-4 text-orange-400 mx-auto"></i>
+                                    @else
+                                        <span class="text-gray-500 font-bold">#{{ $index + 1 }}</span>
+                                    @endif
+                                </td>
+                                <td class="px-3 py-4">
+                                    <span class="font-bold text-white block truncate max-w-[100px]">{{ $branch->name }}</span>
+                                    <span class="text-[9px] text-gray-500">{{ $branch->total_transactions }} Transaksi</span>
+                                </td>
+                                <td class="px-3 py-4 text-right">
+                                    @if($branch->growth > 0)
+                                        <span class="text-emerald-400 font-bold">+{{ number_format($branch->growth, 1) }}%</span>
+                                    @elseif($branch->growth < 0)
+                                        <span class="text-red-400 font-bold">{{ number_format($branch->growth, 1) }}%</span>
+                                    @else
+                                        <span class="text-gray-500">-</span>
+                                    @endif
+                                </td>
+                                <td class="px-3 py-4 text-right font-bold text-emerald-400">
+                                    <span class="block">Rp {{ number_format($branch->total_revenue ?? 0, 0, ',', '.') }}</span>
+                                </td>
+                            </tr>
+                            @empty
+                            <tr><td colspan="4" class="px-3 py-8 text-center text-gray-500 lowercase italic">Belum ada transaksi hari ini</td></tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            @if($branchRevenue->count() > 0)
+            <div class="p-4 bg-gray-900/20 border-t border-gray-700/50">
+                <div class="flex justify-between items-center text-[10px] font-bold uppercase tracking-widest text-gray-500">
+                    <span>Total Omzet POS</span>
+                    <span class="text-white">Rp {{ number_format($branchRevenue->sum('total_revenue'), 0, ',', '.') }}</span>
+                </div>
+            </div>
+            @endif
         </div>
-        <div class="w-full overflow-x-auto">
-            <table class="w-full text-left text-sm whitespace-nowrap">
-                <thead class="bg-gray-900/50 text-gray-400 text-xs uppercase tracking-wider">
-                    <tr>
-                        <th class="px-5 py-4 font-medium">Order ID</th>
-                        <th class="px-5 py-4 font-medium">Channel</th>
-                        <th class="px-5 py-4 font-medium">Customer</th>
-                        <th class="px-5 py-4 font-medium">Total</th>
-                        <th class="px-5 py-4 font-medium">Status</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-700/50">
-                    @forelse($recentOrders as $order)
-                    <tr class="hover:bg-gray-700/20 transition-colors">
-                        <td class="px-5 py-4">
-                            <span class="font-bold text-white block">{{ $order['id'] }}</span>
-                            <span class="text-xs text-gray-500">{{ \Carbon\Carbon::parse($order['date'])->format('d M Y H:i') }}</span>
-                        </td>
-                        <td class="px-5 py-4 text-gray-400 text-xs font-medium">{{ $order['channel'] }}</td>
-                        <td class="px-5 py-4 text-white font-medium">{{ $order['customer'] }}</td>
-                        <td class="px-5 py-4 font-bold text-emerald-400">Rp {{ number_format($order['total'], 0, ',', '.') }}</td>
-                        <td class="px-5 py-4">
-                            @if(in_array($order['status'], ['pending', 'new']))
-                                <span class="px-2 py-1 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-500 border border-amber-500/20 uppercase">Pending</span>
-                            @elseif(in_array($order['status'], ['ready_to_ship', 'shipped', 'processing']))
-                                <span class="px-2 py-1 rounded-full text-xs font-semibold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 uppercase">Proses Kirim</span>
-                            @elseif(in_array($order['status'], ['completed', 'delivered']))
-                                <span class="px-2 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 uppercase">Selesai</span>
-                            @else
-                                <span class="px-2 py-1 rounded-full text-xs font-semibold bg-red-500/10 text-red-400 border border-red-500/20 uppercase">{{ $order['status'] }}</span>
-                            @endif
-                        </td>
-                    </tr>
-                    @empty
-                    <tr><td colspan="5" class="px-5 py-8 text-center text-gray-500">Belum ada data transaksi</td></tr>
-                    @endforelse
-                </tbody>
-            </table>
+        @endif
+
+        <!-- Recent Orders (Marketing) -->
+        <div class="{{ auth()->user()->isExecutive() ? 'lg:col-span-2' : 'lg:col-span-3' }} bg-gray-800 border border-gray-700/50 rounded-xl shadow-sm flex flex-col">
+            <div class="p-5 border-b border-gray-700/50 flex items-center justify-between">
+                <div class="flex items-center gap-2 font-bold text-white"><i data-lucide="list-ordered" class="w-5 h-5 text-indigo-400"></i> Order Terbaru</div>
+                <a href="{{ route('orders') ?? '#' }}" class="text-sm text-indigo-400 hover:text-indigo-300 transition-colors">Lihat Semua &rarr;</a>
+            </div>
+            <div class="w-full overflow-x-auto flex-1">
+                <table class="w-full text-left text-sm whitespace-nowrap">
+                    <thead class="bg-gray-900/50 text-gray-400 text-xs uppercase tracking-wider">
+                        <tr>
+                            <th class="px-5 py-4 font-medium">Order ID</th>
+                            <th class="px-5 py-4 font-medium">Channel</th>
+                            <th class="px-5 py-4 font-medium">Customer</th>
+                            <th class="px-5 py-4 font-medium">Total</th>
+                            <th class="px-5 py-4 font-medium">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-700/50">
+                        @forelse($recentOrders as $order)
+                        <tr class="hover:bg-gray-700/20 transition-colors">
+                            <td class="px-5 py-4">
+                                <span class="font-bold text-white block">{{ $order['id'] }}</span>
+                                <span class="text-xs text-gray-500">{{ \Carbon\Carbon::parse($order['date'])->format('d M Y H:i') }}</span>
+                            </td>
+                            <td class="px-5 py-4 text-gray-400 text-xs font-medium">{{ $order['channel'] }}</td>
+                            <td class="px-5 py-4 text-white font-medium">{{ $order['customer'] }}</td>
+                            <td class="px-5 py-4 font-bold text-emerald-400">Rp {{ number_format($order['total'], 0, ',', '.') }}</td>
+                            <td class="px-5 py-4">
+                                @if(in_array($order['status'], ['pending', 'new']))
+                                    <span class="px-2 py-1 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-500 border border-amber-500/20 uppercase">Pending</span>
+                                @elseif(in_array($order['status'], ['ready_to_ship', 'shipped', 'processing']))
+                                    <span class="px-2 py-1 rounded-full text-[10px] font-bold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 uppercase">Proses</span>
+                                @elseif(in_array($order['status'], ['completed', 'delivered']))
+                                    <span class="px-2 py-1 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 uppercase">Selesai</span>
+                                @else
+                                    <span class="px-2 py-1 rounded-full text-[10px] font-bold bg-red-500/10 text-red-400 border border-red-500/20 uppercase">{{ $order['status'] }}</span>
+                                @endif
+                            </td>
+                        </tr>
+                        @empty
+                        <tr><td colspan="5" class="px-5 py-8 text-center text-gray-500">Belum ada data transaksi</td></tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 </div>

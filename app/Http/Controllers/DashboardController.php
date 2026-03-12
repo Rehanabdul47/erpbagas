@@ -51,14 +51,21 @@ class DashboardController extends Controller
         $this->scopeByBranch($posRevenueTodayQuery);
         $posRevenueToday = $posRevenueTodayQuery->sum('total_amount');
 
-        $ecommerceRevenueToday = EcommerceOrder::whereDate('order_date', $today)->sum('total_amount');
+        // Ecommerce is considered central (Pusat). Only show if Executive or Branch 1
+        $ecommerceRevenueToday = 0;
+        if ($this->isExecutive() || $this->getUserBranchId() == 1) {
+            $ecommerceRevenueToday = EcommerceOrder::whereDate('order_date', $today)->sum('total_amount');
+        }
         $totalRevenueToday = $posRevenueToday + $ecommerceRevenueToday;
 
         $posRevenueYesterdayQuery = Sale::whereDate('created_at', $today->copy()->subDay());
         $this->scopeByBranch($posRevenueYesterdayQuery);
         $posRevenueYesterday = $posRevenueYesterdayQuery->sum('total_amount');
 
-        $ecommerceRevenueYesterday = EcommerceOrder::whereDate('order_date', $today->copy()->subDay())->sum('total_amount');
+        $ecommerceRevenueYesterday = 0;
+        if ($this->isExecutive() || $this->getUserBranchId() == 1) {
+            $ecommerceRevenueYesterday = EcommerceOrder::whereDate('order_date', $today->copy()->subDay())->sum('total_amount');
+        }
         $totalRevenueYesterday = $posRevenueYesterday + $ecommerceRevenueYesterday;
         
         $revenueGrowth = 0;
@@ -71,14 +78,20 @@ class DashboardController extends Controller
         $this->scopeByBranch($posOrdersTodayQuery);
         $posOrdersToday = $posOrdersTodayQuery->count();
 
-        $ecommerceOrdersToday = EcommerceOrder::whereDate('order_date', $today)->count();
+        $ecommerceOrdersToday = 0;
+        if ($this->isExecutive() || $this->getUserBranchId() == 1) {
+            $ecommerceOrdersToday = EcommerceOrder::whereDate('order_date', $today)->count();
+        }
         $totalOrdersToday = $posOrdersToday + $ecommerceOrdersToday;
 
         $posOrdersYesterdayQuery = Sale::whereDate('created_at', $today->copy()->subDay());
         $this->scopeByBranch($posOrdersYesterdayQuery);
         $posOrdersYesterday = $posOrdersYesterdayQuery->count();
 
-        $ecommerceOrdersYesterday = EcommerceOrder::whereDate('order_date', $today->copy()->subDay())->count();
+        $ecommerceOrdersYesterday = 0;
+        if ($this->isExecutive() || $this->getUserBranchId() == 1) {
+            $ecommerceOrdersYesterday = EcommerceOrder::whereDate('order_date', $today->copy()->subDay())->count();
+        }
         $totalOrdersYesterday = $posOrdersYesterday + $ecommerceOrdersYesterday;
 
         $ordersGrowth = 0;
@@ -87,7 +100,10 @@ class DashboardController extends Controller
         }
 
         // Pending Orders (E-commerce)
-        $pendingOrders = EcommerceOrder::where('status', 'pending')->count();
+        $pendingOrders = 0;
+        if ($this->isExecutive() || $this->getUserBranchId() == 1) {
+            $pendingOrders = EcommerceOrder::where('status', 'pending')->count();
+        }
 
         // =============================================
         // 2. PRODUKSI: Inventory & Production Metrics
@@ -281,16 +297,19 @@ class DashboardController extends Controller
         }
 
         // Recent Orders (POS + E-Commerce merged)
-        $recentEcommerce = EcommerceOrder::latest('order_date')->take(5)->get()->map(function($order) {
-            return [
-                'id' => $order->order_number,
-                'channel' => 'E-Commerce (' . $order->platform . ')',
-                'customer' => $order->customer_name,
-                'total' => $order->total_amount,
-                'status' => $order->status,
-                'date' => $order->order_date
-            ];
-        });
+        $recentEcommerce = collect();
+        if ($this->isExecutive() || $this->getUserBranchId() == 1) {
+            $recentEcommerce = EcommerceOrder::latest('order_date')->take(5)->get()->map(function($order) {
+                return [
+                    'id' => $order->order_number,
+                    'channel' => 'E-Commerce (' . $order->platform . ')',
+                    'customer' => $order->customer_name,
+                    'total' => $order->total_amount,
+                    'status' => $order->status,
+                    'date' => $order->order_date
+                ];
+            });
+        }
 
         $recentPosQuery = Sale::latest('created_at');
         $this->scopeByBranch($recentPosQuery);
@@ -365,6 +384,39 @@ class DashboardController extends Controller
             'low_stock_count' => $lowStockCount,
         ];
 
+        // Performa Cabang (Management only)
+        $branchRevenue = collect();
+        if ($user->isExecutive()) {
+            $startOfMonth = Carbon::now()->startOfMonth();
+            $endOfMonth = Carbon::now()->endOfMonth();
+            $startOfPrevMonth = Carbon::now()->subMonth()->startOfMonth();
+            $endOfPrevMonth = Carbon::now()->subMonth()->endOfMonth();
+
+            $branchRevenue = DB::table('branches')
+                ->leftJoin('sales', function($join) use ($startOfMonth, $endOfPrevMonth, $startOfPrevMonth) {
+                    $join->on('branches.id', '=', 'sales.branch_id')
+                         ->where('sales.created_at', '>=', $startOfPrevMonth)
+                         ->where('sales.created_at', '<=', Carbon::now());
+                })
+                ->select(
+                    'branches.name',
+                    DB::raw("SUM(CASE WHEN sales.created_at >= '{$startOfMonth->toDateTimeString()}' THEN 1 ELSE 0 END) as total_transactions"),
+                    DB::raw("SUM(CASE WHEN sales.created_at >= '{$startOfMonth->toDateTimeString()}' THEN sales.total_amount ELSE 0 END) as total_revenue"),
+                    DB::raw("SUM(CASE WHEN sales.created_at >= '{$startOfPrevMonth->toDateTimeString()}' AND sales.created_at <= '{$endOfPrevMonth->toDateTimeString()}' THEN sales.total_amount ELSE 0 END) as last_month_revenue")
+                )
+                ->groupBy('branches.id', 'branches.name')
+                ->orderByDesc('total_revenue')
+                ->get();
+
+            // Calculate growth vs last month
+            foreach ($branchRevenue as $item) {
+                $item->growth = 0;
+                if ($item->last_month_revenue > 0) {
+                    $item->growth = (($item->total_revenue - $item->last_month_revenue) / $item->last_month_revenue) * 100;
+                }
+            }
+        }
+
         // Initial Chart Data (All Platforms)
         $chartData = $this->getChartData('all');
 
@@ -381,7 +433,8 @@ class DashboardController extends Controller
             'productionSummary',
             'activeProductions',
             'criticalStockProducts',
-            'recentTransfers'
+            'recentTransfers',
+            'branchRevenue'
         ))->with('activePage', 'dashboard');
     }
 
@@ -426,7 +479,11 @@ class DashboardController extends Controller
                 $this->scopeByBranch($posQuery);
                 $posData->push($posQuery->sum('total_amount'));
 
-                $ecomData->push(EcommerceOrder::whereDate('order_date', $date)->sum('total_amount'));
+                $ecomValue = 0;
+                if ($this->isExecutive() || $this->getUserBranchId() == 1) {
+                    $ecomValue = EcommerceOrder::whereDate('order_date', $date)->sum('total_amount');
+                }
+                $ecomData->push($ecomValue);
             }
 
             return [
@@ -444,6 +501,17 @@ class DashboardController extends Controller
 
         // When "ecommerce": return separate datasets per platform
         if ($platform === 'ecommerce') {
+            if (!$this->isExecutive() && $this->getUserBranchId() != 1) {
+                return [
+                    'labels' => [],
+                    'datasets' => [],
+                    'start_date' => $start->format('Y-m-d'),
+                    'end_date' => $end->format('Y-m-d'),
+                    'multi' => true,
+                    'isHourly' => false,
+                    'unauthorized' => true
+                ];
+            }
             $platforms = EcommerceOrder::select('platform')->distinct()->pluck('platform');
             $platformsData = [];
             foreach ($platforms as $pf) {
@@ -491,11 +559,13 @@ class DashboardController extends Controller
                 $this->scopeByBranch($posQuery);
                 $singleData->push($posQuery->sum('total_amount'));
             } else {
-                $singleData->push(
-                    EcommerceOrder::whereDate('order_date', $date)
+                $ecomValue = 0;
+                if ($this->isExecutive() || $this->getUserBranchId() == 1) {
+                    $ecomValue = EcommerceOrder::whereDate('order_date', $date)
                         ->where('platform', 'like', "%{$platform}%")
-                        ->sum('total_amount')
-                );
+                        ->sum('total_amount');
+                }
+                $singleData->push($ecomValue);
             }
         }
 
@@ -526,7 +596,11 @@ class DashboardController extends Controller
                 $this->scopeByBranch($posQuery);
                 $posData[] = $posQuery->sum('total_amount');
 
-                $ecomData[] = EcommerceOrder::whereDate('order_date', $date)->whereHour('created_at', $hour)->sum('total_amount');
+                $ecomValue = 0;
+                if ($this->isExecutive() || $this->getUserBranchId() == 1) {
+                    $ecomValue = EcommerceOrder::whereDate('order_date', $date)->whereHour('created_at', $hour)->sum('total_amount');
+                }
+                $ecomData[] = $ecomValue;
             }
             $datasets = [
                 ['label' => 'POS / Kasir', 'data' => $posData],
@@ -534,6 +608,9 @@ class DashboardController extends Controller
             ];
             $multi = true;
         } elseif ($platform === 'ecommerce') {
+            if (!$this->isExecutive() && $this->getUserBranchId() != 1) {
+                return ['labels' => $labels, 'datasets' => [], 'multi' => true, 'isHourly' => true];
+            }
             $platforms = EcommerceOrder::select('platform')->distinct()->pluck('platform');
             $datasets = [];
             foreach ($platforms as $pf) {
