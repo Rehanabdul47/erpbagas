@@ -110,8 +110,8 @@
         {{-- Trend Chart --}}
         <div class="lg:col-span-3 bg-gray-800 border border-gray-700/50 rounded-xl shadow-sm p-5">
             <div class="flex items-center justify-between mb-4">
-                <h4 class="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
-                    <i data-lucide="trending-up" class="w-4 h-4 text-indigo-400"></i> Trend Penjualan POS (30 Hari)
+                <h4 id="chart-title" class="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                    <i data-lucide="trending-up" class="w-4 h-4 text-indigo-400"></i> Trend Penjualan POS
                 </h4>
                 @if($branchId === 'all')
                     <span class="text-[10px] font-bold text-gray-400 bg-gray-900 px-2 py-0.5 rounded border border-gray-700">Performa Antar Cabang</span>
@@ -314,20 +314,9 @@
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <script>
     document.addEventListener('DOMContentLoaded', () => {
-        // Initialize Datepickers
-        flatpickr(".datepicker", {
-            dateFormat: "Y-m-d",
-            altInput: true,
-            altFormat: "d M Y",
-            disableMobile: "true",
-            onClose: function(selectedDates, dateStr, instance) {
-                // If you want auto-submit on selection, uncomment below:
-                // instance.element.closest('form').submit();
-            }
-        });
-
-        const chartData = @json($chartData);
+        let marketingChart;
         const ctx = document.getElementById('marketingTrendChart').getContext('2d');
+        const chartData = @json($chartData);
         
         const colors = [
             '#10b981', // emerald
@@ -338,37 +327,6 @@
             '#06b6d4', // cyan
         ];
 
-        const datasets = chartData.datasets.map((ds, i) => {
-            let color = colors[i % colors.length];
-            
-            // Override colors for consistency
-            if (ds.label === 'Total Penjualan' || ds.label === 'Pendapatan') color = '#10b981';
-            if (ds.label === 'Jumlah Transaksi') color = '#6366f1';
-
-            // Special styling for primary line
-            let fill = false;
-            let backgroundColor = 'transparent';
-            if (!chartData.isComparison && i === 0) {
-                fill = true;
-                const gradient = ctx.createLinearGradient(0, 0, 0, 300);
-                gradient.addColorStop(0, hexToRgba(color, 0.2));
-                gradient.addColorStop(1, hexToRgba(color, 0));
-                backgroundColor = gradient;
-            }
-
-            return {
-                label: ds.label,
-                data: ds.data,
-                borderColor: color,
-                backgroundColor: backgroundColor,
-                borderWidth: 2,
-                fill: fill,
-                tension: 0.4,
-                yAxisID: chartData.isComparison ? 'y' : (i === 0 ? 'y' : 'y1'),
-                borderDash: !chartData.isComparison && i === 1 ? [5, 5] : []
-            };
-        });
-
         function hexToRgba(hex, alpha) {
             const r = parseInt(hex.slice(1, 3), 16);
             const g = parseInt(hex.slice(3, 5), 16);
@@ -376,82 +334,185 @@
             return `rgba(${r}, ${g}, ${b}, ${alpha})`;
         }
 
-        new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: chartData.labels,
-                datasets: datasets
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                interaction: {
-                    mode: 'index',
-                    intersect: false,
-                },
-                plugins: {
-                    legend: {
-                        position: 'top',
-                        labels: {
-                            color: '#9ca3af',
-                            usePointStyle: true,
-                            boxWidth: 8
-                        }
-                    },
-                    tooltip: {
-                        backgroundColor: 'rgba(17, 24, 39, 0.9)',
-                        titleColor: '#fff',
-                        bodyColor: '#e5e7eb',
-                        borderColor: 'rgba(75, 85, 99, 0.4)',
-                        borderWidth: 1,
-                        padding: 10,
-                        callbacks: {
-                            label: function(context) {
-                                let label = context.dataset.label || '';
-                                if (label) label += ': ';
-                                
-                                const isRevenue = label.toLowerCase().includes('total') || 
-                                                label.toLowerCase().includes('pendapatan') || 
-                                                context.datasetIndex === 0 ||
-                                                chartData.isComparison;
+        const initChart = (data) => {
+            if (marketingChart) {
+                marketingChart.destroy();
+            }
 
-                                if (isRevenue && !label.toLowerCase().includes('transaksi')) {
-                                    label += 'Rp ' + new Intl.NumberFormat('id-ID').format(context.raw);
-                                } else {
-                                    label += new Intl.NumberFormat('id-ID').format(context.raw);
-                                }
-                                return label;
-                            }
-                        }
-                    }
+            const datasets = data.datasets.map((ds, i) => {
+                let color = colors[i % colors.length];
+                
+                // Override colors for consistency
+                if (ds.label === 'Total Penjualan POS' || ds.label === 'Pendapatan POS') color = '#10b981';
+                if (ds.label === 'Jumlah Transaksi POS') color = '#6366f1';
+
+                // Special styling for primary line
+                let fill = false;
+                let backgroundColor = 'transparent';
+                if (!data.isComparison && i === 0) {
+                    fill = true;
+                    const gradient = ctx.createLinearGradient(0, 0, 0, 300);
+                    gradient.addColorStop(0, hexToRgba(color, 0.2));
+                    gradient.addColorStop(1, hexToRgba(color, 0));
+                    backgroundColor = gradient;
+                }
+
+                return {
+                    label: ds.label,
+                    data: ds.data,
+                    borderColor: color,
+                    backgroundColor: backgroundColor,
+                    borderWidth: 2,
+                    fill: fill,
+                    tension: 0.4,
+                    yAxisID: data.isComparison ? 'y' : (i === 0 ? 'y' : 'y1'),
+                    borderDash: !data.isComparison && i === 1 ? [5, 5] : []
+                };
+            });
+
+            marketingChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.labels,
+                    datasets: datasets
                 },
-                scales: {
-                    x: {
-                        grid: { display: false, drawBorder: false },
-                        ticks: { color: '#6b7280', maxTicksLimit: 10 }
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false,
                     },
-                    y: {
-                        type: 'linear',
-                        display: true,
-                        position: 'left',
-                        grid: { color: 'rgba(75, 85, 99, 0.1)', drawBorder: false },
-                        ticks: {
-                            color: '#6b7280',
-                            callback: function(value) {
-                                if(value >= 1000000) return 'Rp ' + (value/1000000).toFixed(1) + 'M';
-                                if(value >= 1000) return 'Rp ' + (value/1000).toFixed(0) + 'K';
-                                return 'Rp ' + value;
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: {
+                                color: '#9ca3af',
+                                usePointStyle: true,
+                                boxWidth: 8
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(17, 24, 39, 0.9)',
+                            titleColor: '#fff',
+                            bodyColor: '#e5e7eb',
+                            borderColor: 'rgba(75, 85, 99, 0.4)',
+                            borderWidth: 1,
+                            padding: 10,
+                            callbacks: {
+                                title: function(context) {
+                                    if (data.isHourly) {
+                                        return 'Pukul ' + context[0].label;
+                                    }
+                                    return context[0].label;
+                                },
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) label += ': ';
+                                    
+                                    const isRevenue = label.toLowerCase().includes('total') || 
+                                                    label.toLowerCase().includes('pendapatan') || 
+                                                    (data.isComparison && !label.toLowerCase().includes('transaksi')) ||
+                                                    (!data.isComparison && context.datasetIndex === 0);
+
+                                    if (isRevenue) {
+                                        label += 'Rp ' + new Intl.NumberFormat('id-ID').format(context.raw);
+                                    } else {
+                                        label += new Intl.NumberFormat('id-ID').format(context.raw);
+                                    }
+                                    return label;
+                                }
                             }
                         }
                     },
-                    y1: {
-                        type: 'linear',
-                        display: !chartData.isComparison,
-                        position: 'right',
-                        grid: { display: false },
-                        ticks: { color: '#6366f1', stepSize: 1 }
+                    scales: {
+                        x: {
+                            grid: { display: false, drawBorder: false },
+                            ticks: { 
+                                color: '#6b7280', 
+                                maxTicksLimit: data.isHourly ? 12 : 10 
+                            }
+                        },
+                        y: {
+                            type: 'linear',
+                            display: true,
+                            position: 'left',
+                            grid: { color: 'rgba(75, 85, 99, 0.1)', drawBorder: false },
+                            ticks: {
+                                color: '#6b7280',
+                                callback: function(value) {
+                                    if(value >= 1000000) return 'Rp ' + (value/1000000).toFixed(1) + 'M';
+                                    if(value >= 1000) return 'Rp ' + (value/1000).toFixed(0) + 'K';
+                                    return 'Rp ' + value;
+                                }
+                            }
+                        },
+                        y1: {
+                            type: 'linear',
+                            display: !data.isComparison,
+                            position: 'right',
+                            grid: { display: false },
+                            ticks: { color: '#6366f1', stepSize: 1 }
+                        }
                     }
                 }
+            });
+        };
+
+        // Initial load
+        initChart(chartData);
+
+        // AJAX Update function
+        const updateChart = async () => {
+            const branchId = document.querySelector('select[name="branch_id"]')?.value || 'all';
+            const startDate = document.getElementById('start_date').value;
+            const endDate = document.getElementById('end_date').value;
+
+            try {
+                const response = await fetch(`{{ route('marketing.dashboard.chart-data') }}?branch_id=${branchId}&start_date=${startDate}&end_date=${endDate}`);
+                const newData = await response.json();
+                initChart(newData);
+                
+                // Update title if hourly
+                const chartTitle = document.getElementById('chart-title');
+                if (chartTitle) {
+                    if (newData.isHourly) {
+                        chartTitle.innerHTML = `<i data-lucide="clock" class="w-4 h-4 text-emerald-400"></i> Real-time Penjualan Hari Ini`;
+                    } else {
+                        chartTitle.innerHTML = `<i data-lucide="trending-up" class="w-4 h-4 text-indigo-400"></i> Trend Penjualan POS`;
+                    }
+                    if (window.lucide) lucide.createIcons();
+                }
+            } catch (error) {
+                console.error('Error fetching chart data:', error);
+            }
+        };
+
+        // Event listeners for filters
+        document.querySelector('select[name="branch_id"]')?.addEventListener('change', updateChart);
+        
+        // Auto-refresh if end_date is today
+        const checkAutoRefresh = () => {
+            const endDate = document.getElementById('end_date').value;
+            const today = new Date().toISOString().split('T')[0];
+            
+            if (endDate === today) {
+                // Refresh every 30 seconds if it's today
+                setInterval(updateChart, 30000);
+            }
+        };
+        checkAutoRefresh();
+
+        // Integrate with Flatpickr
+        flatpickr(".datepicker", {
+            dateFormat: "Y-m-d",
+            altInput: true,
+            altFormat: "d M Y",
+            disableMobile: "true",
+            onClose: function(selectedDates, dateStr, instance) {
+                updateChart();
+                // We still let the form submit if they click "Terapkan", 
+                // but AJAX will update the chart instantly on close.
             }
         });
     });

@@ -150,44 +150,48 @@ class MarketingDashboardController extends Controller
         ));
     }
 
+    public function chartApi(Request $request)
+    {
+        $branchId = $request->input('branch_id', 'all');
+        $startDate = $request->input('start_date', Carbon::now()->subDays(29)->format('Y-m-d'));
+        $endDate = $request->input('end_date', Carbon::now()->format('Y-m-d'));
+        
+        return response()->json($this->getChartData($branchId, $startDate, $endDate));
+    }
+
     private function getChartData($branchId, $startDate, $endDate)
     {
-        $days = [];
+        $start = Carbon::parse($startDate)->startOfDay();
+        $end = Carbon::parse($endDate)->endOfDay();
+        
+        // If it's a single day, show hourly
+        if ($start->isSameDay($end->copy()->startOfDay())) {
+            return $this->getHourlyChartData($branchId, $start);
+        }
+
+        $labels = [];
+        $diffInDays = (int)$start->diffInDays($end->copy()->startOfDay());
+        
+        // Limit range for performance
+        if ($diffInDays > 90) {
+            $start = $end->copy()->subDays(90)->startOfDay();
+            $diffInDays = 90;
+        }
+
+        for ($i = 0; $i <= $diffInDays; $i++) {
+            $day = $start->copy()->addDays($i);
+            $labels[] = $day->format('d M');
+        }
+
         $datasets = [];
         $isComparison = ($branchId === 'all');
         $branches = \App\Models\Branch::all();
 
-        $start = Carbon::parse($startDate);
-        $end = Carbon::parse($endDate);
-        $diffInDays = $start->diffInDays($end);
-
-        // Limit range to prevent performance issues (e.g., max 60 days)
-        if ($diffInDays > 60) {
-            $start = $end->copy()->subDays(60);
-            $diffInDays = 60;
-        }
-
-        // Get only unique dates that have sales within the range
-        $days = Sale::whereDate('sale_date', '>=', $startDate)
-            ->whereDate('sale_date', '<=', $endDate)
-            ->whereIn('status', ['paid', 'completed'])
-            ->select(\DB::raw('DATE(sale_date) as date'))
-            ->distinct()
-            ->orderBy('date', 'asc')
-            ->pluck('date')
-            ->map(fn($d) => Carbon::parse($d)->format('d M'))
-            ->toArray();
-
-        // If no data, show at least start and end date to prevent empty chart error
-        if (empty($days)) {
-            $days = [Carbon::parse($startDate)->format('d M'), Carbon::parse($endDate)->format('d M')];
-        }
-
         if ($isComparison) {
-            // Dataset for Total
+            // Total Dataset
             $totalData = [];
-            foreach ($days as $dayLabel) {
-                $date = Carbon::createFromFormat('d M', $dayLabel)->year(Carbon::now()->year);
+            foreach ($labels as $index => $label) {
+                $date = $start->copy()->addDays($index);
                 $totalData[] = Sale::whereDate('sale_date', $date->toDateString())
                     ->whereIn('status', ['paid', 'completed'])
                     ->sum('total_amount');
@@ -197,11 +201,11 @@ class MarketingDashboardController extends Controller
                 'data' => $totalData,
             ];
 
-            // Datasets for each Branch
+            // Branch Datasets
             foreach ($branches as $branch) {
                 $branchData = [];
-                foreach ($days as $dayLabel) {
-                    $date = Carbon::createFromFormat('d M', $dayLabel)->year(Carbon::now()->year);
+                foreach ($labels as $index => $label) {
+                    $date = $start->copy()->addDays($index);
                     $query = Sale::whereDate('sale_date', $date->toDateString())
                         ->whereIn('status', ['paid', 'completed']);
                     
@@ -212,7 +216,6 @@ class MarketingDashboardController extends Controller
                     } else {
                         $query->where('branch_id', $branch->id);
                     }
-                    
                     $branchData[] = $query->sum('total_amount');
                 }
                 $datasets[] = [
@@ -221,11 +224,10 @@ class MarketingDashboardController extends Controller
                 ];
             }
         } else {
-            // Specific Branch: Revenue & Orders Count
             $revenueData = [];
             $ordersData = [];
-            foreach ($days as $dayLabel) {
-                $date = Carbon::createFromFormat('d M', $dayLabel)->year(Carbon::now()->year);
+            foreach ($labels as $index => $label) {
+                $date = $start->copy()->addDays($index);
                 $query = Sale::whereDate('sale_date', $date->toDateString())
                     ->whereIn('status', ['paid', 'completed']);
                 
@@ -252,9 +254,80 @@ class MarketingDashboardController extends Controller
         }
 
         return [
-            'labels' => $days,
+            'labels' => $labels,
             'datasets' => $datasets,
-            'isComparison' => $isComparison
+            'isComparison' => $isComparison,
+            'isHourly' => false
+        ];
+    }
+
+    private function getHourlyChartData($branchId, $date)
+    {
+        $labels = [];
+        for ($i = 0; $i < 24; $i++) {
+            $labels[] = sprintf('%02d:00', $i);
+        }
+
+        $datasets = [];
+        $isComparison = ($branchId === 'all');
+        $branches = \App\Models\Branch::all();
+
+        if ($isComparison) {
+            $totalData = [];
+            foreach (range(0, 23) as $hour) {
+                $totalData[] = Sale::whereDate('sale_date', $date->toDateString())
+                    ->whereIn('status', ['paid', 'completed'])
+                    ->whereHour('created_at', $hour)
+                    ->sum('total_amount');
+            }
+            $datasets[] = ['label' => 'Total Penjualan POS', 'data' => $totalData];
+
+            foreach ($branches as $branch) {
+                $branchData = [];
+                foreach (range(0, 23) as $hour) {
+                    $query = Sale::whereDate('sale_date', $date->toDateString())
+                        ->whereIn('status', ['paid', 'completed'])
+                        ->whereHour('created_at', $hour);
+                    
+                    if ($branch->id == 1) {
+                        $query->where(function($q) use ($branch) {
+                            $q->where('branch_id', $branch->id)->orWhereNull('branch_id');
+                        });
+                    } else {
+                        $query->where('branch_id', $branch->id);
+                    }
+                    $branchData[] = $query->sum('total_amount');
+                }
+                $datasets[] = ['label' => 'POS ' . $branch->name, 'data' => $branchData];
+            }
+        } else {
+            $revenueData = [];
+            $ordersData = [];
+            foreach (range(0, 23) as $hour) {
+                $query = Sale::whereDate('sale_date', $date->toDateString())
+                    ->whereIn('status', ['paid', 'completed'])
+                    ->whereHour('created_at', $hour);
+                
+                if ($branchId == 1) {
+                    $query->where(function($q) use ($branchId) {
+                        $q->where('branch_id', $branchId)->orWhereNull('branch_id');
+                    });
+                } else {
+                    $query->where('branch_id', $branchId);
+                }
+                
+                $revenueData[] = (clone $query)->sum('total_amount');
+                $ordersData[] = (clone $query)->count();
+            }
+            $datasets[] = ['label' => 'Pendapatan POS', 'data' => $revenueData];
+            $datasets[] = ['label' => 'Jumlah Transaksi POS', 'data' => $ordersData];
+        }
+
+        return [
+            'labels' => $labels,
+            'datasets' => $datasets,
+            'isComparison' => $isComparison,
+            'isHourly' => true
         ];
     }
 }

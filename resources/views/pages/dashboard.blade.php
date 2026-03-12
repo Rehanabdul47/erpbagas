@@ -76,7 +76,7 @@
             <div class="p-5 border-b border-gray-700/50 flex flex-col gap-4">
                 <div class="flex items-center justify-between">
                     <div class="flex items-center gap-2 font-bold text-white">
-                        <i data-lucide="bar-chart-3" class="w-5 h-5 text-indigo-400"></i> Trend Penjualan
+                        <i data-lucide="bar-chart-3" class="w-5 h-5 text-indigo-400"></i> <span id="chartTrendTitle">Trend Penjualan</span>
                         <span class="flex items-center gap-1 ml-2 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20">
                             <span class="relative flex h-2 w-2"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span><span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span></span>
                             <span class="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">Live</span>
@@ -576,6 +576,12 @@
                         displayColors: true,
                         boxWidth: 8,
                         callbacks: {
+                            title: function(context) {
+                                // Access current chart data state
+                                const isHourly = salesChart.data.isHourly || false;
+                                if (isHourly) return 'Pukul ' + context[0].label;
+                                return context[0].label;
+                            },
                             label: function(context) {
                                 let label = context.dataset.label || '';
                                 if (label) label += ': ';
@@ -618,11 +624,22 @@
             }
         });
 
+        // Store hourly state in chart instance for tooltip callback
+        salesChart.data.isHourly = initialData.isHourly || false;
+
         // Rebuild chart with new data
         function updateChart(apiData) {
             salesChart.data.labels = apiData.labels;
             salesChart.data.datasets = buildDatasets(apiData);
+            salesChart.data.isHourly = apiData.isHourly || false;
             salesChart.options.plugins.legend.display = apiData.multi || false;
+            
+            // Update Title
+            const titleEl = document.getElementById('chartTrendTitle');
+            if (titleEl) {
+                titleEl.textContent = apiData.isHourly ? 'Penjualan Per Jam' : 'Trend Penjualan';
+            }
+
             salesChart.update();
         }
 
@@ -632,13 +649,14 @@
             const startDate = document.getElementById('chartStartDate').value;
             const endDate = document.getElementById('chartEndDate').value;
 
-            let url = `/dashboard/chart-data?platform=${platform}`;
+            let url = `{{ route('dashboard.chart-data') }}?platform=${platform}`;
             if (startDate) url += `&start_date=${startDate}`;
             if (endDate) url += `&end_date=${endDate}`;
 
             fetch(url)
                 .then(response => response.json())
-                .then(data => updateChart(data));
+                .then(data => updateChart(data))
+                .catch(err => console.error('Error fetching chart data:', err));
         }
 
         // Platform filter

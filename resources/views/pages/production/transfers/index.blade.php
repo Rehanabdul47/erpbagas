@@ -1,9 +1,32 @@
 @extends('layouts.app')
 
+@push('styles')
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/dark.css">
+<style>
+    .flatpickr-calendar {
+        background: #1f2937 !important;
+        border: 1px solid #374151 !important;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5) !important;
+    }
+    .flatpickr-day.selected {
+        background: #4f46e5 !important;
+        border-color: #4f46e5 !important;
+    }
+    .flatpickr-day:hover {
+        background: #374151 !important;
+    }
+    .flatpickr-months .flatpickr-month, .flatpickr-current-month .flatpickr-monthDropdown-months {
+        background: #1f2937 !important;
+        color: white !important;
+    }
+</style>
+@endpush
+
 @section('content')
 <div class="px-6 py-8 md:px-8 max-w-7xl mx-auto min-h-screen" x-data="transferPage()">
 
-    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
         <div class="space-y-1">
             <h1 class="text-2xl font-bold text-white tracking-tight flex items-center gap-2">
                 <i data-lucide="arrow-right-left" class="w-6 h-6 text-indigo-400"></i>
@@ -17,6 +40,62 @@
         <a href="{{ route('production.transfers.create') }}" class="flex items-center justify-center gap-2 px-6 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-sm font-bold transition-all shadow-lg shadow-indigo-600/20 active:scale-[0.98] w-full sm:w-auto">
             <i data-lucide="plus" class="w-4 h-4"></i> Transfer Stok Baru
         </a>
+    </div>
+
+    {{-- Filter Section --}}
+    <div class="bg-gray-800/50 border border-gray-700/50 rounded-2xl p-4 mb-8 backdrop-blur-sm">
+        <form action="{{ route('production.transfers.index') }}" method="GET" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
+            <div class="space-y-1.5">
+                <label class="text-[10px] font-bold text-gray-500 uppercase tracking-widest px-1">Periode</label>
+                <div class="flex items-center bg-gray-900 border border-gray-700 rounded-xl px-3 py-1.5 gap-2">
+                    <i data-lucide="calendar" class="w-4 h-4 text-indigo-400"></i>
+                    <input type="text" id="date_range" value="{{ $startDate && $endDate ? $startDate . ' to ' . $endDate : '' }}" 
+                           class="bg-transparent text-white text-xs outline-none w-full" placeholder="Pilih Tanggal">
+                    <input type="hidden" name="start_date" id="start_date" value="{{ $startDate }}">
+                    <input type="hidden" name="end_date" id="end_date" value="{{ $endDate }}">
+                </div>
+            </div>
+
+            @if($isExecutive)
+            <div class="space-y-1.5">
+                <label class="text-[10px] font-bold text-gray-500 uppercase tracking-widest px-1">Sumber</label>
+                <select name="source_branch_id" class="w-full bg-gray-900 border border-gray-700 text-white rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-indigo-500 outline-none">
+                    <option value="all">Semua Cabang</option>
+                    @foreach($branches as $b)
+                        <option value="{{ $b->id }}" {{ $sourceId == $b->id ? 'selected' : '' }}>{{ $b->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="space-y-1.5">
+                <label class="text-[10px] font-bold text-gray-500 uppercase tracking-widest px-1">Tujuan</label>
+                <select name="destination_branch_id" class="w-full bg-gray-900 border border-gray-700 text-white rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-indigo-500 outline-none">
+                    <option value="all">Semua Cabang</option>
+                    @foreach($branches as $b)
+                        <option value="{{ $b->id }}" {{ $destId == $b->id ? 'selected' : '' }}>{{ $b->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+            @endif
+
+            <div class="space-y-1.5">
+                <label class="text-[10px] font-bold text-gray-500 uppercase tracking-widest px-1">Status</label>
+                <select name="status" class="w-full bg-gray-900 border border-gray-700 text-white rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-indigo-500 outline-none">
+                    <option value="all">Semua Status</option>
+                    <option value="pending" {{ $status == 'pending' ? 'selected' : '' }}>Pending</option>
+                    <option value="sending" {{ $status == 'sending' ? 'selected' : '' }}>Dikirim</option>
+                    <option value="received" {{ $status == 'received' ? 'selected' : '' }}>Diterima</option>
+                </select>
+            </div>
+
+            <div class="flex gap-2">
+                <button type="submit" class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold py-2.5 rounded-xl transition-all flex items-center justify-center gap-2">
+                    <i data-lucide="search" class="w-3.5 h-3.5"></i> Filter
+                </button>
+                <a href="{{ route('production.transfers.index') }}" class="w-10 h-10 flex items-center justify-center bg-gray-700 hover:bg-gray-600 text-gray-400 hover:text-white rounded-xl transition-all shrink-0">
+                    <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+                </a>
+            </div>
+        </form>
     </div>
 
     @if(session('success'))
@@ -210,6 +289,7 @@
 </div>
 
 @push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <script>
     document.addEventListener('alpine:init', () => {
         Alpine.data('transferPage', () => ({
@@ -242,6 +322,26 @@
                 });
             }
         }));
+    });
+
+    document.addEventListener('DOMContentLoaded', () => {
+        flatpickr("#date_range", {
+            mode: "range",
+            dateFormat: "Y-m-d",
+            altInput: true,
+            altFormat: "d M Y",
+            onClose: function(selectedDates, dateStr, instance) {
+                if (selectedDates.length === 2) {
+                    const start = selectedDates[0].toISOString().split('T')[0];
+                    const end = selectedDates[1].toISOString().split('T')[0];
+                    document.getElementById('start_date').value = start;
+                    document.getElementById('end_date').value = end;
+                } else if (selectedDates.length === 0) {
+                    document.getElementById('start_date').value = '';
+                    document.getElementById('end_date').value = '';
+                }
+            }
+        });
     });
 </script>
 @endpush

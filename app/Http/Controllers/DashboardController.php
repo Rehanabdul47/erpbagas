@@ -397,16 +397,21 @@ class DashboardController extends Controller
     private function getChartData($platform, $startDate = null, $endDate = null)
     {
         // Parse dates or default to last 7 days
-        $end = $endDate ? Carbon::parse($endDate) : Carbon::today();
-        $start = $startDate ? Carbon::parse($startDate) : $end->copy()->subDays(6);
+        $end = $endDate ? Carbon::parse($endDate)->endOfDay() : Carbon::today()->endOfDay();
+        $start = $startDate ? Carbon::parse($startDate)->startOfDay() : $end->copy()->subDays(6)->startOfDay();
+
+        // If it's a single day, show hourly
+        if ($start->isSameDay($end->copy()->startOfDay())) {
+            return $this->getHourlyChartData($platform, $start);
+        }
 
         // Limit max range to 90 days
         if ($start->diffInDays($end) > 90) {
-            $start = $end->copy()->subDays(90);
+            $start = $end->copy()->subDays(90)->startOfDay();
         }
 
         $labels = collect();
-        $totalDays = $start->diffInDays($end);
+        $totalDays = (int)$start->diffInDays($end->copy()->startOfDay());
 
         // When "all": return separate datasets for POS + E-Commerce
         if ($platform === 'all') {
@@ -433,6 +438,7 @@ class DashboardController extends Controller
                 'start_date' => $start->format('Y-m-d'),
                 'end_date' => $end->format('Y-m-d'),
                 'multi' => true,
+                'isHourly' => false
             ];
         }
 
@@ -468,6 +474,7 @@ class DashboardController extends Controller
                 'start_date' => $start->format('Y-m-d'),
                 'end_date' => $end->format('Y-m-d'),
                 'multi' => true,
+                'isHourly' => false
             ];
         }
 
@@ -500,6 +507,71 @@ class DashboardController extends Controller
             'start_date' => $start->format('Y-m-d'),
             'end_date' => $end->format('Y-m-d'),
             'multi' => false,
+            'isHourly' => false
+        ];
+    }
+
+    private function getHourlyChartData($platform, $date)
+    {
+        $labels = [];
+        for ($i = 0; $i < 24; $i++) {
+            $labels[] = sprintf('%02d:00', $i);
+        }
+
+        if ($platform === 'all') {
+            $posData = [];
+            $ecomData = [];
+            for ($hour = 0; $hour < 24; $hour++) {
+                $posQuery = Sale::whereDate('created_at', $date)->whereHour('created_at', $hour);
+                $this->scopeByBranch($posQuery);
+                $posData[] = $posQuery->sum('total_amount');
+
+                $ecomData[] = EcommerceOrder::whereDate('order_date', $date)->whereHour('created_at', $hour)->sum('total_amount');
+            }
+            $datasets = [
+                ['label' => 'POS / Kasir', 'data' => $posData],
+                ['label' => 'E-Commerce', 'data' => $ecomData],
+            ];
+            $multi = true;
+        } elseif ($platform === 'ecommerce') {
+            $platforms = EcommerceOrder::select('platform')->distinct()->pluck('platform');
+            $datasets = [];
+            foreach ($platforms as $pf) {
+                $pData = [];
+                for ($hour = 0; $hour < 24; $hour++) {
+                    $pData[] = EcommerceOrder::whereDate('order_date', $date)
+                        ->where('platform', $pf)
+                        ->whereHour('created_at', $hour)
+                        ->sum('total_amount');
+                }
+                $datasets[] = ['label' => $pf, 'data' => $pData];
+            }
+            $multi = true;
+        } else {
+            $singleData = [];
+            for ($hour = 0; $hour < 24; $hour++) {
+                if ($platform === 'pos') {
+                    $q = Sale::whereDate('created_at', $date)->whereHour('created_at', $hour);
+                    $this->scopeByBranch($q);
+                    $singleData[] = $q->sum('total_amount');
+                } else {
+                    $singleData[] = EcommerceOrder::whereDate('order_date', $date)
+                        ->where('platform', 'like', "%{$platform}%")
+                        ->whereHour('created_at', $hour)
+                        ->sum('total_amount');
+                }
+            }
+            $datasets = [['label' => $platform === 'pos' ? 'POS / Kasir' : $platform, 'data' => $singleData]];
+            $multi = false;
+        }
+
+        return [
+            'labels' => $labels,
+            'datasets' => $datasets,
+            'start_date' => $date->format('Y-m-d'),
+            'end_date' => $date->format('Y-m-d'),
+            'multi' => $multi,
+            'isHourly' => true
         ];
     }
 }

@@ -12,11 +12,19 @@ use Illuminate\Support\Facades\DB;
 
 class ProductionTransferController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $user = Auth::user();
         $isExecutive = $user->hasRole('Executive');
         
+        $branches = Branch::where('is_active', true)->get();
+        
+        $startDate = $request->input('start_date');
+        $endDate = $request->input('end_date');
+        $sourceId = $request->input('source_branch_id');
+        $destId = $request->input('destination_branch_id');
+        $status = $request->input('status');
+
         $query = StockTransfer::with(['sourceBranch', 'destinationBranch', 'product', 'user'])->latest();
         
         if (!$isExecutive) {
@@ -26,10 +34,27 @@ class ProductionTransferController extends Controller
                   ->orWhere('destination_branch_id', $branchId);
             });
         }
+
+        // Filters
+        if ($startDate) {
+            $query->whereDate('created_at', '>=', $startDate);
+        }
+        if ($endDate) {
+            $query->whereDate('created_at', '<=', $endDate);
+        }
+        if ($sourceId && $sourceId !== 'all') {
+            $query->where('source_branch_id', $sourceId);
+        }
+        if ($destId && $destId !== 'all') {
+            $query->where('destination_branch_id', $destId);
+        }
+        if ($status && $status !== 'all') {
+            $query->where('status', $status);
+        }
         
-        $transfers = $query->paginate(20);
+        $transfers = $query->paginate(20)->withQueryString();
         
-        return view('pages.production.transfers.index', compact('transfers', 'isExecutive'))
+        return view('pages.production.transfers.index', compact('transfers', 'isExecutive', 'branches', 'startDate', 'endDate', 'sourceId', 'destId', 'status'))
             ->with('activePage', 'production-transfers');
     }
 

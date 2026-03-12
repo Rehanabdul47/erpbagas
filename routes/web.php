@@ -163,6 +163,7 @@ Route::middleware('auth')->group(function () {
     // Marketing
     Route::prefix('marketing')->name('marketing.')->group(function () {
         Route::get('/dashboard', [MarketingDashboardController::class, 'index'])->name('dashboard');
+        Route::get('/dashboard/chart-data', [MarketingDashboardController::class, 'chartApi'])->name('dashboard.chart-data');
     });
 
     // Digital Marketing
