@@ -152,7 +152,7 @@ Route::middleware('auth')->group(function () {
     Route::prefix('orders')->name('orders')->group(function () {
         Route::get('/', [OrderController::class, 'index']);
         Route::get('/{order}', [OrderController::class, 'show'])->name('.show');
-        Route::post('/sync', [OrderController::class, 'syncApi'])->name('.sync');
+        Route::post('/import', [OrderController::class, 'import'])->name('.import');
         Route::put('/{order}/status', [OrderController::class, 'updateStatus'])->name('.update-status');
     });
 
@@ -175,6 +175,9 @@ Route::middleware('auth')->group(function () {
     Route::prefix('digital-marketing')->name('digital-marketing.')->group(function () {
         Route::get('/dashboard', [DigitalMarketingDashboardController::class, 'index'])->name('dashboard');
     });
+
+    // Digital Platforms (E-Commerce)
+    Route::resource('digital-platforms', \App\Http\Controllers\DigitalPlatformController::class)->except(['show']);
 
     // Branches
     Route::resource('branches', \App\Http\Controllers\BranchController::class)->except(['show']);

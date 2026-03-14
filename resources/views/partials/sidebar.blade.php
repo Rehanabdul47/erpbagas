@@ -27,6 +27,7 @@
         ]],
         ['section' => 'DIVISI DIGITAL MARKETING', 'visible' => $isMgmt || $dept === 'Digital Marketing', 'items' => [
             ['id' => 'digital-marketing-dashboard', 'icon' => 'line-chart', 'label' => 'Overview Digital Marketing', 'route' => 'digital-marketing.dashboard', 'visible' => true],
+            ['id' => 'digital-platforms', 'icon' => 'layout-list', 'label' => 'Data Platform', 'route' => 'digital-platforms.index', 'visible' => true],
             ['id' => 'orders', 'icon' => 'shopping-cart', 'label' => 'E-Commerce Orders', 'route' => 'orders', 'badge' => 3, 'visible' => true],
         ]],
         ['section' => 'DIVISI KEUANGAN', 'visible' => $isMgmt || $dept === 'Keuangan', 'items' => [
@@ -89,7 +90,13 @@
                 @foreach($section['items'] as $item)
                 @if(isset($item['visible']) && !$item['visible']) @continue @endif
                 <a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors {{ $activePage === $item['id'] ? 'bg-indigo-600 border border-indigo-500 text-white shadow-lg shadow-indigo-600/20' : 'text-gray-400 hover:text-white hover:bg-gray-700/50' }}" 
-                    @if(Route::has($item['route'])) href="{{ route($item['route']) }}" @else href="#" @endif 
+                    @if(isset($item['route_name']) && Route::has($item['route_name']))
+                        href="{{ route($item['route_name'], $item['route_params'] ?? []) }}"
+                    @elseif(isset($item['route']) && Route::has($item['route'])) 
+                        href="{{ route($item['route']) }}" 
+                    @else 
+                        href="#" 
+                    @endif 
                     data-id="{{ $item['id'] }}" @if(isset($item['target'])) target="{{ $item['target'] }}" @endif>
                     <i data-lucide="{{ $item['icon'] }}" class="w-5 h-5 {{ $activePage === $item['id'] ? 'text-white' : 'text-gray-400 group-hover:text-white' }}"></i>
                     <span class="flex-1 truncate text-xs">{{ $item['label'] }}</span>
