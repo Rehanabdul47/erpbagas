@@ -150,7 +150,7 @@ Route::middleware('auth')->group(function () {
 
     // Orders (E-Commerce)
     Route::prefix('orders')->name('orders')->group(function () {
-        Route::get('/', [OrderController::class, 'index']);
+        Route::get('/', [OrderController::class, 'index'])->name('.index');
         Route::get('/{order}', [OrderController::class, 'show'])->name('.show');
         Route::post('/import', [OrderController::class, 'import'])->name('.import');
         Route::put('/{order}/status', [OrderController::class, 'updateStatus'])->name('.update-status');

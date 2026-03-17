@@ -28,7 +28,7 @@
         ['section' => 'DIVISI DIGITAL MARKETING', 'visible' => $isMgmt || $dept === 'Digital Marketing', 'items' => [
             ['id' => 'digital-marketing-dashboard', 'icon' => 'line-chart', 'label' => 'Overview Digital Marketing', 'route' => 'digital-marketing.dashboard', 'visible' => true],
             ['id' => 'digital-platforms', 'icon' => 'layout-list', 'label' => 'Data Platform', 'route' => 'digital-platforms.index', 'visible' => true],
-            ['id' => 'orders', 'icon' => 'shopping-cart', 'label' => 'E-Commerce Orders', 'route' => 'orders', 'badge' => 3, 'visible' => true],
+            ['id' => 'orders', 'icon' => 'shopping-cart', 'label' => 'E-Commerce Orders', 'route' => 'orders.index', 'badge' => 3, 'visible' => true],
         ]],
         ['section' => 'DIVISI KEUANGAN', 'visible' => $isMgmt || $dept === 'Keuangan', 'items' => [
             ['id' => 'finance-dashboard', 'icon' => 'line-chart', 'label' => 'Overview Keuangan', 'route' => 'finance.dashboard', 'visible' => true],

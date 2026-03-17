@@ -12,12 +12,71 @@
     </div>
     @endif
     
-    @if(session('error'))
-    <div class="bg-red-500/10 border border-red-500/30 rounded-xl px-4 py-3 mb-6 text-red-400 flex items-center gap-3">
-        <i data-lucide="alert-circle" class="w-5 h-5 shrink-0"></i>
-        <span class="font-medium">{{ session('error') }}</span>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        {{-- Shopee Mapping Guide --}}
+        <div class="bg-gradient-to-br from-orange-500/10 to-transparent border border-orange-500/20 rounded-2xl p-5 relative overflow-hidden">
+            <div class="absolute top-0 right-0 p-4 opacity-10">
+                <i data-lucide="shopping-bag" class="w-16 h-16 text-orange-500"></i>
+            </div>
+            <h3 class="text-orange-400 font-bold mb-4 flex items-center gap-2 text-sm uppercase tracking-widest">
+                <span class="w-2 h-2 rounded-full bg-orange-500"></span> Shopee Status Mapping
+            </h3>
+            <div class="space-y-3">
+                <div class="flex items-center justify-between text-xs py-1 border-b border-orange-500/10">
+                    <span class="text-gray-400">Belum Bayar</span>
+                    <span class="text-indigo-400 font-medium">Pending</span>
+                </div>
+                <div class="flex items-center justify-between text-xs py-1 border-b border-orange-500/10">
+                    <span class="text-gray-400">Perlu Dikirim</span>
+                    <span class="text-amber-400 font-medium">Ready to Ship</span>
+                </div>
+                <div class="flex items-center justify-between text-xs py-1 border-b border-orange-500/10">
+                    <span class="text-gray-400">Dikirim</span>
+                    <span class="text-blue-400 font-medium">Shipped</span>
+                </div>
+                <div class="flex items-center justify-between text-xs py-1 border-b border-orange-500/10">
+                    <span class="text-gray-400">Selesai</span>
+                    <span class="text-emerald-400 font-medium">Delivered</span>
+                </div>
+                <div class="flex items-center justify-between text-xs py-1">
+                    <span class="text-gray-400">Pengembalian/Batal</span>
+                    <span class="text-red-400 font-medium">Cancelled</span>
+                </div>
+            </div>
+        </div>
+
+        {{-- TikTok Mapping Guide --}}
+        <div class="bg-gradient-to-br from-gray-500/10 to-transparent border border-gray-500/20 rounded-2xl p-5 relative overflow-hidden text-white">
+            <div class="absolute top-0 right-0 p-4 opacity-10">
+                <i data-lucide="music" class="w-16 h-16 text-white"></i>
+            </div>
+            <h3 class="text-white font-bold mb-4 flex items-center gap-2 text-sm uppercase tracking-widest">
+                <span class="w-2 h-2 rounded-full bg-white"></span> TikTok Shop Mapping
+            </h3>
+            <div class="space-y-3">
+                <div class="flex items-center justify-between text-xs py-1 border-b border-white/10">
+                    <span class="text-gray-400">Dalam Proses</span>
+                    <span class="text-indigo-400 font-medium">Pending</span>
+                </div>
+                <div class="flex items-center justify-between text-xs py-1 border-b border-white/10">
+                    <span class="text-gray-400">Perlu dikirim</span>
+                    <span class="text-amber-400 font-medium">Ready to Ship</span>
+                </div>
+                <div class="flex items-center justify-between text-xs py-1 border-b border-white/10">
+                    <span class="text-gray-400">Dikirim</span>
+                    <span class="text-blue-400 font-medium">Shipped</span>
+                </div>
+                <div class="flex items-center justify-between text-xs py-1 border-b border-white/10">
+                    <span class="text-gray-400">Selesai</span>
+                    <span class="text-emerald-400 font-medium">Delivered</span>
+                </div>
+                <div class="flex items-center justify-between text-xs py-1">
+                    <span class="text-gray-400">Dibatalkan / Gagal</span>
+                    <span class="text-red-400 font-medium">Cancelled</span>
+                </div>
+            </div>
+        </div>
     </div>
-    @endif
 
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <h2 class="text-xl font-bold text-white flex items-center gap-2">

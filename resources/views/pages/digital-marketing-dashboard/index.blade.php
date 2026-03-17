@@ -192,7 +192,7 @@
                     <h4 class="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
                         <i data-lucide="shopping-bag" class="w-4 h-4 text-orange-400"></i> Pesanan Online Terbaru
                     </h4>
-                    <a href="{{ route('orders') }}" class="text-xs font-bold text-orange-400 hover:text-orange-300 px-3 py-1.5 bg-orange-500/10 rounded-md transition-colors border border-orange-500/20">Lihat Semua</a>
+                    <a href="{{ route('orders.index') }}" class="text-xs font-bold text-orange-400 hover:text-orange-300 px-3 py-1.5 bg-orange-500/10 rounded-md transition-colors border border-orange-500/20">Lihat Semua</a>
                 </div>
                 <div class="overflow-x-auto w-full">
                     <table class="w-full text-left text-sm whitespace-nowrap">

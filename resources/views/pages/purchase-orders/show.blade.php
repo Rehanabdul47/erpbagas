@@ -4,6 +4,19 @@
 @section('breadcrumb', 'PO / Detail')
 
 @section('content')
+@php
+    $gs = $global_settings ?? [];
+    $storeName = $gs['invoice_store_name'] ?? ($gs['company_name'] ?? 'GUPALA BATIK');
+    $tagline = $gs['invoice_tagline'] ?? '';
+    $invoiceAddress = $gs['invoice_address'] ?? ($gs['address'] ?? '');
+    $invoicePhone = $gs['invoice_phone'] ?? ($gs['contact_phone'] ?? '');
+@endphp
+<div class="print-header">
+    <h2>{{ $storeName }}</h2>
+    @if($tagline)<div class="tagline">{{ $tagline }}</div>@endif
+    @if($invoiceAddress)<div class="address">{{ $invoiceAddress }}</div>@endif
+    @if($invoicePhone)<div class="phone">Telp: {{ $invoicePhone }}</div>@endif
+</div>
 <div class="max-w-5xl mx-auto space-y-6 pb-20">
     
     {{-- Main Container Card --}}
@@ -206,6 +219,7 @@
 
 @push('scripts')
 <style>
+    .print-header { display: none; }
     @media print {
         #sidebar, #navbar, #breadcrumb, .sticky-actions, button, footer, .sticky { display: none !important; }
         body { background: white !important; color: black !important; font-family: sans-serif; }
@@ -218,6 +232,11 @@
         .p-8 { padding: 30px !important; }
         .rounded-2xl, .rounded-xl { border-radius: 0 !important; }
         .shadow-xl, .shadow-sm { shadow: none !important; }
+        .print-header { display: block !important; text-align: center; padding: 20px 30px; border-bottom: 2px solid #333; margin-bottom: 20px; }
+        .print-header h2 { font-size: 20px; font-weight: 900; text-transform: uppercase; letter-spacing: -0.5px; margin: 0; }
+        .print-header .tagline { font-size: 10px; color: #666; margin-top: 2px; }
+        .print-header .address { font-size: 10px; color: #888; margin-top: 4px; }
+        .print-header .phone { font-size: 10px; color: #888; }
     }
 </style>
 @endpush

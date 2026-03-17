@@ -48,7 +48,7 @@ class NotificationController extends Controller
                 'time' => $order->created_at->diffForHumans(),
                 'icon' => 'shopping-cart',
                 'color' => 'indigo',
-                'route' => route('orders')
+                'route' => route('orders.index')
             ]);
         }
 

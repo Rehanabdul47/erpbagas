@@ -135,7 +135,7 @@
                     <tr class="hover:bg-gray-700/20 transition-colors group">
                         <td class="px-5 py-4">
                             <div class="flex flex-col">
-                                <span class="font-bold text-white mb-0.5">{{ $order->order_number }}</span>
+                                <a href="{{ route('orders.show', $order->id) }}" class="font-bold text-white hover:text-indigo-400 transition-colors mb-0.5">{{ $order->order_number }}</a>
                                 <span class="text-xs text-indigo-400 flex items-center gap-1"><i data-lucide="shopping-bag" class="w-3 h-3"></i> {{ $order->platform }}</span>
                             </div>
                         </td>
@@ -173,6 +173,9 @@
                         </td>
                         <td class="px-5 py-4 text-right">
                             <div class="flex items-center justify-end gap-2">
+                                <a href="{{ route('orders.show', $order->id) }}" class="p-2 rounded-lg text-white bg-gray-700 hover:bg-gray-600 transition-colors shadow-sm" title="Lihat Detail">
+                                    <i data-lucide="eye" class="w-4 h-4"></i>
+                                </a>
                                 <button type="button" @click="openStatusModal({{ json_encode($order) }})" class="p-2 rounded-lg text-white bg-indigo-600 hover:bg-indigo-500 transition-colors shadow-sm focus:ring-2 focus:ring-indigo-500 outline-none" title="Update Status & Resi">
                                     <i data-lucide="edit-3" class="w-4 h-4"></i>
                                 </button>
@@ -297,6 +300,39 @@
                                    accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel"
                                    @change="fileSelected = $event.target.files.length > 0; fileName = $event.target.files.length > 0 ? $event.target.files[0].name : ''" />
                         </label>
+                    </div>
+
+                    {{-- Status Mapping Info --}}
+                    <div class="mt-4 p-4 bg-indigo-500/5 border border-indigo-500/20 rounded-xl">
+                        <div class="flex items-center gap-2 mb-3 text-indigo-400 border-b border-indigo-500/10 pb-2">
+                            <i data-lucide="info" class="w-4 h-4"></i>
+                            <span class="text-[10px] font-bold uppercase tracking-widest pl-1">Panduan Auto-Mapping Status</span>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div class="space-y-2">
+                                <div class="flex items-center gap-1.5 px-2 py-1 bg-orange-500/10 rounded-lg border border-orange-500/20 w-fit">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-orange-500"></span>
+                                    <span class="text-orange-200 text-[10px] font-black tracking-wider uppercase">Shopee</span>
+                                </div>
+                                <ul class="text-[10px] text-gray-400 space-y-1 pl-1">
+                                    <li class="flex items-center gap-1.5"><i data-lucide="chevron-right" class="w-3 h-3 text-orange-500/50"></i> Belum Bayar, Perlu Dikirim</li>
+                                    <li class="flex items-center gap-1.5"><i data-lucide="chevron-right" class="w-3 h-3 text-orange-500/50"></i> Dikirim, Selesai, Pengembalian</li>
+                                </ul>
+                            </div>
+                            <div class="space-y-2">
+                                <div class="flex items-center gap-1.5 px-2 py-1 bg-gray-600/20 rounded-lg border border-gray-500/20 w-fit">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-white"></span>
+                                    <span class="text-white text-[10px] font-black tracking-wider uppercase">TikTok Shop</span>
+                                </div>
+                                <ul class="text-[10px] text-gray-400 space-y-1 pl-1">
+                                    <li class="flex items-center gap-1.5"><i data-lucide="chevron-right" class="w-3 h-3 text-gray-500"></i> Dalam Proses, Perlu dikirim</li>
+                                    <li class="flex items-center gap-1.5"><i data-lucide="chevron-right" class="w-3 h-3 text-gray-500"></i> Dikirim, Selesai, Dibatalkan</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <p class="mt-3 text-[9px] text-indigo-400/70 italic border-t border-indigo-500/10 pt-2 text-center">
+                            *Sistem akan otomatis mengonversi status di atas ke status internal sistem.
+                        </p>
                     </div>
                 </div>
 

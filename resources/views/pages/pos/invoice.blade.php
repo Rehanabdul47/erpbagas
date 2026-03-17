@@ -1,3 +1,18 @@
+@php
+    $gs = $global_settings ?? [];
+    $branch = $sale->branch;
+    
+    // Use branch setting if not empty, otherwise fallback to global setting
+    $storeName = !empty($branch->invoice_name) ? $branch->invoice_name : ($gs['invoice_store_name'] ?? ($gs['company_name'] ?? 'GUPALA BATIK'));
+    $tagline = !empty($branch->invoice_tagline) ? $branch->invoice_tagline : ($gs['invoice_tagline'] ?? '');
+    $invoiceAddress = !empty($branch->address) ? $branch->address : ($gs['invoice_address'] ?? ($gs['address'] ?? 'Jl. Pembatikan, Wiradesa'));
+    $invoicePhone = !empty($branch->phone) ? $branch->phone : ($gs['invoice_phone'] ?? ($gs['contact_phone'] ?? '+62 812 3456 7890'));
+    $footerText = !empty($branch->invoice_footer) ? $branch->invoice_footer : ($gs['invoice_footer_text'] ?? 'Terima Kasih Atas Kunjungan Anda');
+    $invoiceNotes = !empty($branch->invoice_notes) ? $branch->invoice_notes : ($gs['invoice_notes'] ?? '');
+    
+    $showLogo = ($gs['invoice_show_logo'] ?? 'true') === 'true';
+    $companyLogo = $gs['company_logo'] ?? null;
+@endphp
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -27,10 +42,18 @@
     <div class="receipt bg-white shadow-xl mx-auto rounded-sm border border-gray-200">
         {{-- Header --}}
         <div class="text-center mb-6 space-y-1">
-            <h1 class="text-lg font-black tracking-tighter uppercase">GUPALA BATIK</h1>
+            @if($showLogo && $companyLogo)
+            <div class="flex justify-center mb-2">
+                <img src="{{ asset($companyLogo) }}" alt="{{ $storeName }}" class="h-20 object-contain">
+            </div>
+            @endif
+            <h1 class="text-lg font-black tracking-tighter uppercase">{{ $storeName }}</h1>
+            @if($tagline)
+            <p class="text-[9px] text-gray-600 font-bold uppercase leading-none">{{ $tagline }}</p>
+            @endif
             <p class="text-[10px] text-gray-800 font-bold uppercase leading-none">{{ $sale->branch ? 'Cabang ' . $sale->branch->name : 'Kantor Pusat' }}</p>
-            <p class="text-[9px] text-gray-500 uppercase leading-none pt-1">{{ $sale->branch?->address ?? 'Jl. Pembatikan , Wiradesa' }}</p>
-            <p class="text-[9px] text-gray-500 leading-none">Telp: {{ $sale->branch?->phone ?? '+62 812 3456 7890' }}</p>
+            <p class="text-[9px] text-gray-500 uppercase leading-none pt-1">{{ $sale->branch?->address ?? $invoiceAddress }}</p>
+            <p class="text-[9px] text-gray-500 leading-none">Telp: {{ $sale->branch?->phone ?? $invoicePhone }}</p>
             <div class="border-b-[1px] border-dashed border-gray-300 pt-4"></div>
         </div>
 
@@ -85,10 +108,12 @@
 
         {{-- Footer --}}
         <div class="text-center mt-8 space-y-2">
-            <p class="text-[9px] font-bold uppercase tracking-widest text-gray-400">Terima Kasih Atas Kunjungan Anda</p>
+            <p class="text-[9px] font-bold uppercase tracking-widest text-gray-400">{{ $footerText }}</p>
+            @if($invoiceNotes)
+            <p class="text-[8px] text-gray-400 italic leading-tight px-2">{{ $invoiceNotes }}</p>
+            @endif
             <div class="flex justify-center opacity-50">
                 <div class="w-16 h-16 border-2 border-gray-300 rounded overflow-hidden">
-                    {{-- Minimal Barcode Placeholder --}}
                     <div class="h-full flex flex-col justify-around py-2 px-1">
                         @for($i=0; $i<8; $i++)
                         <div class="w-full bg-gray-500" style="height: {{ rand(1, 4) }}px"></div>
@@ -96,7 +121,7 @@
                     </div>
                 </div>
             </div>
-            <p class="text-[8px] text-gray-400 uppercase tracking-tighter italic">GUPALA BATIK</p>
+            <p class="text-[8px] text-gray-400 uppercase tracking-tighter italic">{{ $storeName }}</p>
         </div>
     </div>
 

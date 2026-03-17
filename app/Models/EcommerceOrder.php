@@ -19,10 +19,19 @@ class EcommerceOrder extends Model
         'receipt_number',
         'shipping_cost',
         'total_amount',
+        'subtotal_product',
+        'shipping_fee_buyer_paid',
+        'shipping_fee_discount',
+        'voucher_platform',
+        'voucher_seller',
+        'admin_fee',
         'platform_fee',
         'fixed_fee',
         'service_fee',
+        'processing_fee',
+        'total_income',
         'status',
+        'notes',
         'order_date'
     ];
 

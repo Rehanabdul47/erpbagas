@@ -51,15 +51,35 @@ class SettingController extends Controller
             $user->save();
         }
 
-        foreach ($settings as $key => $value) {
-            if ($key === 'group') continue;
+        // Handle file uploads separately
+        $allFiles = $request->allFiles();
+        foreach ($allFiles as $fileKey => $file) {
+            $filename = $fileKey . '_' . time() . '.' . $file->getClientOriginalExtension();
+            $file->move(public_path('assets/images'), $filename);
 
-            if ($request->hasFile($key)) {
-                $file = $request->file($key);
-                $filename = 'logo_' . time() . '.' . $file->getClientOriginalExtension();
-                $file->move(public_path('assets/images'), $filename);
-                $value = 'assets/images/' . $filename;
-            }
+            Setting::updateOrCreate(
+                ['key' => $fileKey],
+                ['value' => 'assets/images/' . $filename, 'group' => $group]
+            );
+        }
+
+        // Get all input data and remove keys we don't want to save as settings
+        $data = $request->all();
+        $excludeKeys = [
+            '_token', '_method', 'current_password', 'new_password', 
+            'new_password_confirmation', 'group'
+        ];
+        
+        // Also exclude all file keys
+        foreach (array_keys($allFiles) as $fileKey) {
+            $excludeKeys[] = $fileKey;
+        }
+
+        foreach ($data as $key => $value) {
+            if (in_array($key, $excludeKeys)) continue;
+            
+            // Skip if value is an object (like a file) just in case
+            if (is_object($value)) continue;
 
             Setting::updateOrCreate(
                 ['key' => $key],

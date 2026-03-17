@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Branch extends Model
 {
-    protected $fillable = ['name', 'type', 'manager_name', 'address', 'phone', 'is_active', 'status'];
+    protected $fillable = ['name', 'type', 'manager_name', 'address', 'phone', 'is_active', 'status', 'invoice_name', 'invoice_tagline', 'invoice_footer', 'invoice_notes'];
 
     public const STATUS_PENDING = 'pending';
     public const STATUS_SENDING = 'sending';

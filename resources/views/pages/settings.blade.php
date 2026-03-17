@@ -85,6 +85,12 @@ x-init="$nextTick(() => {
                     </div>
                 </button>
 
+                <button @click="activeTab = 'invoice'" :class="activeTab === 'invoice' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20 border-indigo-500' : 'bg-gray-800/50 text-gray-400 hover:text-white hover:bg-gray-800 border-gray-700/50'" class="w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-bold transition-all border group">
+                    <div class="flex items-center gap-3">
+                        <i data-lucide="printer" class="w-4 h-4"></i> Invoice / Print
+                    </div>
+                </button>
+
                 <button @click="activeTab = 'backup'" :class="activeTab === 'backup' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20 border-indigo-500' : 'bg-gray-800/50 text-gray-400 hover:text-white hover:bg-gray-800 border-gray-700/50'" class="w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-bold transition-all border group">
                     <div class="flex items-center gap-3">
                         <i data-lucide="hard-drive" class="w-4 h-4"></i> Backup & Export
@@ -123,19 +129,27 @@ x-init="$nextTick(() => {
                         <input type="hidden" name="group" value="company">
                         <div class="p-6 space-y-6">
                             <div class="flex flex-col sm:flex-row gap-6">
-                                <label for="company_logo" class="w-24 h-24 sm:w-32 sm:h-32 rounded-3xl bg-gray-900 border-2 border-dashed border-gray-700 flex flex-col items-center justify-center gap-2 cursor-pointer hover:border-indigo-500 transition-all group shrink-0 relative overflow-hidden">
-                                    @if(isset($settings['company_logo']) && $settings['company_logo'])
-                                        <img src="{{ asset($settings['company_logo']) }}" alt="Company Logo" class="absolute inset-0 w-full h-full object-contain p-2 bg-white/5">
-                                        <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center transition-all">
-                                            <i data-lucide="upload-cloud" class="w-6 h-6 text-white mb-1"></i>
-                                            <span class="text-[8px] font-black text-white uppercase text-center px-2">Change<br>Logo</span>
-                                        </div>
-                                    @else
-                                        <i data-lucide="upload-cloud" class="w-6 h-6 text-gray-600 group-hover:text-indigo-400 group-hover:scale-110 transition-all"></i>
-                                        <span class="text-[8px] font-black text-gray-500 uppercase text-center px-2 group-hover:text-indigo-400 transition-colors">Upload<br>Brand Logo</span>
-                                    @endif
-                                </label>
-                                <input type="file" id="company_logo" name="company_logo" class="hidden" accept="image/*">
+                                <div x-data="{ previewUrl: '{{ isset($settings['company_logo']) && $settings['company_logo'] ? asset($settings['company_logo']) : '' }}' }">
+                                    <label for="company_logo" class="w-24 h-24 sm:w-32 sm:h-32 rounded-3xl bg-gray-900 border-2 border-dashed border-gray-700 flex flex-col items-center justify-center gap-2 cursor-pointer hover:border-indigo-500 transition-all group shrink-0 relative overflow-hidden">
+                                        <template x-if="previewUrl">
+                                            <div>
+                                                <img :src="previewUrl" alt="Company Logo" class="absolute inset-0 w-full h-full object-contain p-2 bg-white/5">
+                                                <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center transition-all">
+                                                    <i data-lucide="upload-cloud" class="w-6 h-6 text-white mb-1"></i>
+                                                    <span class="text-[8px] font-black text-white uppercase text-center px-2">Change<br>Logo</span>
+                                                </div>
+                                            </div>
+                                        </template>
+                                        <template x-if="!previewUrl">
+                                            <div class="flex flex-col items-center justify-center gap-2">
+                                                <i data-lucide="upload-cloud" class="w-6 h-6 text-gray-600 group-hover:text-indigo-400 group-hover:scale-110 transition-all"></i>
+                                                <span class="text-[8px] font-black text-gray-500 uppercase text-center px-2 group-hover:text-indigo-400 transition-colors">Upload<br>Brand Logo</span>
+                                            </div>
+                                        </template>
+                                    </label>
+                                    <input type="file" id="company_logo" name="company_logo" class="hidden" accept="image/*"
+                                        @change="const file = $event.target.files[0]; if(file) { previewUrl = URL.createObjectURL(file); }">
+                                </div>
 
                                 <div class="flex-1 space-y-6">
                                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -407,6 +421,120 @@ x-init="$nextTick(() => {
                             </div>
                         </div>
                     </div>
+                    </form>
+                </div>
+            </div>
+
+            {{-- Tab: Invoice / Print --}}
+            <div x-show="activeTab === 'invoice'" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4" x-transition:enter-end="opacity-100 translate-y-0" class="space-y-6">
+                <div class="bg-gray-800 border border-gray-700/50 rounded-2xl shadow-2xl overflow-hidden">
+                    <div class="p-6 border-b border-gray-700/50 bg-gradient-to-r from-gray-800 to-gray-800/50">
+                        <h3 class="font-black text-white flex items-center gap-2 italic tracking-tight uppercase">
+                            <i data-lucide="printer" class="w-5 h-5 text-indigo-400"></i> INVOICE & PRINT SETTINGS
+                        </h3>
+                        <p class="text-[10px] text-gray-500 mt-1 font-bold">Kustomisasi informasi yang muncul di semua struk, invoice, dan dokumen cetak.</p>
+                    </div>
+                    <form action="{{ route('settings.update') }}" method="POST">
+                        @csrf
+                        <input type="hidden" name="group" value="invoice">
+                        <div class="p-6 space-y-6">
+                            {{-- Store Name & Tagline --}}
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div class="space-y-1.5">
+                                    <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest pl-1">Nama Toko / Brand</label>
+                                    <input type="text" name="invoice_store_name" value="{{ $settings['invoice_store_name'] ?? ($settings['company_name'] ?? 'GUPALA BATIK') }}" class="w-full bg-gray-900 border border-gray-700 text-white rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all font-bold" placeholder="Nama yang tampil di header struk">
+                                </div>
+                                <div class="space-y-1.5">
+                                    <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest pl-1">Tagline / Subtitle</label>
+                                    <input type="text" name="invoice_tagline" value="{{ $settings['invoice_tagline'] ?? '' }}" class="w-full bg-gray-900 border border-gray-700 text-white rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all" placeholder="Misal: Batik Premium Nusantara">
+                                </div>
+                            </div>
+
+                            {{-- Address --}}
+                            <div class="space-y-1.5">
+                                <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest pl-1">Alamat pada Struk</label>
+                                <textarea name="invoice_address" rows="2" class="w-full bg-gray-900 border border-gray-700 text-white rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all" placeholder="Alamat yang muncul di struk cetak">{{ $settings['invoice_address'] ?? ($settings['address'] ?? '') }}</textarea>
+                            </div>
+
+                            {{-- Phone & Footer --}}
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div class="space-y-1.5">
+                                    <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest pl-1">Telepon pada Struk</label>
+                                    <input type="text" name="invoice_phone" value="{{ $settings['invoice_phone'] ?? ($settings['contact_phone'] ?? '') }}" class="w-full bg-gray-900 border border-gray-700 text-white rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all" placeholder="+62 812 3456 7890">
+                                </div>
+                                <div class="space-y-1.5">
+                                    <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest pl-1">Teks Footer Struk</label>
+                                    <input type="text" name="invoice_footer_text" value="{{ $settings['invoice_footer_text'] ?? 'Terima Kasih Atas Kunjungan Anda' }}" class="w-full bg-gray-900 border border-gray-700 text-white rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all" placeholder="Pesan di bagian bawah struk">
+                                </div>
+                            </div>
+
+                            {{-- Notes --}}
+                            <div class="space-y-1.5">
+                                <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest pl-1">Catatan Tambahan pada Struk</label>
+                                <textarea name="invoice_notes" rows="2" class="w-full bg-gray-900 border border-gray-700 text-white rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all" placeholder="Misal: Barang yang sudah dibeli tidak bisa dikembalikan">{{ $settings['invoice_notes'] ?? '' }}</textarea>
+                            </div>
+
+                            {{-- Show Logo Toggle --}}
+                            <div x-data="{ showLogo: {{ ($settings['invoice_show_logo'] ?? 'true') === 'true' ? 'true' : 'false' }} }">
+                                <input type="hidden" name="invoice_show_logo" :value="showLogo ? 'true' : 'false'">
+                                <div @click="showLogo = !showLogo" class="flex items-center justify-between p-4 bg-gray-900/50 border border-gray-700 rounded-2xl cursor-pointer hover:bg-gray-900 transition-all hover:border-indigo-500/50 group">
+                                    <div class="flex items-center gap-4">
+                                        <div class="w-10 h-10 rounded-xl bg-indigo-500/10 text-indigo-400 flex items-center justify-center group-hover:scale-110 transition-transform">
+                                            <i data-lucide="image" class="w-5 h-5"></i>
+                                        </div>
+                                        <div>
+                                            <div class="text-sm font-black text-white uppercase tracking-tight">Tampilkan Logo</div>
+                                            <div class="text-[10px] text-gray-500 font-bold">Menampilkan logo perusahaan di header cetak</div>
+                                        </div>
+                                    </div>
+                                    <div class="w-12 h-6 rounded-full relative shadow-inner transition-colors duration-300" :class="showLogo ? 'bg-indigo-600' : 'bg-gray-700'">
+                                        <div class="absolute top-1 w-4 h-4 bg-white rounded-full shadow-sm transition-all duration-300" :class="showLogo ? 'right-1' : 'left-1'"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {{-- Preview Section --}}
+                            <div class="border border-gray-700/50 rounded-2xl overflow-hidden">
+                                <div class="px-4 py-3 bg-gray-900/50 border-b border-gray-700/50 flex items-center gap-2">
+                                    <i data-lucide="eye" class="w-4 h-4 text-indigo-400"></i>
+                                    <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Preview Struk (Contoh)</span>
+                                </div>
+                                <div class="p-6 flex justify-center bg-gray-900/30">
+                                    <div class="bg-white text-black w-[280px] p-4 rounded shadow-lg" style="font-family: 'Courier New', monospace;">
+                                        <div class="text-center space-y-0.5 mb-3 border-b border-dashed border-gray-300 pb-3">
+                                            <div class="text-sm font-black uppercase tracking-tighter">{{ $settings['invoice_store_name'] ?? ($settings['company_name'] ?? 'GUPALA BATIK') }}</div>
+                                            @if(!empty($settings['invoice_tagline']))
+                                            <div class="text-[8px] text-gray-500 font-bold uppercase">{{ $settings['invoice_tagline'] }}</div>
+                                            @endif
+                                            <div class="text-[8px] text-gray-500">{{ $settings['invoice_address'] ?? ($settings['address'] ?? 'Jl. Pembatikan, Wiradesa') }}</div>
+                                            <div class="text-[8px] text-gray-500">Telp: {{ $settings['invoice_phone'] ?? ($settings['contact_phone'] ?? '+62 812 3456 7890') }}</div>
+                                        </div>
+                                        <div class="text-[8px] space-y-0.5 mb-3 border-b border-dashed border-gray-300 pb-3">
+                                            <div class="flex justify-between"><span>Invoice:</span><span class="font-bold">#INV-XXXXX</span></div>
+                                            <div class="flex justify-between"><span>Waktu:</span><span>{{ now()->format('d/m/Y H:i') }}</span></div>
+                                        </div>
+                                        <div class="text-[8px] space-y-1 mb-3 border-b border-dashed border-gray-300 pb-3">
+                                            <div class="font-bold uppercase">Contoh Produk</div>
+                                            <div class="flex justify-between"><span>1 x 250.000</span><span>250.000</span></div>
+                                        </div>
+                                        <div class="text-[9px] font-bold flex justify-between border-t border-black pt-1 mb-3">
+                                            <span>TOTAL:</span><span>Rp 250.000</span>
+                                        </div>
+                                        <div class="text-center space-y-1">
+                                            <div class="text-[7px] text-gray-400 font-bold uppercase tracking-widest">{{ $settings['invoice_footer_text'] ?? 'Terima Kasih Atas Kunjungan Anda' }}</div>
+                                            @if(!empty($settings['invoice_notes']))
+                                            <div class="text-[7px] text-gray-400 italic">{{ $settings['invoice_notes'] }}</div>
+                                            @endif
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="px-6 py-4 bg-gray-900/50 border-t border-gray-700/50 flex justify-end">
+                            <button type="submit" class="px-6 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-sm font-black uppercase tracking-widest transition-all shadow-lg active:scale-95">
+                                Simpan Invoice Settings
+                            </button>
+                        </div>
                     </form>
                 </div>
             </div>

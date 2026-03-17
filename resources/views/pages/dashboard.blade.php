@@ -12,7 +12,7 @@
             <p class="text-sm text-indigo-200">Berikut ringkasan bisnis hari ini — {{ now()->locale('id')->isoFormat('dddd, D MMMM YYYY') }}</p>
         </div>
         <div class="flex flex-wrap items-center gap-3">
-            <a href="{{ route('orders') ?? '#' }}" class="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm font-medium transition-colors">
+            <a href="{{ route('orders.index') ?? '#' }}" class="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm font-medium transition-colors">
                 <i data-lucide="plus" class="w-4 h-4"></i> Order Baru
             </a>
             <a href="{{ route('inventory.index') ?? '#' }}" class="flex items-center gap-2 px-4 py-2 bg-gray-800 border border-gray-700 hover:bg-gray-700 text-white rounded-lg text-sm font-medium transition-colors">
@@ -480,7 +480,7 @@
         <div class="{{ auth()->user()->isExecutive() ? 'lg:col-span-2' : 'lg:col-span-3' }} bg-gray-800 border border-gray-700/50 rounded-xl shadow-sm flex flex-col">
             <div class="p-5 border-b border-gray-700/50 flex items-center justify-between">
                 <div class="flex items-center gap-2 font-bold text-white"><i data-lucide="list-ordered" class="w-5 h-5 text-indigo-400"></i> Order Terbaru</div>
-                <a href="{{ route('orders') ?? '#' }}" class="text-sm text-indigo-400 hover:text-indigo-300 transition-colors">Lihat Semua &rarr;</a>
+                <a href="{{ route('orders.index') ?? '#' }}" class="text-sm text-indigo-400 hover:text-indigo-300 transition-colors">Lihat Semua &rarr;</a>
             </div>
             <div class="w-full overflow-x-auto flex-1">
                 <table class="w-full text-left text-sm whitespace-nowrap">

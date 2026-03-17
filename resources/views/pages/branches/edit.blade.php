@@ -85,6 +85,45 @@
                 </div>
             </div>
 
+            {{-- Invoice Settings Section --}}
+            <div class="mt-8 pt-6 border-t border-gray-700/50 space-y-6">
+                <div class="flex items-center gap-2 mb-4">
+                    <i data-lucide="printer" class="w-5 h-5 text-indigo-400"></i>
+                    <h4 class="font-bold text-white text-md">Pengaturan Invoice Cabang (Opsional)</h4>
+                </div>
+                <p class="text-xs text-gray-400 -mt-3 mb-4">Jika dikosongkan, invoice cabang ini akan menggunakan pengaturan invoice default (global).</p>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="space-y-2">
+                        <label class="text-xs font-bold text-gray-400 uppercase tracking-wider">Nama Toko di Invoice</label>
+                        <input type="text" name="invoice_name" value="{{ old('invoice_name', $branch->invoice_name) }}" 
+                               class="w-full bg-gray-900 border border-gray-700 text-white rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all placeholder-gray-600" 
+                               placeholder="Kosongkan untuk pakai default">
+                    </div>
+
+                    <div class="space-y-2">
+                        <label class="text-xs font-bold text-gray-400 uppercase tracking-wider">Tagline di Invoice</label>
+                        <input type="text" name="invoice_tagline" value="{{ old('invoice_tagline', $branch->invoice_tagline) }}" 
+                               class="w-full bg-gray-900 border border-gray-700 text-white rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all placeholder-gray-600" 
+                               placeholder="Kosongkan untuk pakai default">
+                    </div>
+
+                    <div class="space-y-2">
+                        <label class="text-xs font-bold text-gray-400 uppercase tracking-wider">Teks Footer Invoice</label>
+                        <input type="text" name="invoice_footer" value="{{ old('invoice_footer', $branch->invoice_footer) }}" 
+                               class="w-full bg-gray-900 border border-gray-700 text-white rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all placeholder-gray-600" 
+                               placeholder="Kosongkan untuk pakai default">
+                    </div>
+
+                    <div class="space-y-2">
+                        <label class="text-xs font-bold text-gray-400 uppercase tracking-wider">Catatan Tambahan Invoice</label>
+                        <textarea name="invoice_notes" rows="1" 
+                                  class="w-full bg-gray-900 border border-gray-700 text-white rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all placeholder-gray-600" 
+                                  placeholder="Kosongkan untuk pakai default">{{ old('invoice_notes', $branch->invoice_notes) }}</textarea>
+                    </div>
+                </div>
+            </div>
+
             <div class="mt-8 pt-6 border-t border-gray-700/50 flex flex-col-reverse sm:flex-row justify-end gap-3">
                 <a href="{{ route('branches.index') }}" class="px-6 py-2.5 text-gray-400 hover:text-white hover:bg-gray-800 rounded-xl text-sm font-medium transition-all text-center">
                     Batal

@@ -28,7 +28,11 @@ class BranchController extends Controller
             'manager_name' => 'nullable|string|max:255',
             'address' => 'nullable|string',
             'phone' => 'nullable|string|max:255',
-            'is_active' => 'boolean'
+            'is_active' => 'boolean',
+            'invoice_name' => 'nullable|string|max:255',
+            'invoice_tagline' => 'nullable|string|max:255',
+            'invoice_footer' => 'nullable|string|max:255',
+            'invoice_notes' => 'nullable|string'
         ]);
 
         $validated['is_active'] = $request->has('is_active');
@@ -52,7 +56,11 @@ class BranchController extends Controller
             'manager_name' => 'nullable|string|max:255',
             'address' => 'nullable|string',
             'phone' => 'nullable|string|max:255',
-            'is_active' => 'boolean'
+            'is_active' => 'boolean',
+            'invoice_name' => 'nullable|string|max:255',
+            'invoice_tagline' => 'nullable|string|max:255',
+            'invoice_footer' => 'nullable|string|max:255',
+            'invoice_notes' => 'nullable|string'
         ]);
 
         $validated['is_active'] = $request->has('is_active');
