@@ -50,21 +50,31 @@
     @endif
 
     {{-- Stats --}}
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mb-6">
+    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4 md:gap-6 mb-6">
         <div class="bg-gray-800 border-l-4 border-indigo-500 border-y border-r border-gray-700/50 rounded-xl p-5 shadow-sm">
             <div class="w-10 h-10 rounded-lg bg-indigo-500/10 text-indigo-400 flex items-center justify-center mb-4"><i data-lucide="wallet" class="w-5 h-5"></i></div>
-            <div class="text-3xl font-bold text-white mb-1">Rp {{ number_format($stats['totalBalance'], 0, ',', '.') }}</div>
+            <div class="text-2xl font-bold text-white mb-1">Rp {{ number_format($stats['totalBalance'], 0, ',', '.') }}</div>
             <div class="text-gray-400 text-sm">Saldo Kas Saat Ini</div>
         </div>
         <div class="bg-gray-800 border-l-4 border-emerald-500 border-y border-r border-gray-700/50 rounded-xl p-5 shadow-sm">
             <div class="w-10 h-10 rounded-lg bg-emerald-500/10 text-emerald-500 flex items-center justify-center mb-4"><i data-lucide="arrow-down-left" class="w-5 h-5"></i></div>
-            <div class="text-3xl font-bold text-emerald-400 mb-1">Rp {{ number_format($stats['monthlyIn'], 0, ',', '.') }}</div>
+            <div class="text-2xl font-bold text-emerald-400 mb-1">Rp {{ number_format($stats['monthlyIn'], 0, ',', '.') }}</div>
             <div class="text-gray-400 text-sm">Masuk ({{ $stats['currentMonth'] }})</div>
         </div>
         <div class="bg-gray-800 border-l-4 border-red-500 border-y border-r border-gray-700/50 rounded-xl p-5 shadow-sm">
             <div class="w-10 h-10 rounded-lg bg-red-500/10 text-red-500 flex items-center justify-center mb-4"><i data-lucide="arrow-up-right" class="w-5 h-5"></i></div>
-            <div class="text-3xl font-bold text-red-400 mb-1">Rp {{ number_format($stats['monthlyOut'], 0, ',', '.') }}</div>
+            <div class="text-2xl font-bold text-red-400 mb-1">Rp {{ number_format($stats['monthlyOut'], 0, ',', '.') }}</div>
             <div class="text-gray-400 text-sm">Keluar ({{ $stats['currentMonth'] }})</div>
+        </div>
+        <div class="bg-gray-800 border-l-4 border-amber-500 border-y border-r border-gray-700/50 rounded-xl p-5 shadow-sm">
+            <div class="w-10 h-10 rounded-lg bg-amber-500/10 text-amber-500 flex items-center justify-center mb-4"><i data-lucide="banknote" class="w-5 h-5"></i></div>
+            <div class="text-2xl font-bold text-amber-400 mb-1">Rp {{ number_format($stats['totalPiutang'] ?? 0, 0, ',', '.') }}</div>
+            <div class="text-gray-400 text-sm">Total Piutang Usaha</div>
+        </div>
+        <div class="bg-gray-800 border-l-4 border-purple-500 border-y border-r border-gray-700/50 rounded-xl p-5 shadow-sm">
+            <div class="w-10 h-10 rounded-lg bg-purple-500/10 text-purple-500 flex items-center justify-center mb-4"><i data-lucide="credit-card" class="w-5 h-5"></i></div>
+            <div class="text-2xl font-bold text-purple-400 mb-1">Rp {{ number_format($stats['totalHutang'] ?? 0, 0, ',', '.') }}</div>
+            <div class="text-gray-400 text-sm">Total Hutang Usaha</div>
         </div>
     </div>
 

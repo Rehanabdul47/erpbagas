@@ -56,11 +56,35 @@ class CashController extends Controller
         $totalOut = $totalOutQuery->sum('amount');
         $totalBalance = $totalIn - $totalOut;
 
+        // Calculate Piutang Usaha (1-103) - Asset (Normal Balance: Debit)
+        $piutangAccount = \App\Models\Account::where('code', '1-103')->first();
+        $totalPiutang = 0;
+        if ($piutangAccount) {
+            $piutangQuery = \App\Models\JournalItem::where('account_id', $piutangAccount->id)
+                ->whereHas('journal', function($q) {
+                    $this->scopeByBranch($q);
+                });
+            $totalPiutang = $piutangQuery->sum('debit') - $piutangQuery->sum('credit');
+        }
+
+        // Calculate Hutang Usaha (2-101) - Liability (Normal Balance: Credit)
+        $hutangAccount = \App\Models\Account::where('code', '2-101')->first();
+        $totalHutang = 0;
+        if ($hutangAccount) {
+            $hutangQuery = \App\Models\JournalItem::where('account_id', $hutangAccount->id)
+                ->whereHas('journal', function($q) {
+                    $this->scopeByBranch($q);
+                });
+            $totalHutang = $hutangQuery->sum('credit') - $hutangQuery->sum('debit');
+        }
+
         $stats = [
             'totalBalance' => $totalBalance,
             'monthlyIn' => $monthlyIn,
             'monthlyOut' => $monthlyOut,
             'currentMonth' => $startDate->format('F Y'),
+            'totalPiutang' => $totalPiutang,
+            'totalHutang' => $totalHutang,
         ];
         $rePercentage = \App\Models\Setting::where('key', 'finance_retained_earnings_percentage')->value('value') ?? 40;
 
