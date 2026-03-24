@@ -30,9 +30,12 @@ class ProductionController extends Controller
 
     public function create()
     {
-        $finalProductsQuery = Product::where('type', 'final_product')->with('billOfMaterialsAsFinal.rawMaterial');
-        $this->scopeByBranch($finalProductsQuery);
-        $finalProducts = $finalProductsQuery->get();
+        // Produksi hanya menggunakan produk dari Toko Utama (branch_id = 1)
+        $mainBranchId = 1;
+        $finalProducts = Product::where('type', 'final_product')
+            ->where('branch_id', $mainBranchId)
+            ->with('billOfMaterialsAsFinal.rawMaterial')
+            ->get();
         $tailors = \App\Models\Tailor::all();
         return view('pages.production.create', compact('finalProducts', 'tailors'))
             ->with('activePage', 'production');
@@ -51,6 +54,11 @@ class ProductionController extends Controller
 
         $finalProduct = Product::with('billOfMaterialsAsFinal.rawMaterial')->findOrFail($validated['product_id']);
         
+        // Pastikan produk berasal dari Toko Utama
+        if ($finalProduct->branch_id != 1) {
+            return back()->with('error', 'Produksi hanya dapat dilakukan dengan produk dari Toko Utama.')->withInput();
+        }
+
         // Validate if there are enough raw materials
         foreach ($finalProduct->billOfMaterialsAsFinal as $bom) {
             $requiredQuantity = $bom->quantity * $validated['quantity'];

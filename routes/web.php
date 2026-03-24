@@ -70,7 +70,15 @@ Route::middleware('auth')->group(function () {
         Route::post('/', [\App\Http\Controllers\SupplierController::class, 'store'])->name('store');
         Route::put('/{supplier}', [\App\Http\Controllers\SupplierController::class, 'update'])->name('update');
         Route::delete('/{supplier}', [\App\Http\Controllers\SupplierController::class, 'destroy'])->name('destroy');
+        
+        // Supplier Products Catalog
+        Route::post('/{supplier}/products', [\App\Http\Controllers\SupplierController::class, 'storeProduct'])->name('products.store');
+        Route::put('/{supplier}/products/{supplierProduct}', [\App\Http\Controllers\SupplierController::class, 'updateProduct'])->name('products.update');
+        Route::delete('/{supplier}/products/{supplierProduct}', [\App\Http\Controllers\SupplierController::class, 'destroyProduct'])->name('products.destroy');
     });
+
+    // API Routes for AJAX
+    Route::get('/api/suppliers/{supplier}/products', [\App\Http\Controllers\SupplierController::class, 'apiProducts'])->name('api.suppliers.products');
 
     // Purchase Orders
     Route::prefix('purchase-orders')->name('purchase-orders.')->group(function () {
@@ -174,6 +182,7 @@ Route::middleware('auth')->group(function () {
     // Digital Marketing
     Route::prefix('digital-marketing')->name('digital-marketing.')->group(function () {
         Route::get('/dashboard', [DigitalMarketingDashboardController::class, 'index'])->name('dashboard');
+        Route::post('/shopee-report', [DigitalMarketingDashboardController::class, 'generateShopeeReport'])->name('shopee-report');
     });
 
     // Digital Platforms (E-Commerce)

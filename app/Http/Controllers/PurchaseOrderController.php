@@ -30,10 +30,8 @@ class PurchaseOrderController extends Controller
     public function create()
     {
         $suppliers = Supplier::all();
-        $productsQuery = Product::where('type', '!=', 'Service');
-        $this->scopeByBranch($productsQuery);
-        $products = $productsQuery->get();
-        return view('pages.purchase-orders.create', compact('suppliers', 'products'))->with('activePage', 'purchase-orders');
+        // Removed products query, products will be fetched dynamically via AJAX based on selected supplier
+        return view('pages.purchase-orders.create', compact('suppliers'))->with('activePage', 'purchase-orders');
     }
 
     public function store(Request $request)
@@ -42,7 +40,8 @@ class PurchaseOrderController extends Controller
             'supplier_id' => 'required|exists:suppliers,id',
             'date' => 'required|date',
             'items' => 'required|array|min:1',
-            'items.*.product_id' => 'required|exists:products,id',
+            'items.*.product_id' => 'nullable|exists:products,id',
+            'items.*.supplier_product_id' => 'required|exists:supplier_products,id',
             'items.*.quantity' => 'required|numeric|min:0.01',
             'items.*.cost_price' => 'required|numeric|min:0',
             'notes' => 'nullable|string',
@@ -70,7 +69,8 @@ class PurchaseOrderController extends Controller
             foreach ($request->items as $item) {
                 $subtotal = $item['quantity'] * $item['cost_price'];
                 $po->items()->create([
-                    'product_id' => $item['product_id'],
+                    'product_id' => $item['product_id'] ?? null,
+                    'supplier_product_id' => $item['supplier_product_id'],
                     'quantity' => $item['quantity'],
                     'cost_price' => $item['cost_price'],
                     'subtotal' => $subtotal,
@@ -90,7 +90,7 @@ class PurchaseOrderController extends Controller
 
     public function show(PurchaseOrder $purchaseOrder)
     {
-        $purchaseOrder->load(['supplier', 'user', 'items.product']);
+        $purchaseOrder->load(['supplier', 'user', 'items.supplierProduct', 'items.product']);
         return view('pages.purchase-orders.show', compact('purchaseOrder'))->with('activePage', 'purchase-orders');
     }
 
@@ -104,19 +104,21 @@ class PurchaseOrderController extends Controller
                 foreach ($purchaseOrder->items as $item) {
                     $product = $item->product;
                     
-                    // Simple weighted average for COGS or just update to latest?
-                    // For now, let's just update stock
-                    $product->increment('stock', $item->quantity);
-                    
-                    // Record stock movement
-                    \App\Models\StockMovement::create([
-                        'product_id' => $product->id,
-                        'user_id' => Auth::id(),
-                        'type' => 'in',
-                        'quantity' => $item->quantity,
-                        'reference' => 'Purchase Order ' . $purchaseOrder->po_number,
-                        'method' => 'Purchase Order',
-                    ]);
+                    if ($product) {
+                        // Simple weighted average for COGS or just update to latest?
+                        // For now, let's just update stock
+                        $product->increment('stock', $item->quantity);
+                        
+                        // Record stock movement
+                        \App\Models\StockMovement::create([
+                            'product_id' => $product->id,
+                            'user_id' => Auth::id(),
+                            'type' => 'in',
+                            'quantity' => $item->quantity,
+                            'reference' => 'Purchase Order ' . $purchaseOrder->po_number,
+                            'method' => 'Purchase Order',
+                        ]);
+                    }
                 }
                 $purchaseOrder->update(['status' => 'received']);
 

@@ -11,11 +11,19 @@
     $invoiceAddress = $gs['invoice_address'] ?? ($gs['address'] ?? '');
     $invoicePhone = $gs['invoice_phone'] ?? ($gs['contact_phone'] ?? '');
 @endphp
-<div class="print-header">
-    <h2>{{ $storeName }}</h2>
-    @if($tagline)<div class="tagline">{{ $tagline }}</div>@endif
-    @if($invoiceAddress)<div class="address">{{ $invoiceAddress }}</div>@endif
-    @if($invoicePhone)<div class="phone">Telp: {{ $invoicePhone }}</div>@endif
+<div class="print-header hidden">
+    <div style="display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid #1f2937; padding-bottom: 15px; margin-bottom: 25px;">
+        <div style="text-align: left;">
+            <h2 style="font-size: 24px; font-weight: 900; text-transform: uppercase; margin: 0; color: #111827;">{{ $storeName }}</h2>
+            @if($tagline)<div style="font-size: 12px; color: #4b5563; margin-top: 4px;">{{ $tagline }}</div>@endif
+            @if($invoiceAddress)<div style="font-size: 12px; color: #6b7280; margin-top: 4px; max-width: 300px;">{{ $invoiceAddress }}</div>@endif
+            @if($invoicePhone)<div style="font-size: 12px; color: #6b7280; margin-top: 2px;">Telp: {{ $invoicePhone }}</div>@endif
+        </div>
+        <div style="text-align: right;">
+            <h1 style="font-size: 28px; font-weight: 900; color: #111827; margin: 0; letter-spacing: -1px;">PURCHASE ORDER</h1>
+            <div style="font-size: 14px; font-weight: bold; color: #4f46e5; margin-top: 4px;">#{{ $purchaseOrder->po_number }}</div>
+        </div>
+    </div>
 </div>
 <div class="max-w-5xl mx-auto space-y-6 pb-20">
     
@@ -123,20 +131,27 @@
                         <td class="px-8 py-6">
                             <div class="flex items-center gap-4">
                                 <div class="w-10 h-10 rounded-lg bg-gray-900 border border-gray-700 shrink-0 flex items-center justify-center">
-                                    @if($item->product->image)
+                                    @if($item->product && $item->product->image)
                                         <img src="{{ asset($item->product->image) }}" class="w-full h-full object-cover rounded-lg">
                                     @else
                                         <i data-lucide="package" class="w-5 h-5 text-gray-700"></i>
                                     @endif
                                 </div>
-                                <div class="min-w-0">
-                                    <div class="font-bold text-white text-sm truncate">{{ $item->product->name }}</div>
-                                    <div class="text-[10px] font-mono text-gray-500 uppercase tracking-tighter">{{ $item->product->sku }}</div>
+                                <div class="min-w-0 flex flex-col items-start">
+                                    <div class="font-bold text-white text-sm truncate">{{ $item->supplierProduct ? $item->supplierProduct->name : ($item->product ? $item->product->name : 'Unknown Item') }}</div>
+                                    <div class="flex items-center gap-2 mt-1">
+                                        @if($item->supplierProduct && $item->supplierProduct->sku)
+                                            <span class="text-[10px] font-mono text-gray-500 uppercase tracking-tighter">{{ $item->supplierProduct->sku }}</span>
+                                        @endif
+                                        @if($item->product)
+                                            <span class="text-[9px] bg-indigo-500/20 text-indigo-400 px-1.5 py-0.5 rounded uppercase font-bold tracking-widest border border-indigo-500/30">Auto-Stok: {{ $item->product->name }}</span>
+                                        @endif
+                                    </div>
                                 </div>
                             </div>
                         </td>
                         <td class="px-8 py-6 text-center">
-                            <span class="text-sm font-black text-gray-200">{{ number_format($item->quantity, 0) }}</span>
+                            <span class="text-sm font-black text-gray-200">{{ number_format($item->quantity, 0) }} {{ $item->supplierProduct ? $item->supplierProduct->unit : '' }}</span>
                         </td>
                         <td class="px-8 py-6 text-right">
                             <div class="text-xs font-medium text-gray-400">Rp {{ number_format($item->cost_price, 0, ',', '.') }}</div>
@@ -157,7 +172,25 @@
                 </tfoot>
             </table>
         </div>
+        
+        <div class="print-signatures hidden pt-12 mt-12 mb-8" style="page-break-inside: avoid;">
+            <div style="display: flex; justify-content: space-between; width: 100%; padding: 0 40px;">
+                <div style="text-align: center; width: 200px;">
+                    <p style="font-size: 12px; font-weight: bold; color: #4b5563; margin-bottom: 80px;">Pemasok (Supplier)</p>
+                    <p style="font-size: 14px; font-weight: bold; color: #111827; text-decoration: underline;">{{ $purchaseOrder->supplier->name ?? '.......................' }}</p>
+                </div>
+                <div style="text-align: center; width: 200px;">
+                    <p style="font-size: 12px; font-weight: bold; color: #4b5563; margin-bottom: 80px;">Dipesan Oleh</p>
+                    <p style="font-size: 14px; font-weight: bold; color: #111827; text-decoration: underline;">{{ $storeName }}</p>
+                </div>
+                <div style="text-align: center; width: 200px;">
+                    <p style="font-size: 12px; font-weight: bold; color: #4b5563; margin-bottom: 80px;">Manajemen / Keuangan</p>
+                    <p style="font-size: 14px; font-weight: bold; color: #111827;">(......................................)</p>
+                </div>
+            </div>
+        </div>
     </div>
+
 
     {{-- Sticky Actions Panel --}}
     <div class="bg-gray-900/60 border border-gray-700/50 backdrop-blur-md rounded-2xl p-5 flex flex-wrap justify-between items-center gap-6 shadow-2xl">
@@ -219,24 +252,42 @@
 
 @push('scripts')
 <style>
-    .print-header { display: none; }
     @media print {
         #sidebar, #navbar, #breadcrumb, .sticky-actions, button, footer, .sticky { display: none !important; }
-        body { background: white !important; color: black !important; font-family: sans-serif; }
-        .bg-gray-800, .bg-gray-900, .bg-gradient-to-br { background: white !important; }
-        .border-gray-700, .border-gray-700\/50 { border-color: #eee !important; }
-        .text-white, .text-gray-300, .text-gray-400, .text-indigo-400 { color: black !important; }
-        .text-gray-500 { color: #666 !important; }
-        main { margin-left: 0 !important; }
-        .max-w-5xl { max-width: 100% !important; margin: 0 !important; }
-        .p-8 { padding: 30px !important; }
-        .rounded-2xl, .rounded-xl { border-radius: 0 !important; }
-        .shadow-xl, .shadow-sm { shadow: none !important; }
-        .print-header { display: block !important; text-align: center; padding: 20px 30px; border-bottom: 2px solid #333; margin-bottom: 20px; }
-        .print-header h2 { font-size: 20px; font-weight: 900; text-transform: uppercase; letter-spacing: -0.5px; margin: 0; }
-        .print-header .tagline { font-size: 10px; color: #666; margin-top: 2px; }
-        .print-header .address { font-size: 10px; color: #888; margin-top: 4px; }
-        .print-header .phone { font-size: 10px; color: #888; }
+        body { background: white !important; color: black !important; font-family: 'Inter', sans-serif, Arial; margin: 0; padding: 0;}
+        main { margin-left: 0 !important; margin-top: 0 !important; padding: 0 !important; }
+        
+        .max-w-5xl { max-width: 100% !important; margin: 0 !important; padding: 0 !important; border: none !important; box-shadow: none !important; background: transparent !important; }
+        .bg-gray-800, .bg-gray-900, .bg-gradient-to-br, .bg-gray-900\/50, .bg-gray-800\/50 { background: white !important; }
+        .border-gray-700, .border-gray-700\/50, .border-gray-700\/30 { border-color: #e5e7eb !important; }
+        .text-white, .text-gray-200, .text-gray-300 { color: #111827 !important; }
+        .text-gray-400, .text-gray-500 { color: #4b5563 !important; }
+        .text-indigo-400 { color: #4f46e5 !important; }
+        
+        /* Clear the heavy top header since we have .print-header now */
+        .p-8.bg-gradient-to-br { display: none !important; } 
+        
+        /* Adjust layout spacing */
+        .grid-cols-1.md\:grid-cols-2 { display: flex !important; width: 100% !important; border-bottom: 1px solid #e5e7eb !important; }
+        .grid-cols-1.md\:grid-cols-2 > div { width: 50% !important; padding: 20px 0 !important; border: none !important; }
+        .grid-cols-1.md\:grid-cols-2 > div:first-child { padding-right: 20px !important; }
+        .grid-cols-1.md\:grid-cols-2 > div:last-child { padding-left: 20px !important; }
+        
+        /* Table styles */
+        table { border-collapse: collapse !important; width: 100% !important; border: 1px solid #e5e7eb !important; }
+        th { background: #f3f4f6 !important; color: #374151 !important; border-bottom: 2px solid #e5e7eb !important; padding: 12px 15px !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        td { border-bottom: 1px solid #e5e7eb !important; padding: 12px 15px !important; }
+        tfoot td { background: #f9fafb !important; border-top: 2px solid #e5e7eb !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        
+        /* Show print-specific elements */
+        .print-header { display: block !important; }
+        .print-signatures { display: block !important; }
+        
+        /* Utilities */
+        .shadow-xl, .shadow-sm, .shadow-inner { box-shadow: none !important; }
+        .rounded-2xl, .rounded-xl, .rounded-lg { border-radius: 0 !important; }
+        img { filter: grayscale(100%); max-width: 40px !important; max-height: 40px !important; }
+        .bg-indigo-500\/10, .bg-indigo-500\/20 { background: #edf2f7 !important; color: #4a5568 !important; border: 1px solid #e2e8f0 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     }
 </style>
 @endpush

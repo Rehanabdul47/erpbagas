@@ -4,7 +4,7 @@
 @section('breadcrumb', 'Overview Digital Marketing')
 
 @section('content')
-<div>
+<div x-data="{ showShopeeModal: false }">
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
         <div class="flex items-center gap-3">
             <div class="w-10 h-10 rounded-xl bg-orange-500/10 text-orange-400 flex items-center justify-center shrink-0">
@@ -16,19 +16,25 @@
             </div>
         </div>
 
-        <form method="GET" action="{{ route('digital-marketing.dashboard') }}" class="flex items-center gap-2">
-            <div class="relative w-48 shrink-0">
-                <select name="platform" onchange="this.form.submit()" class="w-full bg-gray-900 border border-gray-700 text-white rounded-lg pl-3 pr-10 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all appearance-none cursor-pointer shadow-inner">
-                    <option value="all" {{ $selectedPlatform === 'all' ? 'selected' : '' }}>Semua Platform (Online)</option>
-                    @foreach($platforms as $platform)
-                        <option value="{{ $platform }}" {{ $selectedPlatform === $platform ? 'selected' : '' }}>{{ $platform }}</option>
-                    @endforeach
-                </select>
-                <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-500">
-                    <i data-lucide="chevron-down" class="w-4 h-4"></i>
+        <div class="flex items-center gap-2 w-full md:w-auto">
+            <button type="button" @click="showShopeeModal = true" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 shadow-sm shadow-indigo-600/20 active:scale-95 text-white rounded-lg text-sm font-bold transition-all flex items-center gap-2 shrink-0">
+                <i data-lucide="file-spreadsheet" class="w-4 h-4"></i>
+                <span class="hidden sm:inline">Laporan Shopee</span>
+            </button>
+            <form method="GET" action="{{ route('digital-marketing.dashboard') }}" class="flex items-center gap-2 w-full">
+                <div class="relative w-full sm:w-48 shrink-0">
+                    <select name="platform" onchange="this.form.submit()" class="w-full bg-gray-900 border border-gray-700 text-white rounded-lg pl-3 pr-10 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all appearance-none cursor-pointer shadow-inner">
+                        <option value="all" {{ $selectedPlatform === 'all' ? 'selected' : '' }}>Semua Platform (Online)</option>
+                        @foreach($platforms as $platform)
+                            <option value="{{ $platform }}" {{ $selectedPlatform === $platform ? 'selected' : '' }}>{{ $platform }}</option>
+                        @endforeach
+                    </select>
+                    <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-500">
+                        <i data-lucide="chevron-down" class="w-4 h-4"></i>
+                    </div>
                 </div>
-            </div>
-        </form>
+            </form>
+        </div>
     </div>
 
     {{-- Stats Cards --}}
@@ -285,6 +291,85 @@
                     @endforelse
                 </div>
             </div>
+        </div>
+    </div>
+
+    {{-- Modal Generate Shopee Report --}}
+    <div x-show="showShopeeModal" x-cloak style="display: none;" class="fixed inset-0 bg-gray-900/80 backdrop-blur-sm z-[150] flex items-center justify-center p-4 transition-opacity">
+        <div @click.away="showShopeeModal = false" class="bg-gray-800 border border-gray-700 rounded-xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col pt-1">
+            <div class="px-5 py-4 border-b border-gray-700/50 flex items-center justify-between">
+                <h3 class="font-bold text-white flex items-center gap-2 text-lg">
+                    <div class="w-8 h-8 rounded-lg bg-indigo-500/20 text-indigo-400 flex items-center justify-center shrink-0 border border-indigo-500/30">
+                        <i data-lucide="file-spreadsheet" class="w-4 h-4"></i>
+                    </div>
+                    Generate Laporan & Analisis Data
+                </h3>
+                <button type="button" @click="showShopeeModal = false" class="text-gray-400 hover:text-white transition-colors"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            
+            <form action="{{ route('digital-marketing.shopee-report') }}" method="POST" enctype="multipart/form-data"
+                  x-data="{ fileSelected: false, fileName: '', isSubmitting: false }" 
+                  @submit="isSubmitting = true">
+                @csrf
+                <div class="p-6">
+                    <div class="mb-4">
+                        <label class="text-[10px] font-bold text-gray-400 uppercase tracking-widest pl-1 mb-1.5 block">File Laporan Order (Shopee / Platform lain)</label>
+                        <label for="shopee_file" 
+                               class="flex flex-col items-center justify-center w-full h-40 border-2 border-gray-600 border-dashed rounded-xl cursor-pointer bg-gray-900/30 hover:bg-gray-800/80 hover:border-indigo-500/50 transition-all duration-300 group"
+                               :class="fileSelected ? 'border-indigo-500 bg-indigo-500/5' : ''">
+                            <div class="flex flex-col items-center justify-center pt-5 pb-6">
+                                
+                                <template x-if="!fileSelected">
+                                    <div class="flex flex-col items-center">
+                                        <i data-lucide="upload" class="w-8 h-8 text-gray-500 group-hover:text-indigo-400 transition-colors mb-3"></i>
+                                        <p class="mb-1 text-sm text-gray-300 font-bold"><span class="text-indigo-400">Klik untuk upload file spreadsheet</span></p>
+                                        <p class="text-xs text-gray-500 uppercase tracking-widest font-mono">XLSX, XLS, CSV (Maks 10MB)</p>
+                                    </div>
+                                </template>
+
+                                <template x-if="fileSelected">
+                                    <div class="flex flex-col items-center text-center">
+                                        <i data-lucide="file-spreadsheet" class="w-10 h-10 text-emerald-400 mb-2"></i>
+                                        <p class="text-sm font-bold text-white max-w-[250px] truncate" x-text="fileName"></p>
+                                        <p class="mt-2 text-xs text-gray-400 hover:text-red-400 transition-colors" @click.prevent="fileSelected = false; fileName = ''; $refs.shopeeFileInput.value = ''">
+                                            Batal / Pilih Ulang
+                                        </p>
+                                    </div>
+                                </template>
+
+                            </div>
+                            <input id="shopee_file" name="shopee_file" type="file" class="hidden" x-ref="shopeeFileInput" required
+                                   accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel"
+                                   @change="fileSelected = $event.target.files.length > 0; fileName = $event.target.files.length > 0 ? $event.target.files[0].name : ''" />
+                        </label>
+                    </div>
+
+                    <div class="mt-4 p-4 bg-indigo-500/5 border border-indigo-500/20 rounded-xl space-y-2">
+                        <div class="flex items-center gap-2 mb-2 text-indigo-400 border-b border-indigo-500/10 pb-2">
+                            <i data-lucide="check-circle" class="w-4 h-4"></i>
+                            <span class="text-[10px] font-bold uppercase tracking-widest pl-1">Fitur yang akan di-generate:</span>
+                        </div>
+                        <ul class="text-[11px] text-gray-400 space-y-1.5 pl-1">
+                            <li class="flex items-center gap-1.5"><i data-lucide="chevron-right" class="w-3 h-3 text-indigo-400"></i> Dashboard Summary (Pendapatan & AOV)</li>
+                            <li class="flex items-center gap-1.5"><i data-lucide="chevron-right" class="w-3 h-3 text-emerald-400"></i> Analisis Produk Terlaris (Revenue & Qty)</li>
+                            <li class="flex items-center gap-1.5"><i data-lucide="chevron-right" class="w-3 h-3 text-amber-400"></i> Distribusi Wilayah (Provinsi & Kota)</li>
+                            <li class="flex items-center gap-1.5"><i data-lucide="chevron-right" class="w-3 h-3 text-blue-400"></i> Rekap Label Pengiriman & Order Selesai</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="px-6 py-4 border-t border-gray-700/50 bg-gray-900/20 flex justify-end gap-3">
+                    <button type="button" @click="showShopeeModal = false" class="px-5 py-2 hover:bg-gray-700 text-gray-300 rounded-lg text-sm font-medium transition-colors">Batal</button>
+                    <button type="submit" 
+                            :disabled="!fileSelected || isSubmitting"
+                            :class="!fileSelected || isSubmitting ? 'bg-indigo-600/50 cursor-not-allowed text-white/70' : 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-600/20 active:scale-95 text-white'"
+                            class="px-6 py-2 rounded-xl font-bold transition-all text-sm flex items-center gap-2">
+                        <i data-lucide="file-down" x-show="!isSubmitting" class="w-4 h-4"></i>
+                        <i data-lucide="loader-2" x-show="isSubmitting" x-cloak class="w-4 h-4 animate-spin" style="display: none;"></i>
+                        <span x-text="isSubmitting ? 'Memproses...' : 'Generate Excel'"></span>
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 </div>

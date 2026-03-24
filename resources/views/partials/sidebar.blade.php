@@ -62,7 +62,7 @@
             @endif
             <span class="truncate max-w-[130px]">{{ $sidebarName }}</span>
         </div>
-        <button @click="sidebarOpen = false" id="sidebar-toggle" class="lg:hidden p-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-700 transition-colors">
+        <button @click="closeSidebar()" id="sidebar-toggle" class="lg:hidden p-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-700 transition-colors">
             <i data-lucide="x" class="w-5 h-5"></i>
         </button>
     </div>

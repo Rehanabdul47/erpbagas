@@ -1,6 +1,6 @@
 <header :class="sidebarOpen ? 'lg:left-64' : 'left-0'" class="fixed top-0 right-0 h-16 bg-gray-900/85 backdrop-blur-md border-b border-gray-700/50 flex items-center justify-between px-4 sm:px-6 z-[80] transition-all duration-300">
     <div class="flex items-center gap-3 sm:gap-4">
-        <button @click="sidebarOpen = !sidebarOpen" class="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 transition-colors">
+        <button @click="toggleSidebar()" class="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 transition-colors">
             <i data-lucide="menu" class="w-5 h-5"></i>
         </button>
         <div class="text-base font-semibold text-white hidden sm:block">
@@ -59,7 +59,7 @@
                     </template>
                     <template x-for="notif in notifications" :key="notif.id">
                         <a :href="notif.route" class="flex items-start gap-3 p-4 hover:bg-gray-700/50 border-b border-gray-700/50 last:border-0 transition-colors group">
-                            <div class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" :class="`bg-${notif.color}-500/10 text-${notif.color}-400` shadow-sm">
+                            <div class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" :class="`bg-${notif.color}-500/10 text-${notif.color}-400 shadow-sm`">
                                 <i :data-lucide="notif.icon" class="w-4 h-4"></i>
                             </div>
                             <div class="flex-1 min-w-0">

@@ -23,6 +23,18 @@
     </div>
 </div>
 
+    <div class="print-header hidden mb-8">
+        <div style="text-align: center; border-bottom: 2px solid #1f2937; padding-bottom: 15px; margin-bottom: 25px;">
+            <h1 style="font-size: 24px; font-weight: 900; text-transform: uppercase; color: #111827; margin: 0; letter-spacing: 1px;">LAPORAN KEUANGAN</h1>
+            <h3 style="font-size: 16px; font-weight: bold; color: #4b5563; margin-top: 5px;">Periode: {{ \Carbon\Carbon::parse($month.'-01')->translatedFormat('F Y') }}</h3>
+            @php
+                $gs = $global_settings ?? [];
+                $storeName = $gs['company_name'] ?? 'GUPALA BATIK';
+            @endphp
+            <div style="font-size: 14px; color: #6b7280; font-weight: 600; margin-top: 8px;">{{ $storeName }}</div>
+        </div>
+    </div>
+
     <!-- Consolidated Report Tables -->
     <div class="space-y-8">
         
@@ -278,20 +290,55 @@
             </div>
         </div>
 
+        <div class="print-signatures hidden pt-12 mt-12 mb-8" style="page-break-inside: avoid;">
+            <div style="display: flex; justify-content: space-between; width: 100%; padding: 0 40px;">
+                <div style="text-align: center; width: 200px;">
+                    <p style="font-size: 12px; font-weight: bold; color: #4b5563; margin-bottom: 80px;">Dibuat Oleh</p>
+                    <p style="font-size: 14px; font-weight: bold; color: #111827; text-decoration: underline;">(......................................)</p>
+                    <p style="font-size: 11px; color: #6b7280; margin-top: 4px;">Staff Keuangan</p>
+                </div>
+                <div style="text-align: center; width: 200px;">
+                    <p style="font-size: 12px; font-weight: bold; color: #4b5563; margin-bottom: 80px;">Diperiksa Oleh</p>
+                    <p style="font-size: 14px; font-weight: bold; color: #111827; text-decoration: underline;">(......................................)</p>
+                    <p style="font-size: 11px; color: #6b7280; margin-top: 4px;">Manajer Keuangan</p>
+                </div>
+                <div style="text-align: center; width: 200px;">
+                    <p style="font-size: 12px; font-weight: bold; color: #4b5563; margin-bottom: 80px;">Disetujui Oleh</p>
+                    <p style="font-size: 14px; font-weight: bold; color: #111827; text-decoration: underline;">(......................................)</p>
+                    <p style="font-size: 11px; color: #6b7280; margin-top: 4px;">Direktur</p>
+                </div>
+            </div>
+        </div>
+
     </div>
 
 @push('styles')
 <style>
 @media print {
-    body { background: white !important; color: black !important; }
-    .print\:hidden { display: none !important; }
+    #sidebar, #navbar, #breadcrumb, button, footer, .sticky, .print\:hidden { display: none !important; }
+    body { background: white !important; color: black !important; font-family: 'Inter', sans-serif, Arial; margin: 0; padding: 0;}
+    main { margin-left: 0 !important; margin-top: 0 !important; padding: 0 !important; }
     #page-content { padding: 0 !important; margin: 0 !important; background: white !important; }
-    .bg-gray-800, .bg-gray-900\/50, .bg-gray-900\/30, .bg-indigo-500\/10 { background: white !important; border: 1px solid #eee !important; }
-    .text-white, .text-indigo-400, .text-gray-200, .text-gray-300, .text-indigo-300 { color: black !important; }
-    .text-gray-400, .text-gray-500 { color: #555 !important; }
-    .border-indigo-500\/30, .border-emerald-500\/20, .border-red-500\/20 { border-color: #333 !important; }
-    table { width: 100% !important; border-collapse: collapse !important; }
+    
+    .print-header { display: block !important; }
+    .print-signatures { display: block !important; }
+    
+    .bg-gray-800, .bg-gray-900\/50, .bg-gray-900\/30, .bg-gray-900\/40, .bg-gray-900\/20 { background: white !important; }
+    .bg-emerald-500\/10, .bg-indigo-500\/10, .bg-red-500\/10 { background: #f9fafb !important; color: #111827 !important; border-bottom: 2px solid #e5e7eb !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .border-gray-700, .border-gray-700\/50, .border-gray-700\/30, .border-indigo-500\/30, .border-emerald-500\/20, .border-red-500\/20 { border-color: #e5e7eb !important; }
+    
+    .text-white, .text-gray-200, .text-gray-300, .text-indigo-400, .text-emerald-400, .text-red-400 { color: #111827 !important; font-weight: 600 !important; }
+    .text-gray-400, .text-gray-500 { color: #4b5563 !important; }
+    .text-indigo-300 { color: #111827 !important; font-weight: 800 !important; text-transform: uppercase !important; }
+    
+    table { width: 100% !important; border-collapse: collapse !important; border: 1px solid #e5e7eb !important; margin-bottom: 20px !important; }
+    th { border-bottom: 2px solid #e5e7eb !important; padding: 10px 15px !important; color: #111827 !important; background: #f9fafb !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    td { border-bottom: 1px solid #e5e7eb !important; padding: 8px 15px !important; color: #111827 !important; }
     tr { page-break-inside: avoid !important; }
+    
+    .shadow-sm { box-shadow: none !important; }
+    .rounded-xl, .rounded-lg { border-radius: 0 !important; }
+    .space-y-8 > div { page-break-inside: avoid !important; margin-bottom: 30px !important; border: 1px solid #e5e7eb !important; }
 }
 </style>
 @endpush

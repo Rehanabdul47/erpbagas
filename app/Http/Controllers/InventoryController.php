@@ -11,6 +11,7 @@ use App\Models\JournalEntry;
 use App\Models\Account;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule;
 use Carbon\Carbon;
 
 class InventoryController extends Controller
@@ -92,8 +93,12 @@ class InventoryController extends Controller
 
     public function store(Request $request)
     {
+        $branchId = Auth::user()->hasRole('Executive')
+            ? $request->input('branch_id', 1)
+            : (Auth::user()->branch_id ?? 1);
+
         $validated = $request->validate([
-            'sku' => 'required|string|unique:products,sku',
+            'sku' => ['required', 'string', Rule::unique('products', 'sku')->where('branch_id', $branchId)],
             'name' => 'required|string|max:255',
             'category_id' => 'required|exists:categories,id',
             'stock' => 'required|integer|min:0',
@@ -183,8 +188,12 @@ class InventoryController extends Controller
 
     public function update(Request $request, Product $product)
     {
+        $branchId = Auth::user()->hasRole('Executive')
+            ? $request->input('branch_id', $product->branch_id ?? 1)
+            : (Auth::user()->branch_id ?? 1);
+
         $validated = $request->validate([
-            'sku' => 'required|string|unique:products,sku,' . $product->id,
+            'sku' => ['required', 'string', Rule::unique('products', 'sku')->where('branch_id', $branchId)->ignore($product->id)],
             'name' => 'required|string|max:255',
             'category_id' => 'required|exists:categories,id',
             'safety_stock' => 'required|integer|min:0',
