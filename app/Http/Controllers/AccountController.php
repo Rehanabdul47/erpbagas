@@ -87,4 +87,22 @@ class AccountController extends Controller
 
         return redirect()->route('finance.accounts.index')->with('success', "Akun {$account->code} berhasil {$status}.");
     }
+    public function destroy(Account $account)
+    {
+        if ($account->children()->exists()) {
+            return back()->with('error', 'Akun tidak dapat dihapus karena memiliki sub-akun.');
+        }
+
+        if ($account->journalItems()->exists()) {
+            return back()->with('error', 'Akun tidak dapat dihapus karena sudah memiliki transaksi jurnal.');
+        }
+
+        $code = $account->code;
+        $name = $account->name;
+        $account->delete();
+
+        AuditTrail::record($account, 'deleted', $account->toArray(), null, "Akun dihapus: {$code} - {$name}");
+
+        return redirect()->route('finance.accounts.index')->with('success', "Akun {$code} berhasil dihapus.");
+    }
 }

@@ -61,6 +61,17 @@
                     <i data-lucide="{{ $account->is_active ? 'eye-off' : 'eye' }}" class="w-3.5 h-3.5"></i>
                 </button>
             </form>
+            <button type="button" 
+                @click="$dispatch('global-confirm', { 
+                    title: 'Hapus Akun', 
+                    message: 'Apakah Anda yakin ingin menghapus akun {{ $account->code }}? Akun tidak dapat dihapus jika sudah memiliki transaksi atau sub-akun.', 
+                    confirmText: 'Ya, Hapus', 
+                    actionUrl: '{{ route('finance.accounts.destroy', $account) }}', 
+                    actionMethod: 'DELETE' 
+                })" 
+                class="p-1.5 rounded-lg text-gray-400 hover:text-rose-400 hover:bg-rose-500/10 transition-colors" title="Hapus">
+                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+            </button>
         </div>
     </td>
 </tr>

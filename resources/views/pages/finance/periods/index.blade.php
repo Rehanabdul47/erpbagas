@@ -81,12 +81,17 @@
                                 <button @click="$dispatch('open-edit-modal', {{ json_encode(['id' => $period->id, 'name' => $period->name, 'start_date' => $period->start_date->format('Y-m-d'), 'end_date' => $period->end_date->format('Y-m-d'), 'notes' => $period->notes, 'update_url' => route('finance.periods.update', $period->id)]) }})" class="px-3 py-1.5 bg-blue-500/10 text-blue-400 hover:bg-blue-600 hover:text-white rounded-lg text-xs font-medium transition-colors flex items-center gap-1">
                                     <i data-lucide="edit" class="w-3 h-3"></i> Edit
                                 </button>
-                                <form method="POST" action="{{ route('finance.periods.destroy', $period) }}" class="inline" onsubmit="return confirm('Apakah Anda yakin ingin menghapus periode ini? Tindakan ini tidak dapat dibatalkan.');">
-                                    @csrf @method('DELETE')
-                                    <button type="submit" class="px-3 py-1.5 bg-rose-500/10 text-rose-400 hover:bg-rose-600 hover:text-white rounded-lg text-xs font-medium transition-colors flex items-center gap-1">
-                                        <i data-lucide="trash-2" class="w-3 h-3"></i> Hapus
-                                    </button>
-                                </form>
+                                <button type="button" 
+                                    @click="$dispatch('global-confirm', { 
+                                        title: 'Hapus Periode', 
+                                        message: 'Apakah Anda yakin ingin menghapus periode {{ $period->name }}? Tindakan ini tidak dapat dibatalkan.', 
+                                        confirmText: 'Ya, Hapus', 
+                                        actionUrl: '{{ route('finance.periods.destroy', $period) }}', 
+                                        actionMethod: 'DELETE' 
+                                    })" 
+                                    class="px-3 py-1.5 bg-rose-500/10 text-rose-400 hover:bg-rose-600 hover:text-white rounded-lg text-xs font-medium transition-colors flex items-center gap-1">
+                                    <i data-lucide="trash-2" class="w-3 h-3"></i> Hapus
+                                </button>
                                 @endif
                                 @if($period->isOpen())
                                 <form method="POST" action="{{ route('finance.periods.close', $period) }}" class="inline">
