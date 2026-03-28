@@ -32,8 +32,13 @@
         ]],
         ['section' => 'DIVISI KEUANGAN', 'visible' => $isMgmt || $dept === 'Keuangan', 'items' => [
             ['id' => 'finance-dashboard', 'icon' => 'line-chart', 'label' => 'Overview Keuangan', 'route' => 'finance.dashboard', 'visible' => true],
-            ['id' => 'finance', 'icon' => 'wallet', 'label' => 'Buku Kas', 'route' => 'finance.index', 'visible' => true],
+            ['id' => 'finance', 'icon' => 'wallet', 'label' => 'Buku Kas (In/Out)', 'route' => 'finance.index', 'visible' => true],
+            ['id' => 'ledger', 'icon' => 'book-open', 'label' => 'Jurnal Umum', 'route' => 'finance.ledger.index', 'visible' => true],
+            ['id' => 'coa', 'icon' => 'list-tree', 'label' => 'Chart of Accounts', 'route' => 'finance.accounts.index', 'visible' => true],
+            ['id' => 'periods', 'icon' => 'calendar-range', 'label' => 'Periode Fiskal', 'route' => 'finance.periods.index', 'visible' => true],
+            ['id' => 'budgets', 'icon' => 'piggy-bank', 'label' => 'Anggaran & BvA', 'route' => 'finance.budgets.index', 'visible' => true],
             ['id' => 'reports', 'icon' => 'bar-chart-3', 'label' => 'Laporan Keuangan', 'route' => 'finance.reports', 'visible' => true],
+            ['id' => 'audit', 'icon' => 'shield-check', 'label' => 'Audit Trail', 'route' => 'finance.audit.index', 'visible' => true],
         ]],
         ['section' => 'DIVISI SUMBER DAYA MANUSIA', 'visible' => $isMgmt || $dept === 'HRD & GA', 'items' => [
             ['id' => 'hrm-dashboard', 'icon' => 'layout-dashboard', 'label' => 'Overview HRM', 'route' => 'hrm.dashboard', 'visible' => true],

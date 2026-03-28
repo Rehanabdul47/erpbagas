@@ -104,17 +104,20 @@
             </form>
 
             <div class="flex flex-wrap gap-2 w-full lg:w-auto">
-                <a href="{{ route('finance.reports', ['month' => $month]) }}" class="flex items-center justify-center gap-2 px-4 py-2 bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500 hover:text-white rounded-lg text-sm font-medium transition-colors border border-indigo-500/20">
-                    <i data-lucide="bar-chart-3" class="w-4 h-4"></i> Laporan Lengkap
+                <a href="{{ route('finance.print', ['month' => $month, 'type' => request('type'), 'search' => request('search')]) }}" target="_blank" class="flex items-center justify-center gap-2 px-3 py-2 bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500 hover:text-white rounded-lg text-sm font-medium transition-colors border border-indigo-500/20" title="Cetak Buku Kas">
+                    <i data-lucide="printer" class="w-4 h-4"></i> Cetak
+                </a>
+                <a href="{{ route('finance.reports', ['month' => $month]) }}" class="flex items-center justify-center gap-2 px-3 py-2 bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500 hover:text-white rounded-lg text-sm font-medium transition-colors border border-indigo-500/20">
+                    <i data-lucide="bar-chart-3" class="w-4 h-4"></i> Laporan
                 </a>
                 <button @click="showModalSettings = true" class="flex items-center justify-center gap-2 px-3 py-2 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded-lg text-sm font-medium transition-colors border border-gray-600" title="Pengaturan Persentase Laba">
                     <i data-lucide="settings" class="w-4 h-4"></i>
                 </button>
                 <button @click="showModalIn = true" class="flex items-center justify-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-sm font-medium transition-colors shadow-sm shadow-emerald-600/20">
-                    <i data-lucide="plus" class="w-4 h-4"></i> Kas Masuk
+                    <i data-lucide="plus" class="w-4 h-4"></i> Masuk
                 </button>
                 <button @click="showModalOut = true" class="flex items-center justify-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded-lg text-sm font-medium transition-colors shadow-sm shadow-red-600/20">
-                    <i data-lucide="minus" class="w-4 h-4"></i> Kas Keluar
+                    <i data-lucide="minus" class="w-4 h-4"></i> Keluar
                 </button>
             </div>
         </div>
@@ -231,29 +234,21 @@
                     </div>
 
                     <div class="space-y-1.5">
-                        <label class="text-[10px] font-bold text-gray-400 uppercase tracking-widest pl-1">Kategori Pemasukan</label>
-                        <div class="flex flex-wrap gap-2 mb-2">
-                            @foreach(['Pendapatan Usaha/Penjualan (4-101)', 'Pendapatan Jasa (4-102)', 'Piutang Usaha (1-103)', 'Modal Pemilik (3-101)'] as $cat)
-                            <button type="button" @click="$el.closest('.space-y-1.5').querySelector('select').value = '{{ $cat }}'" 
-                                    class="text-[10px] px-2 py-1 bg-gray-700 hover:bg-emerald-500/20 hover:text-emerald-400 text-gray-400 rounded transition-colors border border-transparent hover:border-emerald-500/30">
-                                {{ $cat }}
-                            </button>
-                            @endforeach
-                        </div>
+                        <label class="text-[10px] font-bold text-gray-400 uppercase tracking-widest pl-1">Akun Penerimaan</label>
                         <select name="category" class="w-full bg-gray-900 border border-gray-700 text-white rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all" required>
-                            <option value="">-- Pilih Akun / Kategori --</option>
-                            <optgroup label="Pendapatan">
-                                <option value="Pendapatan Usaha/Penjualan (4-101)">Pendapatan Usaha/Penjualan (4-101)</option>
-                                <option value="Pendapatan Jasa (4-102)">Pendapatan Jasa (4-102)</option>
-                            </optgroup>
-                            <optgroup label="Aset & Liabilitas">
-                                <option value="Piutang Usaha (1-103)">Piutang Usaha (Pelunasan) (1-103)</option>
-                                <option value="Utang Bank (2-201)">Utang Bank (Pencairan) (2-201)</option>
-                                <option value="Pendapatan Diterima Dimuka (2-104)">Pendapatan Diterima Dimuka (2-104)</option>
-                            </optgroup>
-                            <optgroup label="Ekuitas">
-                                <option value="Modal Pemilik (3-101)">Modal Pemilik (3-101)</option>
-                            </optgroup>
+                            <option value="">-- Pilih Akun --</option>
+                            @foreach($accounts->where('is_active', true)->groupBy(function($a) { return substr($a->code, 0, 1); }) as $prefix => $grpAccounts)
+                                @php
+                                    $groupName = match($prefix) { '1' => 'Aset', '2' => 'Liabilitas', '3' => 'Ekuitas', '4' => 'Pendapatan', '5' => 'Beban Pokok', '6' => 'Beban Operasional', '7' => 'Lainnya', default => 'Lainnya' };
+                                @endphp
+                                <optgroup label="{{ $groupName }}">
+                                    @foreach($grpAccounts as $account)
+                                        <option value="{{ $account->name }} ({{ $account->code }})">
+                                            {{ $account->code }} - {{ $account->name }}
+                                        </option>
+                                    @endforeach
+                                </optgroup>
+                            @endforeach
                         </select>
                     </div>
 
@@ -325,39 +320,21 @@
                     </div>
 
                     <div class="space-y-1.5">
-                        <label class="text-[10px] font-bold text-gray-400 uppercase tracking-widest pl-1">Kategori Pengeluaran</label>
-                        <div class="flex flex-wrap gap-2 mb-2">
-                            @foreach(['Beban Gaji (5-102)', 'Beban Listrik, Air & Telepon (5-106)', 'Beban Sewa (5-103)', 'Harga Pokok Penjualan (HPP) (5-101)', 'Persediaan Barang Dagang (1-104)'] as $cat)
-                            <button type="button" @click="$el.closest('.space-y-1.5').querySelector('select').value = '{{ $cat }}'" 
-                                    class="text-[10px] px-2 py-1 bg-gray-700 hover:bg-red-500/20 hover:text-red-400 text-gray-400 rounded transition-colors border border-transparent hover:border-red-500/30">
-                                {{ $cat }}
-                            </button>
-                            @endforeach
-                        </div>
+                        <label class="text-[10px] font-bold text-gray-400 uppercase tracking-widest pl-1">Akun Pengeluaran</label>
                         <select name="category" class="w-full bg-gray-900 border border-gray-700 text-white rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-red-500 outline-none transition-all" required>
-                            <option value="">-- Pilih Akun / Kategori --</option>
-                            <optgroup label="Beban Operasional">
-                                <option value="Harga Pokok Penjualan (HPP) (5-101)">Harga Pokok Penjualan (HPP) (5-101)</option>
-                                <option value="Beban Gaji (5-102)">Beban Gaji (5-102)</option>
-                                <option value="Beban Sewa (5-103)">Beban Sewa (5-103)</option>
-                                <option value="Beban Perlengkapan/Peralatan (5-104)">Beban Perlengkapan/Peralatan (5-104)</option>
-                                <option value="Beban Penyusutan (5-105)">Beban Penyusutan (5-105)</option>
-                                <option value="Beban Listrik, Air & Telepon (5-106)">Beban Listrik, Air & Telepon (5-106)</option>
-                                <option value="Beban Iklan (5-107)">Beban Iklan (5-107)</option>
-                                <option value="Beban Lain-Lain (5-108)">Beban Lain-Lain (5-108)</option>
-                            </optgroup>
-                            <optgroup label="Liabilitas (Utang)">
-                                <option value="Utang Usaha/Dagang (2-101)">Penyelesaian Utang Usaha (2-101)</option>
-                                <option value="Utang Gaji (2-102)">Penyelesaian Utang Gaji (2-102)</option>
-                                <option value="Utang Pajak (2-103)">Pembayaran Utang Pajak (2-103)</option>
-                                <option value="Utang Bank (2-201)">Angsuran Utang Bank (2-201)</option>
-                            </optgroup>
-                            <optgroup label="Aset & Ekuitas">
-                                <option value="Persediaan Barang Dagang (1-104)">Pembelian Persediaan Barang (1-104)</option>
-                                <option value="Perlengkapan (1-105)">Pembelian Perlengkapan (1-105)</option>
-                                <option value="Peralatan (1-204)">Pembelian Peralatan (1-204)</option>
-                                <option value="Prive (3-102)">Prive / Penarikan (3-102)</option>
-                            </optgroup>
+                            <option value="">-- Pilih Akun --</option>
+                            @foreach($accounts->where('is_active', true)->groupBy(function($a) { return substr($a->code, 0, 1); }) as $prefix => $grpAccounts)
+                                @php
+                                    $groupName = match($prefix) { '1' => 'Aset', '2' => 'Liabilitas', '3' => 'Ekuitas', '4' => 'Pendapatan', '5' => 'Beban Pokok', '6' => 'Beban Operasional', '7' => 'Lainnya', default => 'Lainnya' };
+                                @endphp
+                                <optgroup label="{{ $groupName }}">
+                                    @foreach($grpAccounts as $account)
+                                        <option value="{{ $account->name }} ({{ $account->code }})">
+                                            {{ $account->code }} - {{ $account->name }}
+                                        </option>
+                                    @endforeach
+                                </optgroup>
+                            @endforeach
                         </select>
                     </div>
 
@@ -417,27 +394,21 @@
                             <input type="date" name="date" x-model="editTrx.date" class="w-full bg-gray-900 border border-gray-700 text-white rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all" required>
                         </div>
                         <div class="space-y-1.5">
-                            <label class="text-[10px] font-bold text-gray-400 uppercase tracking-widest pl-1">Kategori</label>
+                            <label class="text-[10px] font-bold text-gray-400 uppercase tracking-widest pl-1">Akun</label>
                             <select name="category" x-model="editTrx.category" class="w-full bg-gray-900 border border-gray-700 text-white rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all" required>
-                                <option value="">-- Pilih Akun / Kategori --</option>
-                                <optgroup label="Pemasukan">
-                                    <option value="Pendapatan Usaha/Penjualan (4-101)">Pendapatan Usaha/Penjualan (4-101)</option>
-                                    <option value="Pendapatan Jasa (4-102)">Pendapatan Jasa (4-102)</option>
-                                    <option value="Piutang Usaha (1-103)">Piutang Usaha (1-103)</option>
-                                    <option value="Modal Pemilik (3-101)">Modal Pemilik (3-101)</option>
-                                </optgroup>
-                                <optgroup label="Pengeluaran">
-                                    <option value="Harga Pokok Penjualan (HPP) (5-101)">Harga Pokok Penjualan (HPP) (5-101)</option>
-                                    <option value="Beban Gaji (5-102)">Beban Gaji (5-102)</option>
-                                    <option value="Beban Sewa (5-103)">Beban Sewa (5-103)</option>
-                                    <option value="Beban Perlengkapan/Peralatan (5-104)">Beban Perlengkapan/Peralatan (5-104)</option>
-                                    <option value="Beban Penyusutan (5-105)">Beban Penyusutan (5-105)</option>
-                                    <option value="Beban Listrik, Air & Telepon (5-106)">Beban Listrik, Air & Telepon (5-106)</option>
-                                    <option value="Beban Iklan (5-107)">Beban Iklan (5-107)</option>
-                                    <option value="Beban Lain-Lain (5-108)">Beban Lain-Lain (5-108)</option>
-                                    <option value="Utang Usaha/Dagang (2-101)">Utang Usaha/Dagang (2-101)</option>
-                                    <option value="Persediaan Barang Dagang (1-104)">Persediaan Barang Dagang (1-104)</option>
-                                </optgroup>
+                                <option value="">-- Pilih Akun --</option>
+                                @foreach($accounts->where('is_active', true)->groupBy(function($a) { return substr($a->code, 0, 1); }) as $prefix => $grpAccounts)
+                                    @php
+                                        $groupName = match($prefix) { '1' => 'Aset', '2' => 'Liabilitas', '3' => 'Ekuitas', '4' => 'Pendapatan', '5' => 'Beban Pokok', '6' => 'Beban Operasional', '7' => 'Lainnya', default => 'Lainnya' };
+                                    @endphp
+                                    <optgroup label="{{ $groupName }}">
+                                        @foreach($grpAccounts as $account)
+                                            <option value="{{ $account->name }} ({{ $account->code }})">
+                                                {{ $account->code }} - {{ $account->name }}
+                                            </option>
+                                        @endforeach
+                                    </optgroup>
+                                @endforeach
                             </select>
                         </div>
                     </div>

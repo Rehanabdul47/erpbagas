@@ -17,7 +17,48 @@ class FinanceReportController extends Controller
         $startDate = Carbon::parse($month . '-01')->startOfMonth();
         $endDate = $startDate->copy()->endOfMonth();
 
-        // 1. Laba Rugi (Income Statement) - for the period
+        $data = $this->getReportData($startDate, $endDate);
+        $data['month'] = $month;
+
+        return view('pages.finance.reports.index', $data)->with('activePage', 'reports');
+    }
+
+    public function print(Request $request)
+    {
+        $month = $request->input('month', date('Y-m'));
+        $standard = $request->input('standard', 'psak');
+        // Reports array: can contain 'lr' (Laba Rugi), 'neraca', 'ak' (Arus Kas), 'pe' (Perubahan Ekuitas)
+        // If not provided or contains 'all', we print all
+        $selectedReports = $request->input('reports', ['all']);
+        
+        $startDate = Carbon::parse($month . '-01')->startOfMonth();
+        $endDate = $startDate->copy()->endOfMonth();
+
+        $data = $this->getReportData($startDate, $endDate);
+        $data['month'] = $month;
+        $data['standard'] = $standard;
+        $data['selectedReports'] = is_array($selectedReports) ? $selectedReports : [];
+
+        // Additional data for Syariah
+        if ($standard === 'syariah') {
+            $data['zakatIn'] = 0;
+            $data['zakatOut'] = 0;
+            $data['kebajikanIn'] = 0;
+            $data['kebajikanOut'] = 0;
+            
+            // Look for Zakat/Social funds if existing in COA
+            $zakatAccount = Account::where('name', 'like', '%Zakat%')->first();
+            if ($zakatAccount) {
+                // Determine balance
+            }
+        }
+
+        return view('pages.finance.reports.print', $data);
+    }
+
+    private function getReportData($startDate, $endDate)
+    {
+        // 1. Laba Rugi (Income Statement)
         $revenues = $this->getAccountBalances('revenue', $startDate, $endDate);
         $expenses = $this->getAccountBalances('expense', $startDate, $endDate);
 
@@ -25,7 +66,7 @@ class FinanceReportController extends Controller
         $totalExpense = $expenses->sum('period_balance');
         $netIncome = $totalRevenue - $totalExpense;
 
-        // 2. Neraca (Balance Sheet) - as of end date
+        // 2. Neraca (Balance Sheet)
         $assets = $this->getAccountBalances('asset', null, $endDate);
         $liabilities = $this->getAccountBalances('liability', null, $endDate);
         $equities = $this->getAccountBalances('equity', null, $endDate);
@@ -34,7 +75,6 @@ class FinanceReportController extends Controller
         $totalLiabilities = $liabilities->sum('period_balance');
         $totalEquityBase = $equities->sum('period_balance');
 
-        // Laba Ditahan (Retained Earnings) percentage from settings, default 40%
         $rePercentage = \App\Models\Setting::where('key', 'finance_retained_earnings_percentage')->value('value') ?? 40;
         $rePercentage = (float) $rePercentage / 100;
         
@@ -43,12 +83,9 @@ class FinanceReportController extends Controller
         
         $totalEquity = $totalEquityBase + $retainedEarnings + $currentEarnings;
 
-        // 3. Arus Kas (Cash Flow) - simplified
+        // 3. Arus Kas (Cash Flow)
         $cashAccount = Account::where('code', '1-101')->first();
-        $cashInitial = 0;
-        $cashInflow = 0;
-        $cashOutflow = 0;
-        $cashEnding = 0;
+        $cashInitial = 0; $cashInflow = 0; $cashOutflow = 0; $cashEnding = 0;
 
         if ($cashAccount) {
             $prevEndDate = $startDate->copy()->subDay();
@@ -57,34 +94,33 @@ class FinanceReportController extends Controller
 
             $cashCurrentArr = $this->getAccountBalances('asset', $startDate, $endDate)->where('code', '1-101')->first();
             if ($cashCurrentArr) {
-                $cashInflow = $cashCurrentArr->total_debit; // Kas bertambah di debit
-                $cashOutflow = $cashCurrentArr->total_credit; // Kas berkurang di kredit
+                $cashInflow = $cashCurrentArr->total_debit;
+                $cashOutflow = $cashCurrentArr->total_credit;
             }
             $cashEnding = $cashInitial + $cashInflow - $cashOutflow;
         }
 
-        // 4. Perubahan Ekuitas (Changes in Equity)
-        // Beginning Equity = Equity up to prevEndDate + Retained Earnings up to prevEndDate
-        $prevAssets = $this->getAccountBalances('asset', null, $prevEndDate); // not needed
+        // 4. Perubahan Ekuitas
+        $prevEndDate = $startDate->copy()->subDay();
         $prevEquities = $this->getAccountBalances('equity', null, $prevEndDate);
         $prevRevenues = $this->getAccountBalances('revenue', null, $prevEndDate);
         $prevExpenses = $this->getAccountBalances('expense', null, $prevEndDate);
         
         $beginningEquity = $prevEquities->sum('period_balance') + ($prevRevenues->sum('period_balance') - $prevExpenses->sum('period_balance'));
         
-        // Prive/Dividends (Equity account 3-102) during period
         $priveAccount = $equities->where('code', '3-102')->first();
-        $prive = $priveAccount ? abs($priveAccount->period_balance) : 0; // usually debit balance (- balance in our calc)
+        $prive = $priveAccount ? abs($priveAccount->period_balance) : 0;
         
-        $endingEquity = $beginningEquity + $netIncome - $prive; // Net income already calculated
+        $endingEquity = $beginningEquity + $netIncome - $prive;
 
-        return view('pages.finance.reports.index', compact(
-            'month', 'startDate', 'endDate',
+        return compact(
+            'startDate', 'endDate',
             'revenues', 'expenses', 'totalRevenue', 'totalExpense', 'netIncome',
-            'assets', 'liabilities', 'equities', 'totalAssets', 'totalLiabilities', 'totalEquityBase', 'retainedEarnings', 'currentEarnings', 'totalEquity',
+            'assets', 'liabilities', 'equities', 'totalAssets', 'totalLiabilities', 'totalEquityBase', 
+            'retainedEarnings', 'currentEarnings', 'totalEquity',
             'cashInitial', 'cashInflow', 'cashOutflow', 'cashEnding',
             'beginningEquity', 'prive', 'endingEquity', 'rePercentage'
-        ))->with('activePage', 'reports');
+        );
     }
 
     private function getAccountBalances($type, $startDate = null, $endDate = null)

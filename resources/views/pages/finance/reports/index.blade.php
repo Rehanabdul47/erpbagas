@@ -10,16 +10,76 @@
             <i data-lucide="file-bar-chart" class="w-6 h-6 text-indigo-400"></i>
             Laporan Periode: <span class="text-indigo-400">{{ \Carbon\Carbon::parse($month.'-01')->translatedFormat('F Y') }}</span>
         </h2>
-        <form id="filter-form" class="flex flex-wrap items-center gap-3 w-full md:w-auto">
-            <a href="{{ route('finance.index', ['month' => $month]) }}" class="flex items-center gap-2 px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg text-sm font-medium transition-colors">
-                <i data-lucide="arrow-left" class="w-4 h-4"></i> Buku Kas
-            </a>
-            <input type="month" name="month" value="{{ $month }}" onchange="document.getElementById('filter-form').submit()"
-                   class="bg-gray-900 border border-gray-700 text-white rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all">
-            <button type="button" onclick="window.print()" class="flex items-center gap-2 px-4 py-2 bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500 hover:text-white border border-indigo-500/20 rounded-lg text-sm font-medium transition-colors">
-                <i data-lucide="printer" class="w-4 h-4"></i> Cetak Dokumen
-            </button>
-        </form>
+        <div class="flex flex-wrap items-center gap-3 w-full md:w-auto">
+            <form id="filter-form" class="flex items-center gap-3">
+                <a href="{{ route('finance.ledger.index', ['month' => $month]) }}" class="flex items-center gap-2 px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg text-sm font-medium transition-colors">
+                    <i data-lucide="arrow-left" class="w-4 h-4"></i> Jurnal Umum
+                </a>
+                <input type="month" name="month" value="{{ $month }}" onchange="document.getElementById('filter-form').submit()"
+                       class="bg-gray-900 border border-gray-700 text-white rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all">
+            </form>
+            
+            <div x-data="{ showPrintModal: false }">
+                <button type="button" @click="showPrintModal = true" class="flex items-center gap-2 px-4 py-2 bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500 hover:text-white border border-indigo-500/20 rounded-lg text-sm font-medium transition-colors">
+                    <i data-lucide="printer" class="w-4 h-4"></i> Cetak Dokumen
+                </button>
+
+                <!-- Print Options Modal -->
+                <div x-show="showPrintModal" class="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm" style="display: none;">
+                    <div @click.away="showPrintModal = false" class="bg-gray-800 border border-gray-700 rounded-xl shadow-xl w-full max-w-lg overflow-hidden flex flex-col">
+                        <div class="px-6 py-4 border-b border-gray-700 flex justify-between items-center bg-gray-900/50">
+                            <h3 class="text-lg font-bold text-white flex items-center gap-2"><i data-lucide="printer" class="w-5 h-5 text-indigo-400"></i>Opsi Cetak Laporan Keuangan</h3>
+                            <button @click="showPrintModal = false" type="button" class="text-gray-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+                        </div>
+                        <form action="{{ route('finance.reports.print') }}" method="GET" target="_blank" class="p-6 flex flex-col gap-6">
+                            <input type="hidden" name="month" value="{{ $month }}">
+                            
+                            <!-- Standar Akuntansi -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-300 mb-2">Standar Akuntansi (SAK)</label>
+                                <select name="standard" class="w-full bg-gray-900 border border-gray-700 text-white rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+                                    <option value="psak">PSAK-IFRS (Standar Internasional)</option>
+                                    <option value="sak_umum">SAK Indonesia (Konvergensi IFRS)</option>
+                                    <option value="sak_privat">SAK Entitas Privat (Pengganti ETAP)</option>
+                                    <option value="emkm">SAK EMKM (Entitas Mikro, Kecil, Menengah)</option>
+                                    <option value="syariah">SAK Syariah</option>
+                                    <option value="sap">SAP (Standar Akuntansi Pemerintahan)</option>
+                                </select>
+                            </div>
+
+                            <!-- Pilihan Komponen Laporan -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-300 mb-3">Komponen Laporan Pembukuan</label>
+                                <div class="space-y-3">
+                                    <label class="flex items-center gap-3 cursor-pointer">
+                                        <input type="checkbox" name="reports[]" value="lr" checked class="w-4 h-4 rounded border-gray-600 bg-gray-700 text-indigo-500 focus:ring-indigo-500 focus:ring-offset-gray-800">
+                                        <span class="text-gray-300 text-sm">Laporan Laba Rugi</span>
+                                    </label>
+                                    <label class="flex items-center gap-3 cursor-pointer">
+                                        <input type="checkbox" name="reports[]" value="neraca" checked class="w-4 h-4 rounded border-gray-600 bg-gray-700 text-indigo-500 focus:ring-indigo-500 focus:ring-offset-gray-800">
+                                        <span class="text-gray-300 text-sm">Neraca (Laporan Posisi Keuangan)</span>
+                                    </label>
+                                    <label class="flex items-center gap-3 cursor-pointer">
+                                        <input type="checkbox" name="reports[]" value="ak" checked class="w-4 h-4 rounded border-gray-600 bg-gray-700 text-indigo-500 focus:ring-indigo-500 focus:ring-offset-gray-800">
+                                        <span class="text-gray-300 text-sm">Laporan Arus Kas</span>
+                                    </label>
+                                    <label class="flex items-center gap-3 cursor-pointer">
+                                        <input type="checkbox" name="reports[]" value="pe" checked class="w-4 h-4 rounded border-gray-600 bg-gray-700 text-indigo-500 focus:ring-indigo-500 focus:ring-offset-gray-800">
+                                        <span class="text-gray-300 text-sm">Laporan Perubahan Ekuitas</span>
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <!-- Action Buttons -->
+                            <div class="flex justify-end gap-3 mt-2">
+                                <button type="button" @click="showPrintModal = false" class="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg text-sm font-medium transition-colors">Batal</button>
+                                <button type="submit" @click="showPrintModal = false" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-bold transition-colors shadow-lg shadow-indigo-500/20">Konfirmasi & Cetak</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 

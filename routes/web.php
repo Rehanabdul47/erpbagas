@@ -21,6 +21,11 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProductionTransferController;
 use App\Http\Controllers\TailorController;
+use App\Http\Controllers\AccountController;
+use App\Http\Controllers\GeneralLedgerController;
+use App\Http\Controllers\FiscalPeriodController;
+use App\Http\Controllers\BudgetController;
+use App\Http\Controllers\AuditTrailController;
 
 use App\Http\Controllers\RedeemCodeController;
 
@@ -126,15 +131,51 @@ Route::middleware('auth')->group(function () {
         Route::delete('/{category}', [CategoryController::class, 'destroy'])->name('destroy');
     });
 
-    // Other pages (still JS-rendered for now)
-    // Finance / Cash Book
+    // Finance Division
     Route::prefix('finance')->name('finance.')->group(function () {
+        // Dashboard
         Route::get('/dashboard', [FinanceDashboardController::class, 'index'])->name('dashboard');
+
+        // Cash Book
         Route::get('/', [CashController::class, 'index'])->name('index');
         Route::post('/', [CashController::class, 'store'])->name('store');
+        Route::get('/print', [CashController::class, 'print'])->name('print');
         Route::put('/{finance}', [CashController::class, 'update'])->name('update');
         Route::delete('/{finance}', [CashController::class, 'destroy'])->name('destroy');
+
+        // Chart of Accounts
+        Route::get('/accounts', [AccountController::class, 'index'])->name('accounts.index');
+        Route::post('/accounts', [AccountController::class, 'store'])->name('accounts.store');
+        Route::put('/accounts/{account}', [AccountController::class, 'update'])->name('accounts.update');
+        Route::patch('/accounts/{account}/toggle', [AccountController::class, 'toggleActive'])->name('accounts.toggle');
+
+        // General Ledger
+        Route::get('/ledger', [GeneralLedgerController::class, 'index'])->name('ledger.index');
+        Route::get('/ledger/create', [GeneralLedgerController::class, 'create'])->name('ledger.create');
+        Route::post('/ledger', [GeneralLedgerController::class, 'store'])->name('ledger.store');
+        Route::get('/ledger/{entry}', [GeneralLedgerController::class, 'show'])->name('ledger.show');
+        Route::patch('/ledger/{entry}/post', [GeneralLedgerController::class, 'post'])->name('ledger.post');
+        Route::patch('/ledger/{entry}/void', [GeneralLedgerController::class, 'void'])->name('ledger.void');
+
+        // Fiscal Periods
+        Route::get('/periods', [FiscalPeriodController::class, 'index'])->name('periods.index');
+        Route::post('/periods', [FiscalPeriodController::class, 'store'])->name('periods.store');
+        Route::patch('/periods/{period}/close', [FiscalPeriodController::class, 'close'])->name('periods.close');
+        Route::patch('/periods/{period}/lock', [FiscalPeriodController::class, 'lock'])->name('periods.lock');
+        Route::patch('/periods/{period}/reopen', [FiscalPeriodController::class, 'reopen'])->name('periods.reopen');
+
+        // Budgets
+        Route::get('/budgets', [BudgetController::class, 'index'])->name('budgets.index');
+        Route::get('/budgets/create', [BudgetController::class, 'create'])->name('budgets.create');
+        Route::post('/budgets', [BudgetController::class, 'store'])->name('budgets.store');
+        Route::get('/budgets/report', [BudgetController::class, 'report'])->name('budgets.report');
+
+        // Audit Trail
+        Route::get('/audit', [AuditTrailController::class, 'index'])->name('audit.index');
+
+        // Reports
         Route::get('/reports', [\App\Http\Controllers\FinanceReportController::class, 'index'])->name('reports');
+        Route::get('/reports/print', [\App\Http\Controllers\FinanceReportController::class, 'print'])->name('reports.print');
     });
 
     // HRM & Payroll
