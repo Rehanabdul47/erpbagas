@@ -77,6 +77,17 @@
                         </td>
                         <td class="px-5 py-4 text-right">
                             <div class="flex items-center justify-end gap-1">
+                                @if(auth()->user()->isExecutive())
+                                <button @click="$dispatch('open-edit-modal', {{ json_encode(['id' => $period->id, 'name' => $period->name, 'start_date' => $period->start_date->format('Y-m-d'), 'end_date' => $period->end_date->format('Y-m-d'), 'notes' => $period->notes, 'update_url' => route('finance.periods.update', $period->id)]) }})" class="px-3 py-1.5 bg-blue-500/10 text-blue-400 hover:bg-blue-600 hover:text-white rounded-lg text-xs font-medium transition-colors flex items-center gap-1">
+                                    <i data-lucide="edit" class="w-3 h-3"></i> Edit
+                                </button>
+                                <form method="POST" action="{{ route('finance.periods.destroy', $period) }}" class="inline" onsubmit="return confirm('Apakah Anda yakin ingin menghapus periode ini? Tindakan ini tidak dapat dibatalkan.');">
+                                    @csrf @method('DELETE')
+                                    <button type="submit" class="px-3 py-1.5 bg-rose-500/10 text-rose-400 hover:bg-rose-600 hover:text-white rounded-lg text-xs font-medium transition-colors flex items-center gap-1">
+                                        <i data-lucide="trash-2" class="w-3 h-3"></i> Hapus
+                                    </button>
+                                </form>
+                                @endif
                                 @if($period->isOpen())
                                 <form method="POST" action="{{ route('finance.periods.close', $period) }}" class="inline">
                                     @csrf @method('PATCH')
@@ -146,6 +157,59 @@
                     <button type="button" @click="showModal = false" class="px-4 py-2 hover:bg-gray-700 text-gray-300 rounded-lg text-sm font-medium">Batal</button>
                     <button type="submit" class="px-6 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-sm font-bold transition-all active:scale-95 flex items-center gap-2">
                         <i data-lucide="save" class="w-4 h-4"></i> Buat Periode
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {{-- Modal Edit --}}
+    <div x-data="{ 
+            showEditModal: false, 
+            editForm: { id: '', name: '', start_date: '', end_date: '', notes: '', update_url: '' } 
+        }" 
+        @open-edit-modal.window="
+            showEditModal = true; 
+            editForm = $event.detail;
+        "
+        x-show="showEditModal" 
+        x-cloak 
+        style="display: none;" 
+        class="fixed inset-0 bg-gray-900/80 backdrop-blur-sm z-[150] flex items-center justify-center p-4">
+        <div @click.away="showEditModal = false" class="bg-gray-800 border border-gray-700 rounded-xl shadow-2xl w-full max-w-md overflow-hidden">
+            <div class="px-5 py-4 border-b border-gray-700/50 flex items-center justify-between">
+                <h3 class="font-bold text-white flex items-center gap-2 px-2 py-1 bg-blue-500/10 text-blue-400 rounded-lg">
+                    <i data-lucide="edit-3" class="w-4 h-4"></i> Edit Periode
+                </h3>
+                <button @click="showEditModal = false" class="text-gray-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <form method="POST" :action="editForm.update_url">
+                @csrf
+                @method('PUT')
+                <div class="p-5 flex flex-col gap-4">
+                    <div class="space-y-1.5">
+                        <label class="text-[10px] font-bold text-gray-400 uppercase tracking-widest pl-1">Nama Periode</label>
+                        <input type="text" name="name" x-model="editForm.name" placeholder="Maret 2026" class="w-full bg-gray-900 border border-gray-700 text-white rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none" required>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="space-y-1.5">
+                            <label class="text-[10px] font-bold text-gray-400 uppercase tracking-widest pl-1">Tanggal Mulai</label>
+                            <input type="date" name="start_date" x-model="editForm.start_date" class="w-full bg-gray-900 border border-gray-700 text-white rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none" required>
+                        </div>
+                        <div class="space-y-1.5">
+                            <label class="text-[10px] font-bold text-gray-400 uppercase tracking-widest pl-1">Tanggal Berakhir</label>
+                            <input type="date" name="end_date" x-model="editForm.end_date" class="w-full bg-gray-900 border border-gray-700 text-white rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none" required>
+                        </div>
+                    </div>
+                    <div class="space-y-1.5">
+                        <label class="text-[10px] font-bold text-gray-400 uppercase tracking-widest pl-1">Catatan</label>
+                        <textarea name="notes" x-model="editForm.notes" rows="2" class="w-full bg-gray-900 border border-gray-700 text-white rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Opsional"></textarea>
+                    </div>
+                </div>
+                <div class="px-5 py-4 border-t border-gray-700/50 bg-gray-900/20 flex justify-end gap-3">
+                    <button type="button" @click="showEditModal = false" class="px-4 py-2 hover:bg-gray-700 text-gray-300 rounded-lg text-sm font-medium">Batal</button>
+                    <button type="submit" class="px-6 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-sm font-bold transition-all active:scale-95 flex items-center gap-2">
+                        <i data-lucide="save" class="w-4 h-4"></i> Simpan Perubahan
                     </button>
                 </div>
             </form>

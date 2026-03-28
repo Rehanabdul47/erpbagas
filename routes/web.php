@@ -160,6 +160,8 @@ Route::middleware('auth')->group(function () {
         // Fiscal Periods
         Route::get('/periods', [FiscalPeriodController::class, 'index'])->name('periods.index');
         Route::post('/periods', [FiscalPeriodController::class, 'store'])->name('periods.store');
+        Route::put('/periods/{period}', [FiscalPeriodController::class, 'update'])->name('periods.update');
+        Route::delete('/periods/{period}', [FiscalPeriodController::class, 'destroy'])->name('periods.destroy');
         Route::patch('/periods/{period}/close', [FiscalPeriodController::class, 'close'])->name('periods.close');
         Route::patch('/periods/{period}/lock', [FiscalPeriodController::class, 'lock'])->name('periods.lock');
         Route::patch('/periods/{period}/reopen', [FiscalPeriodController::class, 'reopen'])->name('periods.reopen');
