@@ -80,11 +80,9 @@
                         <td class="px-5 py-4 text-gray-400 text-xs font-mono">{{ class_basename($trail->auditable_type) }} #{{ $trail->auditable_id }}</td>
                         <td class="px-5 py-4 text-gray-300 text-xs max-w-[300px] truncate">{{ $trail->description ?? '-' }}</td>
                         <td class="px-5 py-4 text-center">
-                            @if($trail->old_values || $trail->new_values)
-                            <button @click="detail = {{ json_encode($trail) }}; showDetail = true" class="p-1.5 rounded-lg text-gray-400 hover:text-indigo-400 hover:bg-indigo-500/10 transition-colors">
+                            <button @click="detail = {{ json_encode($trail->load('user')) }}; showDetail = true" class="p-1.5 rounded-lg text-gray-400 hover:text-indigo-400 hover:bg-indigo-500/10 transition-colors">
                                 <i data-lucide="eye" class="w-4 h-4"></i>
                             </button>
-                            @endif
                         </td>
                     </tr>
                     @empty
@@ -102,17 +100,48 @@
     <div x-show="showDetail" x-cloak style="display: none;" class="fixed inset-0 bg-gray-900/80 backdrop-blur-sm z-[150] flex items-center justify-center p-4">
         <div @click.away="showDetail = false" class="bg-gray-800 border border-gray-700 rounded-xl shadow-2xl w-full max-w-lg overflow-hidden">
             <div class="px-5 py-4 border-b border-gray-700/50 flex items-center justify-between">
-                <h3 class="font-bold text-white flex items-center gap-2"><i data-lucide="diff" class="w-4 h-4 text-indigo-400"></i> Detail Perubahan</h3>
+                <h3 class="font-bold text-white flex items-center gap-2">
+                    <i data-lucide="info" class="w-4 h-4 text-indigo-400"></i> 
+                    Detail Aktivitas
+                </h3>
                 <button @click="showDetail = false" class="text-gray-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
             </div>
-            <div class="p-5 max-h-[60vh] overflow-y-auto space-y-4">
-                <template x-if="detail && detail.old_values">
+            <div class="p-5 max-h-[70vh] overflow-y-auto space-y-5">
+                <template x-if="detail">
+                    <div>
+                        <div class="mb-4">
+                            <div class="text-[10px] font-bold text-indigo-400 uppercase tracking-widest mb-1.5">Deskripsi</div>
+                            <p class="text-sm text-gray-200 leading-relaxed" x-text="detail.description || '-'"></p>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-4 pb-4 border-b border-gray-700/50">
+                            <div>
+                                <div class="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">User</div>
+                                <div class="text-xs text-gray-300" x-text="detail.user ? detail.user.name : 'System'"></div>
+                            </div>
+                            <div>
+                                <div class="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">Waktu</div>
+                                <div class="text-xs text-gray-300 font-mono" x-text="new Date(detail.created_at).toLocaleString('id-ID')"></div>
+                            </div>
+                            <div>
+                                <div class="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">Modul</div>
+                                <div class="text-xs text-gray-300 font-mono" x-text="detail.auditable_type ? detail.auditable_type.split('\\').pop() : '-'"></div>
+                            </div>
+                            <div>
+                                <div class="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">IP Address</div>
+                                <div class="text-xs text-gray-300 font-mono" x-text="detail.ip_address || '-'"></div>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+
+                <template x-if="detail && detail.old_values && Object.keys(detail.old_values).length > 0">
                     <div>
                         <div class="text-[10px] font-bold text-red-400 uppercase tracking-widest mb-2">Sebelum (Old Values)</div>
                         <pre class="bg-gray-900 rounded-lg p-3 text-xs text-red-300 overflow-x-auto" x-text="JSON.stringify(detail.old_values, null, 2)"></pre>
                     </div>
                 </template>
-                <template x-if="detail && detail.new_values">
+                <template x-if="detail && detail.new_values && Object.keys(detail.new_values).length > 0">
                     <div>
                         <div class="text-[10px] font-bold text-emerald-400 uppercase tracking-widest mb-2">Sesudah (New Values)</div>
                         <pre class="bg-gray-900 rounded-lg p-3 text-xs text-emerald-300 overflow-x-auto" x-text="JSON.stringify(detail.new_values, null, 2)"></pre>
