@@ -59,6 +59,9 @@ class FiscalPeriodController extends Controller
             'closed_at' => now(),
         ]);
 
+        // Sync budgets
+        $period->budgets()->whereIn('status', ['approved', 'active'])->update(['status' => 'closed']);
+
         AuditTrail::record($period, 'updated', ['status' => 'open'], ['status' => 'closed'], "Periode {$period->name} ditutup");
 
         return back()->with('success', "Periode {$period->name} berhasil ditutup.");
@@ -72,6 +75,9 @@ class FiscalPeriodController extends Controller
 
         $old = $period->status;
         $period->update(['status' => 'locked']);
+
+        // Sync budgets
+        $period->budgets()->whereIn('status', ['approved', 'active'])->update(['status' => 'closed']);
         AuditTrail::record($period, 'updated', ['status' => $old], ['status' => 'locked'], "Periode {$period->name} dikunci");
 
         return back()->with('success', "Periode {$period->name} berhasil dikunci.");
@@ -89,6 +95,9 @@ class FiscalPeriodController extends Controller
             'closed_by' => null,
             'closed_at' => null,
         ]);
+
+        // Sync budgets back to active if they were closed due to period closure
+        $period->budgets()->where('status', 'closed')->update(['status' => 'active']);
 
         AuditTrail::record($period, 'updated', ['status' => $old], ['status' => 'open'], "Periode {$period->name} dibuka kembali");
 

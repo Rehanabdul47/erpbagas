@@ -24,6 +24,7 @@
             ['id' => 'sales', 'icon' => 'trending-up', 'label' => 'Sales & CRM', 'route' => 'sales.index', 'visible' => true],
             ['id' => 'redeem-codes', 'icon' => 'ticket', 'label' => 'Promo & Redeem Codes', 'route' => 'redeem-codes.index', 'visible' => true],
             ['id' => 'pos', 'icon' => 'monitor', 'label' => 'Point of Sale', 'route' => 'pos.index', 'visible' => true],
+            ['id' => 'credit-sales', 'icon' => 'clock', 'label' => 'Penjualan Tempo', 'route' => 'credit-sales.index', 'visible' => true],
         ]],
         ['section' => 'DIVISI DIGITAL MARKETING', 'visible' => $isMgmt || $dept === 'Digital Marketing', 'items' => [
             ['id' => 'digital-marketing-dashboard', 'icon' => 'line-chart', 'label' => 'Overview Digital Marketing', 'route' => 'digital-marketing.dashboard', 'visible' => true],

@@ -26,8 +26,20 @@ class Customer extends Model
         return $this->hasMany(Sale::class);
     }
 
+    public function creditSales(): HasMany
+    {
+        return $this->hasMany(CreditSale::class);
+    }
+
     public function hasCompletedPurchase(): bool
     {
         return $this->sales()->where('status', 'paid')->exists();
+    }
+
+    public function getTotalCreditOutstandingAttribute(): float
+    {
+        return $this->creditSales()
+            ->whereIn('status', ['unpaid', 'partial', 'overdue'])
+            ->sum(\DB::raw('total_amount - paid_amount'));
     }
 }

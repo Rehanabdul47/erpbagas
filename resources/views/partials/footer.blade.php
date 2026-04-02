@@ -12,9 +12,45 @@
 
 {{-- Shared Scripts --}}
 @stack('scripts')
+<style>
+    /* Hide native calendar icon to prevent double icons when using flatpickr */
+    input[type="date"]::-webkit-calendar-picker-indicator {
+        display: none;
+        -webkit-appearance: none;
+    }
+</style>
 <script>
 document.addEventListener('DOMContentLoaded', () => {
     @stack('init')
+    
+    // Initialize Flatpickr globally for all date inputs
+    const flatpickrConfig = {
+        dateFormat: "Y-m-d",
+        disableMobile: "true",
+        animate: true,
+        static: false, 
+        onChange: function(selectedDates, dateStr, instance) {
+            // Trigger native change/input event so Alpine's x-model picks it up
+            instance.element.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+    };
+
+    // Auto-init on existing date inputs
+    flatpickr('input[type="date"]', flatpickrConfig);
+
+    // Watch for new date inputs (for Alpine.js templates/modals)
+    const observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+            mutation.addedNodes.forEach((node) => {
+                if (node.nodeType === 1) { // Element node
+                    const dateInputs = node.querySelectorAll('input[type="date"]');
+                    if (dateInputs.length > 0) flatpickr(dateInputs, flatpickrConfig);
+                }
+            });
+        });
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+
     setTimeout(() => { if (window.lucide) lucide.createIcons(); }, 100);
 });
 </script>

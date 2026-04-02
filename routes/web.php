@@ -26,6 +26,7 @@ use App\Http\Controllers\GeneralLedgerController;
 use App\Http\Controllers\FiscalPeriodController;
 use App\Http\Controllers\BudgetController;
 use App\Http\Controllers\AuditTrailController;
+use App\Http\Controllers\CreditSaleController;
 
 use App\Http\Controllers\RedeemCodeController;
 
@@ -38,6 +39,8 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 Route::middleware('auth')->group(function () {
     // Notifications API
     Route::get('/api/notifications', [NotificationController::class, 'getNotifications'])->name('api.notifications');
+    Route::post('/api/notifications/read', [NotificationController::class, 'markAsRead'])->name('api.notifications.read');
+    Route::post('/api/notifications/read-all', [NotificationController::class, 'markAllAsRead'])->name('api.notifications.readAll');
 
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/dashboard/chart-data', [DashboardController::class, 'chartDataApi'])->name('dashboard.chart-data');
@@ -171,6 +174,9 @@ Route::middleware('auth')->group(function () {
         Route::get('/budgets', [BudgetController::class, 'index'])->name('budgets.index');
         Route::get('/budgets/create', [BudgetController::class, 'create'])->name('budgets.create');
         Route::post('/budgets', [BudgetController::class, 'store'])->name('budgets.store');
+        Route::get('/budgets/{budget}/edit', [BudgetController::class, 'edit'])->name('budgets.edit');
+        Route::put('/budgets/{budget}', [BudgetController::class, 'update'])->name('budgets.update');
+        Route::delete('/budgets/{budget}', [BudgetController::class, 'destroy'])->name('budgets.destroy');
         Route::get('/budgets/report', [BudgetController::class, 'report'])->name('budgets.report');
 
         // Audit Trail
@@ -242,6 +248,16 @@ Route::middleware('auth')->group(function () {
         Route::put('/customers/{customer}', [SalesController::class, 'updateCustomer'])->name('customers.update');
         Route::delete('/customers/{customer}', [SalesController::class, 'destroyCustomer'])->name('customers.destroy');
     });
+
+    // Credit Sales (Penjualan Tempo)
+    Route::prefix('credit-sales')->name('credit-sales.')->group(function () {
+        Route::get('/', [CreditSaleController::class, 'index'])->name('index');
+        Route::post('/', [CreditSaleController::class, 'store'])->name('store');
+        Route::get('/{creditSale}', [CreditSaleController::class, 'show'])->name('show');
+        Route::post('/{creditSale}/payments', [CreditSaleController::class, 'storePayment'])->name('payments.store');
+        Route::get('/{creditSale}/payments/{payment}/receipt', [CreditSaleController::class, 'paymentReceipt'])->name('payments.receipt');
+    });
+    Route::get('/api/credit-sales/products', [CreditSaleController::class, 'getProducts'])->name('api.credit-sales.products');
 
     Route::get('/settings', [\App\Http\Controllers\SettingController::class, 'index'])->name('settings');
     Route::post('/settings', [\App\Http\Controllers\SettingController::class, 'update'])->name('settings.update');

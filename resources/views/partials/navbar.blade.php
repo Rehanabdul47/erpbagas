@@ -25,18 +25,22 @@
                         this.notifCount = data.count;
                         this.notifications = data.notifications;
                         this.loading = false;
-                        
-                        // Re-initialize Lucide icons after DOM update
-                        this.$nextTick(() => {
-                            if (typeof lucide !== 'undefined') {
-                                lucide.createIcons();
-                            }
-                        });
+                        this.$nextTick(() => { if (typeof lucide !== 'undefined') lucide.createIcons(); });
                     })
-                    .catch(err => {
-                        console.error('Error fetching notifications:', err);
-                        this.loading = false;
-                    });
+                    .catch(err => { console.error('Error fetching notifications:', err); this.loading = false; });
+            },
+            markRead(id) {
+                fetch('{{ route('api.notifications.read') }}', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+                    body: JSON.stringify({ id: id })
+                }).then(() => this.fetchNotifs());
+            },
+            markAllRead() {
+                fetch('{{ route('api.notifications.readAll') }}', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' }
+                }).then(() => this.fetchNotifs());
             }
         }" x-init="fetchNotifs(); setInterval(() => fetchNotifs(), 60000)">
             <button @click="notificationsOpen = !notificationsOpen; if(notificationsOpen) fetchNotifs()" @click.away="notificationsOpen = false" class="relative p-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 transition-colors" id="notification-btn">
@@ -50,15 +54,19 @@
                  style="display: none;" 
                  class="absolute top-full right-0 mt-2 w-80 bg-gray-800 border border-gray-700 rounded-xl shadow-lg z-[110] overflow-hidden" id="notification-dropdown">
                 <div class="flex justify-between items-center px-4 py-3 border-b border-gray-700 bg-gray-900/50">
-                    <strong class="text-sm text-white">Notifikasi</strong>
-                    <button class="text-[10px] uppercase font-bold text-indigo-400 hover:text-indigo-300 transition-colors">Semua</button>
+                    <div class="flex items-center gap-2">
+                        <strong class="text-sm text-white">Notifikasi</strong>
+                        <span x-show="notifCount > 0" class="px-1.5 py-0.5 bg-indigo-500 text-[9px] text-white rounded font-bold" x-text="notifCount + ' Baru'"></span>
+                    </div>
+                    <button @click="markAllRead()" class="text-[10px] uppercase font-bold text-indigo-400 hover:text-indigo-300 transition-colors">Baca Semua</button>
                 </div>
                 <div class="max-h-80 overflow-y-auto" id="notif-dropdown-list">
                     <template x-if="loading && notifications.length === 0">
                         <div class="p-8 text-center"><div class="w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto"></div></div>
                     </template>
                     <template x-for="notif in notifications" :key="notif.id">
-                        <a :href="notif.route" class="flex items-start gap-3 p-4 hover:bg-gray-700/50 border-b border-gray-700/50 last:border-0 transition-colors group">
+                        <a :href="notif.route" @click="markRead(notif.id)" class="flex items-start gap-3 p-4 hover:bg-gray-700/50 border-b border-gray-700/50 last:border-0 transition-colors group relative" :class="notif.is_read ? 'opacity-60 bg-transparent' : 'bg-indigo-500/5'">
+                            <span x-show="!notif.is_read" class="absolute left-1 top-1/2 -translate-y-1/2 w-1.5 h-1.5 bg-indigo-500 rounded-full"></span>
                             <div class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" :class="`bg-${notif.color}-500/10 text-${notif.color}-400 shadow-sm`">
                                 <i :data-lucide="notif.icon" class="w-4 h-4"></i>
                             </div>

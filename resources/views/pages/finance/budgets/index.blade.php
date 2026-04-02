@@ -16,6 +16,13 @@
     </div>
     @endif
 
+    @if(session('error'))
+    <div class="bg-red-500/10 border border-red-500/30 rounded-xl px-4 py-3 mb-6 text-red-400 flex items-center gap-3">
+        <i data-lucide="x-circle" class="w-5 h-5 shrink-0"></i>
+        <span class="font-medium">{{ session('error') }}</span>
+    </div>
+    @endif
+
     <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
         <div class="flex items-center gap-3">
             <div class="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center shrink-0">
@@ -47,13 +54,26 @@
                         <th class="px-5 py-4 font-medium text-right">Total Anggaran</th>
                         <th class="px-5 py-4 font-medium text-center">Status</th>
                         <th class="px-5 py-4 font-medium">Dibuat Oleh</th>
+                        <th class="px-5 py-4 font-medium text-center">Aksi</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-700/50">
                     @forelse($budgets as $budget)
                     <tr class="hover:bg-gray-700/20 transition-colors">
                         <td class="px-5 py-4 font-bold text-white">{{ $budget->name }}</td>
-                        <td class="px-5 py-4 text-gray-300">{{ $budget->fiscalPeriod->name ?? '-' }}</td>
+                        <td class="px-5 py-4">
+                            <div class="flex flex-col">
+                                <span class="text-gray-300">{{ $budget->fiscalPeriod->name ?? '-' }}</span>
+                                @if($budget->fiscalPeriod)
+                                    @php
+                                        $pc = ['open'=>'text-emerald-400 bg-emerald-500/10','closed'=>'text-amber-400 bg-amber-500/10','locked'=>'text-red-400 bg-red-500/10'];
+                                    @endphp
+                                    <span class="text-[9px] font-black uppercase tracking-tighter w-fit px-1 rounded mt-0.5 {{ $pc[$budget->fiscalPeriod->status] ?? 'text-gray-500 bg-gray-500/10' }}">
+                                        {{ $budget->fiscalPeriod->status }}
+                                    </span>
+                                @endif
+                            </div>
+                        </td>
                         <td class="px-5 py-4 text-gray-300">{{ $budget->department ?? '-' }}</td>
                         <td class="px-5 py-4 text-right font-bold text-emerald-400">Rp {{ number_format($budget->items->sum('planned_amount'), 0, ',', '.') }}</td>
                         <td class="px-5 py-4 text-center">
@@ -61,9 +81,29 @@
                             <span class="text-[10px] px-2 py-1 rounded-full font-bold {{ $bs[$budget->status] ?? '' }}">{{ strtoupper($budget->status) }}</span>
                         </td>
                         <td class="px-5 py-4 text-gray-400">{{ $budget->creator->name ?? '-' }}</td>
+                        <td class="px-5 py-4 text-center">
+                            <div class="flex items-center justify-center gap-2">
+                                @if(auth()->user()->isExecutive())
+                                <a href="{{ route('finance.budgets.edit', $budget) }}" class="p-1.5 rounded-lg text-gray-400 hover:text-indigo-400 hover:bg-indigo-500/10 transition-all" title="Edit Anggaran">
+                                    <i data-lucide="edit-3" class="w-4 h-4"></i>
+                                </a>
+                                <button type="button" 
+                                    @click="$dispatch('global-confirm', { 
+                                        title: 'Hapus Anggaran', 
+                                        message: 'Apakah Anda yakin ingin menghapus anggaran {{ $budget->name }}? Tindakan ini tidak dapat dibatalkan.', 
+                                        confirmText: 'Ya, Hapus', 
+                                        actionUrl: '{{ route('finance.budgets.destroy', $budget) }}', 
+                                        actionMethod: 'DELETE' 
+                                    })"
+                                    class="p-1.5 rounded-lg text-gray-400 hover:text-red-400 hover:bg-red-500/10 transition-all" title="Hapus Anggaran">
+                                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                </button>
+                                @endif
+                            </div>
+                        </td>
                     </tr>
                     @empty
-                    <tr><td colspan="6" class="text-center py-12 text-gray-500">Belum ada anggaran dibuat</td></tr>
+                    <tr><td colspan="7" class="text-center py-12 text-gray-500">Belum ada anggaran dibuat</td></tr>
                     @endforelse
                 </tbody>
             </table>

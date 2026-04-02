@@ -148,4 +148,40 @@
         /* === GLOBAL MODAL === */
         body.theme-light [x-data] .bg-gray-800\/90 { background-color: rgba(255,255,255,0.95) !important; }
     </style>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/dark.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <style>
+        /* === CUSTOM FLATPICKR THEME === */
+        .flatpickr-calendar {
+            background: #111827 !important; 
+            border: 1px solid #374151 !important; 
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5) !important;
+            border-radius: 12px !important;
+            backdrop-filter: blur(10px);
+            z-index: 9999 !important;
+        }
+        .flatpickr-day.selected, .flatpickr-day.startRange, .flatpickr-day.endRange, .flatpickr-day.selected.prevMonthDay, .flatpickr-day.startRange.prevMonthDay, .flatpickr-day.endRange.prevMonthDay, .flatpickr-day.selected.nextMonthDay, .flatpickr-day.startRange.nextMonthDay, .flatpickr-day.endRange.nextMonthDay {
+            background: #6366F1 !important; /* primary-500 */
+            border-color: #6366F1 !important;
+        }
+        .flatpickr-day:hover { background: #374151 !important; }
+        .flatpickr-months .flatpickr-month, .flatpickr-current-month .flatpickr-month {
+            background: #111827 !important;
+            color: white !important;
+            fill: white !important;
+        }
+        .flatpickr-current-month .flatpickr-monthDropdown-months { background: #111827 !important; }
+        .flatpickr-weekdays { background: #1f2937 !important; }
+        span.flatpickr-weekday { background: #1f2937 !important; color: #9ca3af !important; }
+        .flatpickr-calendar.arrowTop:after, .flatpickr-calendar.arrowTop:before { border-bottom-color: #374151 !important; }
+
+        /* Light mode overrides for flatpickr */
+        body.theme-light .flatpickr-calendar {
+            background: #FFFFFF !important;
+            border: 1px solid #E2E8F0 !important;
+            color: #0F172A !important;
+        }
+        body.theme-light .flatpickr-months .flatpickr-month { background: #FFFFFF !important; color: #0F172A !important; }
+    </style>
     @stack('styles')
