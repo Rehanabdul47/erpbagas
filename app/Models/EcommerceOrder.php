@@ -2,42 +2,51 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class EcommerceOrder extends Model
 {
-    use HasFactory;
-
     protected $fillable = [
-        'order_number',
-        'platform',
-        'customer_name',
-        'customer_phone',
-        'shipping_address',
-        'shipping_courier',
-        'receipt_number',
-        'shipping_cost',
-        'total_amount',
-        'subtotal_product',
-        'shipping_fee_buyer_paid',
-        'shipping_fee_discount',
-        'voucher_platform',
-        'voucher_seller',
-        'admin_fee',
-        'platform_fee',
-        'fixed_fee',
-        'service_fee',
-        'processing_fee',
-        'total_income',
+        'ecommerce_integration_id',
+        'platform_order_id',
         'status',
-        'notes',
-        'order_date'
+        'payment_method',
+        'total_amount',
+        'shipping_fee',
+        'platform_discount',
+        'seller_discount',
+        'subtotal',
+        'buyer_message',
+        'recipient_name',
+        'recipient_phone',
+        'full_address',
+        'city',
+        'district',
+        'province',
+        'zipcode',
+        'shipping_provider',
+        'tracking_number',
+        'shipping_document_url',
+        'is_stock_deducted',
+        'order_created_at',
+        'order_paid_at',
     ];
 
     protected $casts = [
-        'order_date' => 'datetime',
+        'is_stock_deducted' => 'boolean',
+        'order_created_at' => 'datetime',
+        'order_paid_at' => 'datetime',
+        'total_amount' => 'decimal:2',
+        'shipping_fee' => 'decimal:2',
+        'platform_discount' => 'decimal:2',
+        'seller_discount' => 'decimal:2',
+        'subtotal' => 'decimal:2',
     ];
+
+    public function integration()
+    {
+        return $this->belongsTo(EcommerceIntegration::class, 'ecommerce_integration_id');
+    }
 
     public function items()
     {

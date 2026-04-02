@@ -15,7 +15,6 @@ use App\Http\Controllers\ProductionDashboardController;
 use App\Http\Controllers\MarketingDashboardController;
 use App\Http\Controllers\DigitalMarketingDashboardController;
 use App\Http\Controllers\FinanceDashboardController;
-use App\Http\Controllers\OrderController;
 use App\Http\Controllers\HrmDashboardController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\NotificationController;
@@ -29,6 +28,9 @@ use App\Http\Controllers\AuditTrailController;
 use App\Http\Controllers\CreditSaleController;
 
 use App\Http\Controllers\RedeemCodeController;
+
+// Webhook TikTok
+Route::post('/api/tiktok/webhook', [\App\Http\Controllers\TikTokWebhookController::class, 'handle'])->name('tiktok.webhook');
 
 // Auth routes
 Route::get('/', [AuthController::class, 'showLogin'])->name('login');
@@ -206,13 +208,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/settings', [HrmController::class, 'updateSettings'])->name('settings.update');
     });
 
-    // Orders (E-Commerce)
-    Route::prefix('orders')->name('orders')->group(function () {
-        Route::get('/', [OrderController::class, 'index'])->name('.index');
-        Route::get('/{order}', [OrderController::class, 'show'])->name('.show');
-        Route::post('/import', [OrderController::class, 'import'])->name('.import');
-        Route::put('/{order}/status', [OrderController::class, 'updateStatus'])->name('.update-status');
-    });
+
 
     // POS System
     Route::prefix('pos')->name('pos.')->group(function () {
@@ -229,14 +225,22 @@ Route::middleware('auth')->group(function () {
         Route::get('/dashboard/chart-data', [MarketingDashboardController::class, 'chartApi'])->name('dashboard.chart-data');
     });
 
-    // Digital Marketing
+    // Digital Marketing & E-Commerce
     Route::prefix('digital-marketing')->name('digital-marketing.')->group(function () {
         Route::get('/dashboard', [DigitalMarketingDashboardController::class, 'index'])->name('dashboard');
-        Route::post('/shopee-report', [DigitalMarketingDashboardController::class, 'generateShopeeReport'])->name('shopee-report');
+        
+        // Settings
+        Route::get('/settings', [\App\Http\Controllers\EcommerceSettingController::class, 'index'])->name('settings.index');
+        Route::post('/settings', [\App\Http\Controllers\EcommerceSettingController::class, 'update'])->name('settings.update');
+        
+        // Orders
+        Route::get('/orders', [\App\Http\Controllers\EcommerceOrderController::class, 'index'])->name('orders.index');
+        Route::get('/orders/{order}', [\App\Http\Controllers\EcommerceOrderController::class, 'show'])->name('orders.show');
+        Route::get('/orders/{id}/print-resi', [\App\Http\Controllers\EcommerceOrderController::class, 'printResi'])->name('orders.print-resi');
+        Route::post('/orders/{id}/confirm-shipment', [\App\Http\Controllers\EcommerceOrderController::class, 'confirmShipment'])->name('orders.confirm-shipment');
     });
 
-    // Digital Platforms (E-Commerce)
-    Route::resource('digital-platforms', \App\Http\Controllers\DigitalPlatformController::class)->except(['show']);
+
 
     // Branches
     Route::resource('branches', \App\Http\Controllers\BranchController::class)->except(['show']);

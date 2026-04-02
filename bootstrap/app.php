@@ -14,6 +14,10 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->web(append: [
             \App\Http\Middleware\SessionTimeout::class,
         ]);
+
+        $middleware->validateCsrfTokens(except: [
+            'api/tiktok/webhook', // Exclude webhook from CSRF
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
