@@ -135,7 +135,7 @@
                     <tr class="hover:bg-gray-700/20 transition-colors group">
                         <td class="px-5 py-4">
                             <div class="flex flex-col">
-                                <a href="{{ route('orders.show', $order->id) }}" class="font-bold text-white hover:text-indigo-400 transition-colors mb-0.5">{{ $order->order_number }}</a>
+                                <a href="{{ route('digital-marketing.orders.show', $order->id) }}" class="font-bold text-white hover:text-indigo-400 transition-colors mb-0.5">{{ $order->order_number }}</a>
                                 <span class="text-xs text-indigo-400 flex items-center gap-1"><i data-lucide="shopping-bag" class="w-3 h-3"></i> {{ $order->platform }}</span>
                             </div>
                         </td>
@@ -173,7 +173,7 @@
                         </td>
                         <td class="px-5 py-4 text-right">
                             <div class="flex items-center justify-end gap-2">
-                                <a href="{{ route('orders.show', $order->id) }}" class="p-2 rounded-lg text-white bg-gray-700 hover:bg-gray-600 transition-colors shadow-sm" title="Lihat Detail">
+                                <a href="{{ route('digital-marketing.orders.show', $order->id) }}" class="p-2 rounded-lg text-white bg-gray-700 hover:bg-gray-600 transition-colors shadow-sm" title="Lihat Detail">
                                     <i data-lucide="eye" class="w-4 h-4"></i>
                                 </a>
                                 <button type="button" @click="openStatusModal({{ json_encode($order) }})" class="p-2 rounded-lg text-white bg-indigo-600 hover:bg-indigo-500 transition-colors shadow-sm focus:ring-2 focus:ring-indigo-500 outline-none" title="Update Status & Resi">
