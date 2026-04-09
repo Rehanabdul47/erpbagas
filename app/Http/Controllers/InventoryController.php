@@ -148,7 +148,7 @@ class InventoryController extends Controller
                 'type' => 'in',
                 'quantity' => $product->stock,
                 'reference' => 'Initial Stock',
-                'method' => 'Manual',
+                'method' => 'PENYESUAIAN',
             ]);
         }
 
@@ -411,7 +411,7 @@ class InventoryController extends Controller
                 'type' => $difference > 0 ? 'in' : 'out',
                 'quantity' => abs($difference),
                 'reference' => 'Stock Opname Adjustment',
-                'method' => 'Opname',
+                'method' => 'PENYESUAIAN',
             ]);
         }
 
