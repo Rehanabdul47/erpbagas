@@ -45,6 +45,10 @@
             ['id' => 'hrm-dashboard', 'icon' => 'layout-dashboard', 'label' => 'Overview HRM', 'route' => 'hrm.dashboard', 'visible' => true],
             ['id' => 'hrm', 'icon' => 'users', 'label' => 'HRM & Payroll', 'route' => 'hrm.index', 'visible' => true],
         ]],
+        ['section' => 'TOOLS', 'visible' => true, 'items' => [
+            ['id' => 'excel-parser', 'icon' => 'file-search', 'label' => 'Excel Parser', 'route' => 'tools.excel-parser', 'visible' => true],
+            ['id' => 'marketplace-parser', 'icon' => 'bar-chart-2', 'label' => 'Marketplace Parser', 'route' => 'tools.marketplace-parser', 'visible' => true],
+        ]],
         ['section' => 'SISTEM', 'visible' => ($user && $user->hasRole('Executive')) || ($user && $user->hasRole('Admin')), 'items' => [
             ['id' => 'branches', 'icon' => 'store', 'label' => 'Cabang / Toko', 'route' => 'branches.index', 'visible' => true],
             ['id' => 'users', 'icon' => 'user-cog', 'label' => 'Manage Users', 'route' => 'users.index', 'visible' => true],

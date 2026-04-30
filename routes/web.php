@@ -26,7 +26,8 @@ use App\Http\Controllers\FiscalPeriodController;
 use App\Http\Controllers\BudgetController;
 use App\Http\Controllers\AuditTrailController;
 use App\Http\Controllers\CreditSaleController;
-
+use App\Http\Controllers\ExcelParserController;
+use App\Http\Controllers\MarketplaceParserController;
 use App\Http\Controllers\RedeemCodeController;
 
 // Webhook TikTok
@@ -267,4 +268,13 @@ Route::middleware('auth')->group(function () {
     Route::post('/settings', [\App\Http\Controllers\SettingController::class, 'update'])->name('settings.update');
     Route::post('/settings/backup/manual', [\App\Http\Controllers\SettingController::class, 'manualBackup'])->name('settings.backup.manual');
     Route::post('/settings/export/audit', [\App\Http\Controllers\SettingController::class, 'exportAudit'])->name('settings.export.audit');
+
+    // Tools
+    Route::prefix('tools')->name('tools.')->group(function () {
+        Route::get('/excel-parser', [ExcelParserController::class, 'index'])->name('excel-parser');
+        Route::post('/excel-parser', [ExcelParserController::class, 'parse'])->name('excel-parser.parse');
+        
+        Route::get('/marketplace-parser', [MarketplaceParserController::class, 'index'])->name('marketplace-parser');
+        Route::post('/marketplace-parser', [MarketplaceParserController::class, 'parse'])->name('marketplace-parser.parse');
+    });
 });
