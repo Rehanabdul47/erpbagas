@@ -5,20 +5,20 @@
 
 @section('content')
     <div x-data="{ 
-        activeTab: new URLSearchParams(window.location.search).get('tab') || 'stock-list',
-        search: '',
-        category: '',
-        status: '',
-        type: '',
-        branch_id: new URLSearchParams(window.location.search).get('branch_id') || '',
-        showStockIn: false,
-        showStockOut: false,
-        showOpnameModal: false,
-        showDeleteModal: false,
-        deleteUrl: '',
-        deleteItemName: '',
-        opnameProduct: { id: '', name: '', sysStock: 0, physStock: 0 }
-    }">
+            activeTab: new URLSearchParams(window.location.search).get('tab') || 'stock-list',
+            search: '',
+            category: '',
+            status: '',
+            type: '',
+            branch_id: new URLSearchParams(window.location.search).get('branch_id') || '',
+            showStockIn: false,
+            showStockOut: false,
+            showOpnameModal: false,
+            showDeleteModal: false,
+            deleteUrl: '',
+            deleteItemName: '',
+            opnameProduct: { id: '', name: '', sysStock: 0, physStock: 0 }
+        }">
 
         {{-- Flash Messages --}}
         @if(session('success'))
@@ -46,7 +46,8 @@
             </div>
             <div class="bg-gray-800 border border-gray-700/50 rounded-xl p-5 shadow-sm">
                 <div class="w-10 h-10 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center mb-4">
-                    <i data-lucide="layers" class="w-5 h-5"></i></div>
+                    <i data-lucide="layers" class="w-5 h-5"></i>
+                </div>
                 <div class="text-3xl font-bold text-white mb-1">{{ number_format($stats['totalStock']) }}</div>
                 <div class="text-gray-400 text-sm">Total Stok</div>
             </div>
@@ -111,7 +112,8 @@
                             <option value="">Semua Cabang (Global)</option>
                             @foreach($branches as $branch)
                                 <option value="{{ $branch->id }}" {{ request('branch_id') == $branch->id ? 'selected' : '' }}>
-                                    {{ $branch->name }}</option>
+                                    {{ $branch->name }}
+                                </option>
                             @endforeach
                         </select>
                         @if(request('branch_id'))
@@ -209,7 +211,7 @@
                                                     <td class="px-4 py-3">
                                                         <span
                                                             class="px-2 py-1 rounded-full text-[10px] font-bold 
-                                                            {{ $p->status === 'ok' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' :
+                                                                                    {{ $p->status === 'ok' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' :
                                 ($p->status === 'low' ? 'bg-amber-500/10 text-amber-500 border-amber-500/20' : 'bg-red-500/10 text-red-500 border-red-500/20') }} border">
                                                             {{ $p->status_label }}
                                                         </span>
@@ -265,7 +267,7 @@
                                                     <td class="px-4 py-3">
                                                         <span
                                                             class="px-2 py-1 rounded-full text-[10px] font-bold border 
-                                                            {{ $m->type === 'in' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' :
+                                                                                    {{ $m->type === 'in' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' :
                                 ($m->type === 'out' ? 'bg-red-500/10 text-red-500 border-red-500/20' : 'bg-amber-500/10 text-amber-500 border-amber-500/20') }}">
                                                             @if($m->type === 'in') 📥 Masuk @elseif($m->type === 'out') 📤 Keluar @else ⚙️
                                                             Proses @endif
